@@ -57,6 +57,22 @@ export function demoEvents(today: CalendarDate, locale: string, timeZone: string
 			end: week.add({ weeks: 1, days: 3 }),
 			color: 'oklch(0.6 0.2 25)'
 		},
+		{
+			id: 'english',
+			title: 'Clase de inglés',
+			start: at(day(1), 19),
+			end: at(day(1), 20, 30),
+			color: 'oklch(0.6 0.15 250)',
+			rrule: 'FREQ=WEEKLY;BYDAY=MO,WE'
+		},
+		{
+			id: 'bills',
+			title: 'Pago de servicios',
+			start: today.set({ day: 1 }).add({ months: 1 }).subtract({ days: 1 }),
+			end: today.set({ day: 1 }).add({ months: 1 }),
+			color: 'oklch(0.65 0.15 150)',
+			rrule: 'FREQ=MONTHLY;BYMONTHDAY=-1'
+		},
 		...['Revisión 1:1', 'Planning', 'Retro', 'Café'].map((title, index) => ({
 			id: `busy-${index}`,
 			title,

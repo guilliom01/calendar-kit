@@ -25,7 +25,30 @@
 			cancel: 'Cancelar',
 			delete: 'Eliminar',
 			undo: 'Deshacer',
-			redo: 'Rehacer'
+			redo: 'Rehacer',
+			timeZone: 'Zona horaria',
+			repeat: 'Repetir',
+			doesNotRepeat: 'No se repite',
+			daily: 'Todos los días',
+			weekly: 'Cada semana el {weekday}',
+			weekdays: 'Días laborables (de lunes a viernes)',
+			monthlyOnDay: 'Cada mes el día {day}',
+			monthlyOnWeekday: 'Cada mes el {ordinal} {weekday}',
+			yearly: 'Cada año el {date}',
+			custom: 'Personalizado ({rule})',
+			ordinals: ['primer', 'segundo', 'tercer', 'cuarto', 'quinto'],
+			last: 'último',
+			ends: 'Termina',
+			never: 'Nunca',
+			endsOn: 'El',
+			endsAfter: 'Después de',
+			occurrences: 'repeticiones',
+			editRecurring: 'Editar evento recurrente',
+			deleteRecurring: 'Eliminar evento recurrente',
+			thisEvent: 'Este evento',
+			followingEvents: 'Este y los eventos siguientes',
+			allEvents: 'Todos los eventos',
+			ok: 'Aceptar'
 		}
 	});
 </script>

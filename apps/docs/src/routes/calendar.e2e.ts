@@ -152,3 +152,98 @@ test.describe('editing', () => {
 		await expect(dialog.getByLabel('Fin, hora')).toHaveValue('11:30');
 	});
 });
+
+test.describe('recurring events', () => {
+	const english = (page: Page) => page.getByRole('button', { name: /Clase de inglés/ });
+	const dialog = (page: Page) => page.getByRole('dialog');
+
+	async function chooseScope(page: Page, scope: string) {
+		await expect(dialog(page).getByRole('heading', { name: /evento recurrente/ })).toBeVisible();
+		await dialog(page).getByLabel(scope).check();
+		await dialog(page).getByRole('button', { name: 'Aceptar' }).click();
+		await expect(dialog(page)).toBeHidden();
+	}
+
+	test('show on every matching day, week after week', async ({ page }) => {
+		await viewButton(page, 'semana').click();
+		await expect(english(page)).toHaveCount(2);
+		await page.getByRole('button', { name: 'la próxima semana' }).click();
+		await expect(english(page)).toHaveCount(2);
+	});
+
+	test('editing one occurrence changes only that one, in one undo step', async ({ page }) => {
+		await viewButton(page, 'semana').click();
+		await english(page).first().click();
+		await dialog(page).getByLabel('Título').fill('Clase de repaso');
+		await dialog(page).getByRole('button', { name: 'Guardar' }).click();
+		await chooseScope(page, 'Este evento');
+
+		await expect(page.getByRole('button', { name: /Clase de repaso/ })).toHaveCount(1);
+		await expect(english(page)).toHaveCount(1);
+
+		await page.keyboard.press('Control+z');
+		await expect(english(page)).toHaveCount(2);
+		await expect(page.getByRole('button', { name: /Clase de repaso/ })).toHaveCount(0);
+	});
+
+	test('moving an occurrence with "all events" moves the whole series', async ({ page }) => {
+		await viewButton(page, 'semana').click();
+		const wednesday = english(page).last();
+		await wednesday.scrollIntoViewIfNeeded();
+		const box = (await wednesday.boundingBox())!;
+		await page.mouse.move(box.x + box.width / 2, box.y + 10);
+		await page.mouse.down();
+		await page.mouse.move(box.x + box.width / 2, box.y + 34, { steps: 5 });
+		await page.mouse.move(box.x + box.width / 2, box.y + 58, { steps: 5 });
+		await page.mouse.up();
+		await chooseScope(page, 'Todos los eventos');
+
+		await expect(english(page).first()).toContainText('8:00 – 9:30 p. m.');
+		await page.getByRole('button', { name: 'la próxima semana' }).click();
+		await expect(english(page).first()).toContainText('8:00 – 9:30 p. m.');
+	});
+
+	test('deleting "this and following" keeps the earlier occurrences', async ({ page }) => {
+		await viewButton(page, 'semana').click();
+		await page.getByRole('button', { name: 'la próxima semana' }).click();
+		await english(page).first().click();
+		await dialog(page).getByRole('button', { name: 'Eliminar' }).click();
+		await chooseScope(page, 'Este y los eventos siguientes');
+
+		await expect(english(page)).toHaveCount(0);
+		await page.getByRole('button', { name: 'la semana pasada' }).click();
+		await expect(english(page)).toHaveCount(2);
+	});
+
+	test('a new event can repeat every week', async ({ page }) => {
+		await page.getByRole('button', { name: 'Nuevo evento' }).click();
+		await dialog(page).getByLabel('Título').fill('Gimnasio');
+		await dialog(page).getByLabel('Repetir').selectOption({ label: 'Cada semana el martes' });
+		await dialog(page).getByRole('button', { name: 'Guardar' }).click();
+
+		await viewButton(page, 'semana').click();
+		await page.getByRole('button', { name: 'la próxima semana' }).click();
+		await expect(page.getByRole('button', { name: /Gimnasio/ })).toContainText('3:00 – 4:00 p. m.');
+	});
+
+	test('a monthly series on the last day lands on 30 and 31', async ({ page }) => {
+		const bills = page.getByRole('button', { name: 'Pago de servicios' });
+		await page.getByRole('button', { name: 'lunes, 30 de noviembre de 2026' }).click();
+		await expect(bills).toBeVisible();
+		await page.getByRole('button', { name: 'mañana' }).click();
+		await expect(bills).toHaveCount(0);
+
+		await viewButton(page, 'mes').click();
+		await page.getByRole('button', { name: 'jueves, 31 de diciembre de 2026' }).click();
+		await expect(bills).toBeVisible();
+	});
+});
+
+test('switching the time zone shows timed events at the new local time', async ({ page }) => {
+	await page.getByRole('button', { name: 'lunes, 16 de noviembre de 2026' }).click();
+	const review = page.getByRole('button', { name: /Design review/ });
+	await expect(review).toContainText('9:15 – 10:30 a. m.');
+
+	await page.getByRole('combobox', { name: 'Zona horaria' }).selectOption('Europe/Madrid');
+	await expect(review).toContainText('3:15 – 4:30 p. m.');
+});

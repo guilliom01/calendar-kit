@@ -1,8 +1,8 @@
 <script lang="ts">
 	import {
 		DateFormatter,
+		fromAbsolute,
 		isToday,
-		now,
 		toCalendarDate,
 		toZoned,
 		type CalendarDate
@@ -62,12 +62,13 @@
 	const hour = $derived(formatter({ hour: 'numeric' }));
 	const time = $derived(formatter({ hour: 'numeric', minute: '2-digit' }));
 
-	// Current time, refreshed every minute, for the "now" line.
-	let current = $state(now(calendar.timeZone));
+	// Current time, refreshed every minute, for the "now" line. Follows time zone changes.
+	let tick = $state(Date.now());
 	$effect(() => {
-		const timer = setInterval(() => (current = now(calendar.timeZone)), 60_000);
+		const timer = setInterval(() => (tick = Date.now()), 60_000);
 		return () => clearInterval(timer);
 	});
+	const current = $derived(fromAbsolute(tick, calendar.timeZone));
 	const nowMinutes = $derived(current.hour * 60 + current.minute);
 
 	const toDate = (day: CalendarDate) => day.toDate(calendar.timeZone);

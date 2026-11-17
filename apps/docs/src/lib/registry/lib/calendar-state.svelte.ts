@@ -8,17 +8,22 @@ import {
 } from '@internationalized/date';
 import {
 	EventStore,
-	eventsInRange,
+	expandEvents,
+	seriesChanges,
 	shiftDate,
 	viewRange,
 	weekDays,
 	type CalendarEvent,
 	type CalendarView,
 	type DayOfWeek,
-	type EventStoreOptions
+	type EventStoreOptions,
+	type SeriesScope
 } from '@calendar-kit/core';
 
-/** Texts that Intl cannot provide. Override them through `labels` for your language. */
+/**
+ * Texts that Intl cannot provide. Override them through `labels` for your language.
+ * `{name}` placeholders are filled in by the components.
+ */
 export const defaultLabels = {
 	allDay: 'All day',
 	untitled: '(No title)',
@@ -32,10 +37,38 @@ export const defaultLabels = {
 	cancel: 'Cancel',
 	delete: 'Delete',
 	undo: 'Undo',
-	redo: 'Redo'
+	redo: 'Redo',
+	timeZone: 'Time zone',
+	repeat: 'Repeat',
+	doesNotRepeat: 'Does not repeat',
+	daily: 'Every day',
+	weekly: 'Every week on {weekday}',
+	weekdays: 'Every weekday (Monday to Friday)',
+	monthlyOnDay: 'Every month on day {day}',
+	monthlyOnWeekday: 'Every month on the {ordinal} {weekday}',
+	yearly: 'Every year on {date}',
+	custom: 'Custom ({rule})',
+	ordinals: ['first', 'second', 'third', 'fourth', 'fifth'],
+	last: 'last',
+	ends: 'Ends',
+	never: 'Never',
+	endsOn: 'On',
+	endsAfter: 'After',
+	occurrences: 'occurrences',
+	editRecurring: 'Edit recurring event',
+	deleteRecurring: 'Delete recurring event',
+	thisEvent: 'This event',
+	followingEvents: 'This and following events',
+	allEvents: 'All events',
+	ok: 'OK'
 };
 
 export type CalendarLabels = typeof defaultLabels;
+
+/** Replaces `{name}` placeholders in a label. */
+export function fillLabel(label: string, values: Record<string, string | number>) {
+	return label.replace(/\{(\w+)\}/g, (match, name: string) => String(values[name] ?? match));
+}
 
 export interface CalendarStateOptions<T extends CalendarEvent> extends EventStoreOptions<T> {
 	view?: CalendarView;
@@ -61,10 +94,20 @@ export interface EventDraft<T extends CalendarEvent> {
 	isNew: boolean;
 }
 
+/** A change to one occurrence of a series, waiting for the user to choose its scope. */
+export interface ScopeRequest<T extends CalendarEvent> {
+	action: 'update' | 'delete';
+	occurrence: T;
+	changed: T | null;
+	/** False when the recurrence rule itself changed: that cannot apply to one occurrence. */
+	allowThis: boolean;
+}
+
 /**
- * Reactive calendar state shared by the toolbar, the views and the dialog through context.
+ * Reactive calendar state shared by the toolbar, the views and the dialogs through context.
  * Event changes go through an `EventStore`: they show right away, are saved with `onMutate`,
- * roll back if saving fails, and can be undone.
+ * roll back if saving fails, and can be undone. Recurring events (`rrule`) are expanded for the
+ * visible range; changing one occurrence asks whether it applies to it, the following, or all.
  */
 export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 	readonly store: EventStore<T>;
@@ -81,6 +124,7 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 	editable = $state(true);
 	labels: CalendarLabels = $state(defaultLabels);
 	draft: EventDraft<T> | null = $state.raw(null);
+	scopeRequest: ScopeRequest<T> | null = $state.raw(null);
 
 	#createId: () => string;
 
@@ -103,7 +147,8 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 	readonly days = $derived(
 		this.view === 'day' ? [this.date] : weekDays(this.date, this.weekOptions)
 	);
-	readonly visibleEvents = $derived(eventsInRange(this.events, this.range, this.timeZone));
+	/** Events and occurrences of recurring events that overlap the visible range. */
+	readonly visibleEvents = $derived(expandEvents(this.events, this.range, this.timeZone));
 	readonly title = $derived(formatTitle(this));
 
 	next() {
@@ -128,12 +173,42 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 		return this.#track(this.store.create(event));
 	}
 
+	/** Saves a changed event. For an occurrence of a series, first asks for the scope. */
 	update(event: T) {
+		const occurrence = this.#occurrence(event.id);
+		if (occurrence) {
+			this.scopeRequest = {
+				action: 'update',
+				occurrence,
+				changed: event,
+				allowThis: event.rrule === occurrence.rrule
+			};
+			return Promise.resolve(undefined);
+		}
 		return this.#track(this.store.update(event));
 	}
 
+	/** Deletes an event. For an occurrence of a series, first asks for the scope. */
 	remove(id: string) {
+		const occurrence = this.#occurrence(id);
+		if (occurrence) {
+			this.scopeRequest = { action: 'delete', occurrence, changed: null, allowThis: true };
+			return Promise.resolve();
+		}
 		return this.#track(this.store.remove(id));
+	}
+
+	/** Applies the pending occurrence change to `scope`, or drops it when `scope` is null. */
+	applyScope(scope: SeriesScope | null) {
+		const request = this.scopeRequest;
+		this.scopeRequest = null;
+		const series = this.events.find((event) => event.id === request?.occurrence.seriesId);
+		if (!request || !scope || !series) return Promise.resolve();
+
+		const changes = seriesChanges(series, request.occurrence, request.changed, scope, () =>
+			this.#createId()
+		);
+		return this.#track(this.store.batch(changes));
 	}
 
 	undo() {
@@ -167,6 +242,10 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 
 	closeDraft() {
 		this.draft = null;
+	}
+
+	#occurrence(id: string) {
+		return this.visibleEvents.find((event) => event.id === id && event.seriesId);
 	}
 
 	async #track<R>(operation: Promise<R>): Promise<R> {

@@ -20,6 +20,21 @@
 	const relative = $derived(new Intl.RelativeTimeFormat(calendar.locale, { numeric: 'auto' }));
 	const fields = $derived(new Intl.DisplayNames(calendar.locale, { type: 'dateTimeField' }));
 
+	/** Every IANA time zone with its current offset, e.g. "America/Lima (GMT-5)". */
+	const timeZones = $derived.by(() => {
+		const zones = new Set([...Intl.supportedValuesOf('timeZone'), calendar.timeZone]);
+		const at = calendar.date.toDate(calendar.timeZone);
+		return [...zones].map((zone) => {
+			const offset = new Intl.DateTimeFormat(calendar.locale, {
+				timeZone: zone,
+				timeZoneName: 'shortOffset'
+			})
+				.formatToParts(at)
+				.find((part) => part.type === 'timeZoneName')?.value;
+			return { zone, label: `${zone.replaceAll('_', ' ')} (${offset})` };
+		});
+	});
+
 	/** One-hour event at the next full hour today, or at 9:00 on the focused date. */
 	function newEvent() {
 		const { date, timeZone } = calendar;
@@ -60,7 +75,17 @@
 	</div>
 	<h2 class="text-lg font-semibold first-letter:uppercase" aria-live="polite">{calendar.title}</h2>
 
-	<div class="ms-auto flex items-center gap-2">
+	<div class="ms-auto flex flex-wrap items-center gap-2">
+		<select
+			aria-label={calendar.labels.timeZone}
+			title={calendar.labels.timeZone}
+			class="h-9 max-w-48 rounded-md border border-input bg-transparent px-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+			bind:value={calendar.timeZone}
+		>
+			{#each timeZones as { zone, label } (zone)}
+				<option value={zone}>{label}</option>
+			{/each}
+		</select>
 		{#if calendar.editable}
 			<div class="flex">
 				<Button

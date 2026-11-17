@@ -68,7 +68,7 @@
 			"name": "event-dialog",
 			"type": "registry:ui",
 			"title": "Event dialog",
-			"description": "Dialog to create, edit and delete events: title, all-day, start, end and color.",
+			"description": "Dialogs to create, edit and delete events (title, all-day, dates, repeat, color) and to choose the scope of changes to recurring events.",
 			"dependencies": ["@calendar-kit/core", "@internationalized/date"],
 			"registryDependencies": [
 				"button",
@@ -89,6 +89,10 @@
 					"type": "registry:ui"
 				},
 				{
+					"path": "src/lib/registry/ui/event-dialog/recurrence-scope-dialog.svelte",
+					"type": "registry:ui"
+				},
+				{
 					"path": "src/lib/registry/ui/event-dialog/index.ts",
 					"type": "registry:ui"
 				}
@@ -98,7 +102,7 @@
 			"name": "calendar",
 			"type": "registry:ui",
 			"title": "Calendar",
-			"description": "Full calendar: toolbar, month, week and day views, drag and drop, event dialog, undo/redo.",
+			"description": "Full calendar: toolbar with time zone switcher, month, week and day views, drag and drop, recurring events, event dialog, undo/redo.",
 			"dependencies": ["@calendar-kit/core", "@internationalized/date", "@lucide/svelte"],
 			"registryDependencies": [
 				"button",

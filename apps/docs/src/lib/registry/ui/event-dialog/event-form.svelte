@@ -1,18 +1,35 @@
 <script lang="ts">
 	import {
+		DateFormatter,
+		endOfMonth,
+		getDayOfWeek,
 		parseDate,
 		parseZonedDateTime,
 		toCalendarDate,
 		toTimeZone,
+		toZoned,
+		type CalendarDate,
 		type ZonedDateTime
 	} from '@internationalized/date';
-	import { isAllDay, resizeEvent, type CalendarEvent } from '@calendar-kit/core';
+	import {
+		formatRRule,
+		isAllDay,
+		parseRRule,
+		resizeEvent,
+		WEEKDAYS,
+		type CalendarEvent,
+		type RecurrenceRule
+	} from '@calendar-kit/core';
 	import { Button } from '#lib/registry/ui/button/index.js';
 	import { Checkbox } from '#lib/registry/ui/checkbox/index.js';
 	import * as Dialog from '#lib/registry/ui/dialog/index.js';
 	import { Input } from '#lib/registry/ui/input/index.js';
 	import { Label } from '#lib/registry/ui/label/index.js';
-	import { getCalendar, type EventDraft } from '#lib/registry/lib/calendar-state.svelte.js';
+	import {
+		fillLabel,
+		getCalendar,
+		type EventDraft
+	} from '#lib/registry/lib/calendar-state.svelte.js';
 	import { cn } from '#lib/utils.js';
 
 	interface Props {
@@ -51,8 +68,122 @@
 
 	const zoned = (date: string, time: string) => parseZonedDateTime(`${date}T${time}[${timeZone}]`);
 
+	// Recurrence: a repeat pattern (the rule without its end) plus how the series ends.
+	const originalRule = original.rrule ? parseRRule(original.rrule) : undefined;
+	const withoutEnd = (rule: RecurrenceRule) =>
+		formatRRule({ ...rule, count: undefined, until: undefined });
+	let repeat = $state(originalRule ? withoutEnd(originalRule) : '');
+	let ends: 'never' | 'on' | 'after' = $state(
+		originalRule?.count !== undefined ? 'after' : originalRule?.until ? 'on' : 'never'
+	);
+	let endsAfter = $state(originalRule?.count ?? 10);
+	let endsOn = $state(
+		originalRule?.until
+			? ('hour' in originalRule.until
+					? toCalendarDate(toTimeZone(originalRule.until, timeZone))
+					: originalRule.until
+				).toString()
+			: ''
+	);
+
+	function safeDate(value: string): CalendarDate | undefined {
+		try {
+			return parseDate(value);
+		} catch {
+			return undefined;
+		}
+	}
+
+	/**
+	 * Label for a rule that is not one of the presets. Weekly rules on several days read as
+	 * "Every week on Monday and Wednesday"; anything else shows the rule itself.
+	 */
+	function describeRule(value: string) {
+		const rule = parseRRule(value);
+		const simpleWeekly =
+			rule.freq === 'WEEKLY' &&
+			(rule.interval ?? 1) === 1 &&
+			!rule.byMonth &&
+			!rule.bySetPos &&
+			rule.byDay?.every((day) => day.n === undefined);
+		if (!simpleWeekly || !rule.byDay) return fillLabel(labels.custom, { rule: value });
+
+		const monday = parseDate('2026-11-16'); // any Monday, to name weekdays with Intl
+		const name = new DateFormatter(calendar.locale, { weekday: 'long', timeZone: 'UTC' });
+		const names = rule.byDay.map(({ weekday }) =>
+			name.format(monday.add({ days: WEEKDAYS.indexOf(weekday) }).toDate('UTC'))
+		);
+		const list = new Intl.ListFormat(calendar.locale, { type: 'conjunction' }).format(names);
+		return fillLabel(labels.weekly, { weekday: list });
+	}
+
+	/** Repeat choices for the chosen start date, like "Every month on the last Friday". */
+	const repeatOptions = $derived.by(() => {
+		const day =
+			safeDate(startDate) ??
+			(isAllDay(original) ? original.start : toCalendarDate(toTimeZone(original.start, timeZone)));
+		const asDate = day.toDate(timeZone);
+		const weekdayName = new DateFormatter(calendar.locale, { weekday: 'long', timeZone }).format(
+			asDate
+		);
+		const weekday = WEEKDAYS[getDayOfWeek(day, 'en-US', 'mon')]!;
+		const week = Math.ceil(day.day / 7);
+		const isLast = day.day + 7 > endOfMonth(day).day;
+		const options = [
+			{ value: '', label: labels.doesNotRepeat },
+			{ value: 'FREQ=DAILY', label: labels.daily },
+			{
+				value: `FREQ=WEEKLY;BYDAY=${weekday}`,
+				label: fillLabel(labels.weekly, { weekday: weekdayName })
+			},
+			{ value: 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR', label: labels.weekdays },
+			{
+				value: `FREQ=MONTHLY;BYMONTHDAY=${day.day}`,
+				label: fillLabel(labels.monthlyOnDay, { day: day.day })
+			},
+			{
+				value: `FREQ=MONTHLY;BYDAY=${isLast ? -1 : week}${weekday}`,
+				label: fillLabel(labels.monthlyOnWeekday, {
+					ordinal: isLast ? labels.last : (labels.ordinals[week - 1] ?? String(week)),
+					weekday: weekdayName
+				})
+			},
+			{
+				value: 'FREQ=YEARLY',
+				label: fillLabel(labels.yearly, {
+					date: new DateFormatter(calendar.locale, {
+						day: 'numeric',
+						month: 'long',
+						timeZone
+					}).format(asDate)
+				})
+			}
+		];
+		if (repeat && !options.some((option) => option.value === repeat)) {
+			options.push({ value: repeat, label: describeRule(repeat) });
+		}
+		return options;
+	});
+
+	function buildRule(): string | undefined {
+		if (!repeat) return undefined;
+		const rule = parseRRule(repeat);
+		if (ends === 'after') rule.count = Math.max(1, endsAfter);
+		const lastDay = ends === 'on' ? safeDate(endsOn) : undefined;
+		if (lastDay) {
+			// UNTIL is inclusive: the whole last day, as a UTC time for timed events.
+			rule.until = allDay
+				? lastDay
+				: toTimeZone(toZoned(lastDay.add({ days: 1 }), timeZone).subtract({ seconds: 1 }), 'UTC');
+		}
+		const formatted = formatRRule(rule);
+		// Keep the original text when nothing changed, so "this event" stays available.
+		return originalRule && formatted === formatRRule(originalRule) ? original.rrule : formatted;
+	}
+
 	function buildEvent(): CalendarEvent {
-		const base = { ...original, title: title.trim(), color };
+		const base = { ...original, title: title.trim(), color, rrule: buildRule() };
+		if (!base.rrule) delete base.exdates;
 		if (allDay) {
 			const start = parseDate(startDate);
 			const lastDay = parseDate(endDate);
@@ -64,6 +195,10 @@
 			minDuration: calendar.snapStep
 		});
 	}
+
+	// Native select styled like the shadcn input, for accessibility and mobile pickers.
+	const selectClass =
+		'h-9 w-full rounded-md border border-input bg-transparent px-2.5 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30';
 
 	function submit(event: SubmitEvent) {
 		event.preventDefault();
@@ -123,6 +258,57 @@
 			/>
 		{/if}
 	</div>
+
+	<div class="grid gap-2">
+		<Label for="calendar-event-repeat">{labels.repeat}</Label>
+		<select id="calendar-event-repeat" class={selectClass} bind:value={repeat}>
+			{#each repeatOptions as option (option.value)}
+				<option value={option.value}>{option.label}</option>
+			{/each}
+		</select>
+	</div>
+
+	{#if repeat}
+		<fieldset class="grid gap-2">
+			<legend class="mb-2 text-sm font-medium">{labels.ends}</legend>
+			<div class="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2 text-sm">
+				<label class="flex items-center gap-2">
+					<input type="radio" name="calendar-event-ends" value="never" bind:group={ends} />
+					{labels.never}
+				</label>
+				<span></span>
+
+				<label class="flex items-center gap-2">
+					<input type="radio" name="calendar-event-ends" value="on" bind:group={ends} />
+					{labels.endsOn}
+				</label>
+				<Input
+					type="date"
+					aria-label={labels.endsOn}
+					class="w-44"
+					bind:value={endsOn}
+					disabled={ends !== 'on'}
+					required={ends === 'on'}
+				/>
+
+				<label class="flex items-center gap-2">
+					<input type="radio" name="calendar-event-ends" value="after" bind:group={ends} />
+					{labels.endsAfter}
+				</label>
+				<div class="flex items-center gap-2">
+					<Input
+						type="number"
+						min="1"
+						aria-label="{labels.endsAfter} ({labels.occurrences})"
+						class="w-20"
+						bind:value={endsAfter}
+						disabled={ends !== 'after'}
+					/>
+					<span>{labels.occurrences}</span>
+				</div>
+			</div>
+		</fieldset>
+	{/if}
 
 	<fieldset class="grid gap-2">
 		<legend class="mb-2 text-sm font-medium">{labels.color}</legend>

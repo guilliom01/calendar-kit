@@ -79,6 +79,16 @@ What users can do (with `editable: true`, the default):
 - Drag events to move them (across days and hours), and drag their bottom edge to resize them. Changes snap to `snapStep` minutes (default 15). Escape cancels a drag.
 - Undo and redo with the toolbar buttons or Ctrl/Cmd+Z and Ctrl/Cmd+Shift+Z (or Ctrl+Y). Delete or Backspace removes the focused event.
 
+### Recurring events
+
+Give an event an RFC 5545 `rrule` (for example `FREQ=WEEKLY;BYDAY=MO,WE` or `FREQ=MONTHLY;BYDAY=-1FR;COUNT=6`) and optional `exdates`. Supported parts: `FREQ` (daily to yearly), `INTERVAL`, `COUNT`, `UNTIL`, `BYMONTH`, `BYMONTHDAY`, `BYDAY` (with ordinals), `BYSETPOS` and `WKST`. Other parts throw a `RangeError` rather than being ignored. Occurrences are expanded only for the visible range, keep their wall-clock time across DST changes, and are checked against `rrule-temporal` in the tests.
+
+The event dialog offers common patterns ("every week on Monday", "every month on the last Friday", ...) and how the series ends (never, on a date, after N times). Editing, moving or deleting an occurrence asks whether the change applies to this event, this and the following ones, or all of them. Each choice is one undo step. Outside the UI, `seriesChanges()` from `@calendar-kit/core` returns the same changes for `EventStore.batch()`.
+
+### Time zones
+
+`timeZone` decides where events are shown. The toolbar has a time zone switcher; timed events move to the new local time, and all-day events stay on their dates.
+
 Changes show right away and are sent to `onMutate`. Changes to the same event are saved in order, and undo and redo reach `onMutate` as inverse changes.
 
 | Item             | What it is                                                          |

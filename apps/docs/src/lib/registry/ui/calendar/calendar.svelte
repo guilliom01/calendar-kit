@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { CalendarEvent } from '@calendar-kit/core';
 	import type { Snippet } from 'svelte';
-	import { EventDialog } from '#lib/registry/ui/event-dialog/index.js';
+	import { EventDialog, RecurrenceScopeDialog } from '#lib/registry/ui/event-dialog/index.js';
 	import { MonthView } from '#lib/registry/ui/month-view/index.js';
 	import { TimeGrid } from '#lib/registry/ui/time-grid/index.js';
 	import { setCalendar, type CalendarState } from '#lib/registry/lib/calendar-state.svelte.js';
@@ -56,4 +56,5 @@
 	{/if}
 
 	<EventDialog />
+	<RecurrenceScopeDialog />
 </div>
