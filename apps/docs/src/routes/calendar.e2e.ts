@@ -548,3 +548,40 @@ test.describe('import and export', () => {
 		await expect(page.getByText('Conferencia en Cusco')).toBeVisible();
 	});
 });
+
+test.describe('languages and directions', () => {
+	test('counts use plural rules: "1 evento", "3 eventos"', async ({ page }) => {
+		await viewButton(page, 'año').click();
+		await expect(
+			page.getByRole('button', { name: 'martes, 17 de noviembre de 2026, 1 evento' })
+		).toBeVisible();
+		await expect(
+			page.getByRole('button', { name: 'miércoles, 18 de noviembre de 2026, 3 eventos' })
+		).toBeVisible();
+	});
+
+	test('right-to-left pages drag toward the next day and mirror the gantt', async ({ page }) => {
+		await page.evaluate(() => (document.documentElement.dir = 'rtl'));
+		await viewButton(page, 'semana').click();
+
+		// In RTL the next day is on the left.
+		const workshop = page.getByRole('button', { name: /Svelte workshop/ });
+		await workshop.scrollIntoViewIfNeeded();
+		const box = (await workshop.boundingBox())!;
+		await page.mouse.move(box.x + box.width / 2, box.y + 20);
+		await page.mouse.down();
+		await page.mouse.move(box.x + box.width / 2 - box.width / 2, box.y + 20, { steps: 5 });
+		await page.mouse.move(box.x + box.width / 2 - box.width, box.y + 20, { steps: 5 });
+		await page.mouse.up();
+		await page.getByRole('button', { name: 'jueves, 19 de noviembre de 2026' }).click();
+		await expect(page.getByRole('button', { name: /Svelte workshop/ })).toContainText(
+			'3:00 – 6:00 p. m.'
+		);
+
+		await viewButton(page, 'Gantt').click();
+		const analysis = (await page.getByRole('button', { name: /^Análisis/ }).boundingBox())!;
+		const design = (await page.getByRole('button', { name: /^Diseño/ }).boundingBox())!;
+		expect(analysis.x).toBeGreaterThan(design.x);
+		await expect(page.locator('svg path[marker-end]')).toHaveCount(3);
+	});
+});

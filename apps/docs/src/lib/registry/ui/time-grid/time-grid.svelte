@@ -120,10 +120,21 @@
 
 	/** Column, its day and the minute of the day under the pointer. */
 	function pointAt(pointer: PointerEvent) {
-		const first = columnElements[0]!.getBoundingClientRect();
-		const last = columnElements[cols.length - 1]!.getBoundingClientRect();
-		const ratio = (pointer.clientX - first.left) / (last.right - first.left);
-		const index = Math.min(cols.length - 1, Math.max(0, Math.floor(ratio * cols.length)));
+		// Measured per column, so it works left-to-right and right-to-left.
+		const rects = columnElements
+			.slice(0, cols.length)
+			.map((element) => element.getBoundingClientRect());
+		const distance = (rect: DOMRect) => Math.abs(pointer.clientX - (rect.left + rect.right) / 2);
+		let index = rects.findIndex(
+			(rect) => pointer.clientX >= rect.left && pointer.clientX < rect.right
+		);
+		if (index === -1) {
+			index = rects.reduce(
+				(best, rect, i) => (distance(rect) < distance(rects[best]!) ? i : best),
+				0
+			);
+		}
+		const first = rects[0]!;
 		const minutes = ((pointer.clientY - first.top) / first.height) * MINUTES_PER_DAY;
 		return { column: cols[index]!, day: cols[index]!.day, minutes };
 	}
@@ -372,7 +383,7 @@
 							)}
 							style:top={percent(item.start)}
 							style:height={percent(item.end - item.start)}
-							style:left="{(item.column / item.columns) * 100}%"
+							style:inset-inline-start="{(item.column / item.columns) * 100}%"
 							style:width="{100 / item.columns}%"
 							style:--event-color={event.color ?? 'var(--primary)'}
 							title={event.title || calendar.labels.untitled}
@@ -405,7 +416,7 @@
 							class="pointer-events-none absolute inset-x-0 z-10 h-0.5 bg-destructive"
 							style:top={percent(nowMinutes)}
 						>
-							<span class="absolute -top-1 -left-1 size-2.5 rounded-full bg-destructive"></span>
+							<span class="absolute -start-1 -top-1 size-2.5 rounded-full bg-destructive"></span>
 						</div>
 					{/if}
 				</div>

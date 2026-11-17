@@ -44,7 +44,7 @@ export const spanishLabels: Partial<CalendarLabels> = {
 	gantt: 'Gantt',
 	noEvents: 'No hay eventos',
 	loading: 'Cargando…',
-	events: 'eventos',
+	eventCount: { one: '{count} evento', other: '{count} eventos' },
 	unassigned: 'Sin asignar',
 	progress: 'Avance',
 	views: 'Vistas',

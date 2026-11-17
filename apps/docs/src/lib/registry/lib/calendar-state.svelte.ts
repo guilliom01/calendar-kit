@@ -71,7 +71,8 @@ export const defaultLabels = {
 	gantt: 'Gantt',
 	noEvents: 'No events',
 	loading: 'Loading…',
-	events: 'events',
+	/** Plural forms by `Intl.PluralRules` category; `other` is required. */
+	eventCount: { one: '{count} event', other: '{count} events' } as PluralForms,
 	unassigned: 'Unassigned',
 	progress: 'Progress',
 	views: 'Views',
@@ -86,6 +87,15 @@ export const defaultLabels = {
 };
 
 export type CalendarLabels = typeof defaultLabels;
+
+/** A label per plural category (`zero`, `one`, `two`, `few`, `many`, `other`). */
+export type PluralForms = Partial<Record<Intl.LDMLPluralRule, string>> & { other: string };
+
+/** Picks the plural form for `count` in `locale` and fills its `{count}`. */
+export function pluralLabel(forms: PluralForms, count: number, locale: string) {
+	const category = new Intl.PluralRules(locale).select(count);
+	return fillLabel(forms[category] ?? forms.other, { count });
+}
 
 /** Replaces `{name}` placeholders in a label. */
 export function fillLabel(label: string, values: Record<string, string | number>) {

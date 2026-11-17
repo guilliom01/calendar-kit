@@ -40,7 +40,7 @@
 		aria-label={relative.format(-1, unit)}
 		onclick={() => calendar.previous()}
 	>
-		<ChevronLeftIcon />
+		<ChevronLeftIcon class="rtl:rotate-180" />
 	</Button>
 	<Button
 		variant="ghost"
@@ -48,6 +48,6 @@
 		aria-label={relative.format(1, unit)}
 		onclick={() => calendar.next()}
 	>
-		<ChevronRightIcon />
+		<ChevronRightIcon class="rtl:rotate-180" />
 	</Button>
 </div>

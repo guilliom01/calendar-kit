@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { DateFormatter, isSameMonth, isToday, type CalendarDate } from '@internationalized/date';
 	import { countByDay, monthGrid } from '@calendar-kit/core';
-	import { getCalendar } from '#lib/registry/lib/calendar-state.svelte.js';
+	import { getCalendar, pluralLabel } from '#lib/registry/lib/calendar-state.svelte.js';
 	import { cn } from '#lib/utils.js';
 
 	let { class: className }: { class?: string } = $props();
@@ -22,6 +22,8 @@
 	const weekday = $derived(formatter({ weekday: 'narrow' }));
 	const fullDate = $derived(formatter({ dateStyle: 'full' }));
 	const toDate = (day: CalendarDate) => day.toDate(calendar.timeZone);
+	const eventCount = (count: number) =>
+		pluralLabel(calendar.labels.eventCount, count, calendar.locale);
 
 	function openMonth(month: CalendarDate) {
 		calendar.date = month;
@@ -73,10 +75,10 @@
 								isToday(day, calendar.timeZone) &&
 									'bg-primary font-semibold text-primary-foreground'
 							)}
-							aria-label="{fullDate.format(toDate(day))}{count
-								? `, ${count} ${calendar.labels.events}`
-								: ''}"
-							title={count ? `${count} ${calendar.labels.events}` : undefined}
+							aria-label={count
+								? `${fullDate.format(toDate(day))}, ${eventCount(count)}`
+								: fullDate.format(toDate(day))}
+							title={count ? eventCount(count) : undefined}
 							onclick={(click) => calendar.clickDate(day, click)}
 						>
 							{day.day}

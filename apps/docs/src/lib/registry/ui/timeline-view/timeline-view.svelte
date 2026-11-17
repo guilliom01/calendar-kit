@@ -94,7 +94,7 @@
 	)}
 >
 	<div class="grid min-w-3xl grid-cols-[minmax(9rem,14rem)_1fr]">
-		<div class="sticky top-0 left-0 z-20 border-e border-b bg-muted"></div>
+		<div class="sticky start-0 top-0 z-20 border-e border-b bg-muted"></div>
 		<div class="sticky top-0 z-10 grid border-b bg-muted" style:grid-template-columns={dayColumns}>
 			{#each days as day (day.toString())}
 				<button
@@ -120,7 +120,7 @@
 		{#each rows as row (row.id)}
 			{@const lanes = Math.max(1, ...row.items.map((item) => item.lane + 1))}
 			<div
-				class="sticky left-0 z-10 flex items-start border-e border-b bg-background px-2 py-1.5 text-sm"
+				class="sticky start-0 z-10 flex items-start border-e border-b bg-background px-2 py-1.5 text-sm"
 				style:padding-inline-start="{0.5 + row.depth * 1.25}rem"
 			>
 				{#if row.hasChildren}
@@ -130,9 +130,9 @@
 						aria-expanded={!collapsed.has(row.id)}
 						onclick={() => toggle(row.id)}
 					>
-						{#if collapsed.has(row.id)}<ChevronRightIcon class="size-4" />{:else}<ChevronDownIcon
-								class="size-4"
-							/>{/if}
+						{#if collapsed.has(row.id)}<ChevronRightIcon
+								class="size-4 rtl:rotate-180"
+							/>{:else}<ChevronDownIcon class="size-4" />{/if}
 						{row.title}
 					</button>
 				{:else}

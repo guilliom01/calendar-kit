@@ -25,6 +25,8 @@
 	let preview: CalendarEvent | null = $state.raw(null);
 	let width = $state(0);
 	let height = $state(0);
+	/** Right-to-left pages mirror the dependency arrows. */
+	let rtl = $state(false);
 
 	const days = $derived.by(() => {
 		const list: CalendarDate[] = [];
@@ -60,12 +62,14 @@
 				const from = index.get(id);
 				const source = from === undefined ? undefined : rows[from]?.item;
 				if (from === undefined || !source) return [];
-				const x1 = (source.startIndex + source.span) * column;
-				const x2 = entry.item!.startIndex * column;
+				const mirror = (x: number) => (rtl ? width - x : x);
+				const x1 = mirror((source.startIndex + source.span) * column);
+				const x2 = mirror(entry.item!.startIndex * column);
+				const step = rtl ? -8 : 8;
 				const y1 = (from + 0.5) * row;
 				const y2 = (position + 0.5) * row;
 				// Out of the dependency's end, down (or up) to the task's row, then into its start.
-				const d = `M ${x1} ${y1} H ${x1 + 8} V ${y2} H ${x2 - 2}`;
+				const d = `M ${x1} ${y1} H ${x1 + step} V ${y2} H ${x2 - step / 4}`;
 				return [{ id: `${id}->${entry.event.id}`, d }];
 			})
 		);
@@ -103,7 +107,7 @@
 			class="grid min-w-max"
 			style:grid-template-columns="minmax(10rem,16rem) minmax({days.length * 2}rem, 1fr)"
 		>
-			<div class="sticky top-0 left-0 z-20 border-e border-b bg-muted"></div>
+			<div class="sticky start-0 top-0 z-20 border-e border-b bg-muted"></div>
 			<div
 				class="sticky top-0 z-10 grid border-b bg-muted"
 				style:grid-template-columns={dayColumns}
@@ -124,7 +128,7 @@
 				{/each}
 			</div>
 
-			<div class="sticky left-0 z-10 border-e bg-background">
+			<div class="sticky start-0 z-10 border-e bg-background">
 				{#each rows as { event } (event.id)}
 					<div class="flex h-10 items-center justify-between gap-2 border-b px-3 text-sm">
 						<span class="truncate">{event.title || calendar.labels.untitled}</span>
@@ -137,7 +141,14 @@
 				{/each}
 			</div>
 
-			<div class="relative" bind:clientWidth={width} bind:clientHeight={height}>
+			<div
+				class="relative"
+				bind:clientWidth={width}
+				bind:clientHeight={height}
+				{@attach (node) => {
+					rtl = getComputedStyle(node).direction === 'rtl';
+				}}
+			>
 				{#each rows as { event, item } (event.id)}
 					<div class="relative grid h-10 border-b" style:grid-template-columns={dayColumns}>
 						{#each days as day (day.toString())}
@@ -155,7 +166,7 @@
 								'absolute inset-y-2 flex touch-none items-center overflow-hidden rounded bg-(--event-color)/25 text-start text-xs font-medium hover:ring-2 hover:ring-(--event-color)/50',
 								preview?.id === event.id && 'opacity-80 shadow-md'
 							)}
-							style:left="{(item!.startIndex / days.length) * 100}%"
+							style:inset-inline-start="{(item!.startIndex / days.length) * 100}%"
 							style:width="{(item!.span / days.length) * 100}%"
 							style:--event-color={event.color ?? 'var(--primary)'}
 							title={event.title || calendar.labels.untitled}
@@ -166,7 +177,7 @@
 							onclick={(click) => calendar.clickEvent(event, click)}
 						>
 							<span
-								class="absolute inset-y-0 left-0 bg-(--event-color)/60"
+								class="absolute inset-y-0 start-0 bg-(--event-color)/60"
 								style:width="{(event.progress ?? 0) * 100}%"
 							></span>
 							<span class="relative truncate px-2">
