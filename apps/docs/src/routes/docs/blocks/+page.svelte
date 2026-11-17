@@ -121,7 +121,10 @@
 <Code code={customView} />
 
 <h2>month-view</h2>
-<p>A month grid. Multi-day events are bars; the rest collapse into "+N" when a day is full.</p>
+<p>
+	A month grid. Multi-day events are bars. When a day is full, the rest collapse into "+N", which
+	opens a popover listing every event of that day (or runs your <code>onMoreClick</code> hook instead).
+</p>
 <PropsTable
 	caption="MonthView props"
 	rows={[

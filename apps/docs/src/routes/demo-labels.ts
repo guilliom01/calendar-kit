@@ -55,5 +55,6 @@ export const spanishLabels: Partial<CalendarLabels> = {
 	exportIcs: 'Exportar .ics',
 	importIcs: 'Importar .ics',
 	exportCsv: 'Exportar CSV',
-	print: 'Imprimir'
+	print: 'Imprimir',
+	moreEvents: { one: '{count} evento más', other: '{count} eventos más' }
 };

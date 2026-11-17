@@ -86,9 +86,9 @@
 			"name": "month-view",
 			"type": "registry:ui",
 			"title": "Month view",
-			"description": "Month grid with all-day bars, timed events and a +N overflow per day.",
+			"description": "Month grid with all-day bars, timed events and a +N popover listing a full day.",
 			"dependencies": ["@calendar-kit/core", "@internationalized/date"],
-			"registryDependencies": ["utils", "./calendar-state.json"],
+			"registryDependencies": ["popover", "utils", "./calendar-state.json"],
 			"files": [
 				{
 					"path": "src/lib/registry/ui/month-view/month-view.svelte",

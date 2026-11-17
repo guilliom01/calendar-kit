@@ -12,6 +12,7 @@
 	const calendar = new CalendarState({
 		locale: 'es-PE',
 		timeZone,
+		labels: { moreEvents: { one: '{count} evento más', other: '{count} eventos más' } },
 		events: demoEvents(today(timeZone), 'es-PE', timeZone).filter(
 			(event) => event.progress === undefined
 		),
@@ -25,6 +26,11 @@
 				return false;
 			}
 			message = `Movido: ${event.title}`;
+		},
+		// Our own reaction to "+N" instead of the built-in list.
+		onMoreClick: (day, events) => {
+			message = `Más eventos el ${day.toString()}: ${events.length}`;
+			return false;
 		},
 		// Show the picked day instead of opening a dialog.
 		onSelect: ({ start }) => {

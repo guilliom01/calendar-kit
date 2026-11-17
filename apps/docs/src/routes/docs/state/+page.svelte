@@ -115,6 +115,12 @@
 			description: 'An event was clicked or activated. Built-in: open the event dialog.'
 		},
 		{
+			name: 'onMoreClick(day, events)',
+			type: 'boolean | void',
+			description:
+				'"+N" was clicked in the month view. Built-in: a popover listing every event of the day.'
+		},
+		{
 			name: 'onDateClick(date, nativeEvent)',
 			type: 'boolean | void',
 			description:

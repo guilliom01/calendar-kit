@@ -3,7 +3,8 @@
 	import { isAllDay, layoutWeekRow, monthGrid, type CalendarEvent } from '@calendar-kit/core';
 	import type { Snippet } from 'svelte';
 	import { dragAcrossDays, withPreview } from '#lib/registry/lib/calendar-drag.js';
-	import { getCalendar } from '#lib/registry/lib/calendar-state.svelte.js';
+	import * as Popover from '#lib/registry/ui/popover/index.js';
+	import { getCalendar, pluralLabel } from '#lib/registry/lib/calendar-state.svelte.js';
 	import { cn } from '#lib/utils.js';
 
 	interface Props {
@@ -34,6 +35,23 @@
 	const weekday = $derived(formatter({ weekday: 'short' }));
 	const time = $derived(formatter({ hour: 'numeric', minute: '2-digit' }));
 	const fullDate = $derived(formatter({ dateStyle: 'full' }));
+
+	/** Day whose "+N" list is open. */
+	let openDay: string | null = $state(null);
+
+	function setOpen(key: string, open: boolean, day: CalendarDate, events: CalendarEvent[]) {
+		if (!open) {
+			if (openDay === key) openDay = null;
+		} else if (calendar.clickMore(day, events)) openDay = key;
+	}
+
+	/** Every event shown on a day of the week row, hidden or not, in lane order. */
+	function eventsOnDay(items: (typeof weeks)[number]['items'], dayIndex: number) {
+		return items
+			.filter((item) => item.startIndex <= dayIndex && dayIndex < item.startIndex + item.span)
+			.sort((a, b) => a.lane - b.lane)
+			.map((item) => item.event);
+	}
 
 	function hiddenCount(items: (typeof weeks)[number]['items'], dayIndex: number) {
 		return items.filter(
@@ -157,15 +175,67 @@
 				{#each week.days as day, dayIndex (day.toString())}
 					{@const hidden = hiddenCount(week.items, dayIndex)}
 					{#if hidden > 0}
-						<button
-							type="button"
-							class="pointer-events-auto mx-0.5 rounded px-1.5 text-start text-xs font-medium text-muted-foreground hover:bg-muted"
-							style:grid-column={dayIndex + 1}
-							style:grid-row={maxLanes + 1}
-							onclick={(click) => calendar.clickDate(day, click)}
+						{@const key = day.toString()}
+						{@const dayEvents = eventsOnDay(week.items, dayIndex)}
+						<!-- Opening goes through onMoreClick, which may keep it closed and do something else. -->
+						<Popover.Root
+							bind:open={() => openDay === key, (open) => setOpen(key, open, day, dayEvents)}
 						>
-							+{hidden}
-						</button>
+							<Popover.Trigger
+								class="pointer-events-auto mx-0.5 rounded px-1.5 text-start text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground data-[state=open]:text-foreground"
+								style="grid-column: {dayIndex + 1}; grid-row: {maxLanes + 1}"
+							>
+								<span aria-hidden="true">+{hidden}</span>
+								<span class="sr-only">
+									{pluralLabel(calendar.labels.moreEvents, hidden, calendar.locale)},
+									{fullDate.format(toDate(day))}
+								</span>
+							</Popover.Trigger>
+							<Popover.Content
+								class="w-64 gap-2 p-2"
+								align="start"
+								role="dialog"
+								aria-label={fullDate.format(toDate(day))}
+							>
+								<button
+									type="button"
+									class="rounded px-2 py-1 text-start text-sm font-semibold first-letter:uppercase hover:bg-muted"
+									onclick={(click) => {
+										openDay = null;
+										calendar.clickDate(day, click);
+									}}
+								>
+									{fullDate.format(toDate(day))}
+								</button>
+								<ul class="grid gap-0.5">
+									{#each dayEvents as event (event.id)}
+										<li>
+											<button
+												type="button"
+												class="flex w-full min-w-0 items-center gap-1.5 rounded px-2 py-1 text-start text-xs hover:bg-muted"
+												style:--event-color={event.color ?? 'var(--primary)'}
+												onclick={(click) => {
+													openDay = null;
+													calendar.clickEvent(event, click);
+												}}
+											>
+												{#if eventContent}
+													{@render eventContent(event)}
+												{:else}
+													<span class="size-2 shrink-0 rounded-full bg-(--event-color)"></span>
+													{#if !isAllDay(event)}
+														<span class="shrink-0 text-muted-foreground"
+															>{time.format(event.start.toDate())}</span
+														>
+													{/if}
+													<span class="truncate">{event.title || calendar.labels.untitled}</span>
+												{/if}
+											</button>
+										</li>
+									{/each}
+								</ul>
+							</Popover.Content>
+						</Popover.Root>
 					{/if}
 				{/each}
 			</div>

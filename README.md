@@ -97,6 +97,7 @@ Every interaction runs your hook first; return `false` to skip the built-in beha
 | Option          | When                                  | Built-in behavior                              |
 | --------------- | ------------------------------------- | ---------------------------------------------- |
 | `onEventClick`  | An event is clicked or activated      | Open the event dialog (if you added one)       |
+| `onMoreClick`   | "+N" is clicked in the month view     | A popover listing every event of that day      |
 | `onDateClick`   | A day number or day header is clicked | Show the day view (if you registered one)      |
 | `onSelect`      | An empty day or time range is picked  | Open the dialog for a new event                |
 | `onEventChange` | An event is dragged or resized        | Save it. Return an event to save that instead  |

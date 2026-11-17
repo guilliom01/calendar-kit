@@ -15,7 +15,9 @@ test('month view shows the current month with its events', async ({ page }) => {
 	await expect(page.getByText('Feriado')).toBeVisible();
 	// Friday: the conference bar plus 4 meetings; 3 lanes fit, 2 meetings collapse.
 	// The overnight deploy (Thu 22:00 to Fri 01:00) shows only on Thursday.
-	await expect(page.getByRole('button', { name: '+2' })).toBeVisible();
+	await expect(
+		page.getByRole('button', { name: '2 eventos más, viernes, 20 de noviembre de 2026' })
+	).toBeVisible();
 });
 
 test('previous, next and today navigate by the current view', async ({ page }) => {
@@ -617,4 +619,30 @@ test('the documentation sections are reachable on a phone', async ({ page }) => 
 	const docs = page.getByRole('navigation', { name: 'Documentation' });
 	await docs.getByRole('link', { name: 'State and hooks' }).click();
 	await expect(page.getByRole('heading', { level: 1 })).toHaveText('State and hooks');
+});
+
+test.describe('+N in the month view', () => {
+	const more = (page: Page) =>
+		page.getByRole('button', { name: '2 eventos más, viernes, 20 de noviembre de 2026' });
+
+	test('lists every event of the day, even without a day view, and opens them', async ({
+		page
+	}) => {
+		await page.goto('/minimo');
+		await more(page).click();
+		const list = page.getByRole('dialog');
+		for (const title of ['Conferencia en Cusco', 'Revisión 1:1', 'Planning', 'Retro', 'Café']) {
+			await expect(list.getByRole('button', { name: new RegExp(title) })).toBeVisible();
+		}
+		await list.getByRole('button', { name: /Café/ }).click();
+		await expect(page.getByTestId('panel')).toHaveText('Evento elegido: Café');
+		await expect(list).toBeHidden();
+	});
+
+	test('onMoreClick can replace the list with your own reaction', async ({ page }) => {
+		await page.goto('/ganchos');
+		await more(page).click();
+		await expect(page.getByTestId('message')).toHaveText('Más eventos el 2026-11-20: 5');
+		await expect(page.getByRole('dialog')).toHaveCount(0);
+	});
 });

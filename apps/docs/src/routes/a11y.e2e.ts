@@ -28,6 +28,10 @@ for (const colorScheme of ['light', 'dark'] as const) {
 		}
 
 		await page.getByRole('button', { name: 'mes', exact: true }).click();
+		await page.getByRole('button', { name: /2 eventos más/ }).click();
+		expect(await scan(page), '+N popover').toEqual([]);
+		await page.keyboard.press('Escape');
+
 		await page.getByRole('button', { name: /Svelte workshop/ }).click();
 		expect(await scan(page), 'event dialog').toEqual([]);
 

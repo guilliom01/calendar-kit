@@ -83,7 +83,8 @@ export const defaultLabels = {
 	exportIcs: 'Export .ics',
 	importIcs: 'Import .ics',
 	exportCsv: 'Export CSV',
-	print: 'Print'
+	print: 'Print',
+	moreEvents: { one: '{count} more event', other: '{count} more events' } as PluralForms
 };
 
 export type CalendarLabels = typeof defaultLabels;
@@ -156,6 +157,8 @@ export interface CalendarStateOptions<T extends CalendarEvent> extends EventStor
 
 	/** An event was clicked (or activated with the keyboard). Built-in: open the event dialog. */
 	onEventClick?(event: T, nativeEvent: Event): boolean | void;
+	/** "+N" was clicked on a day with hidden events. Built-in: a popover listing all of them. */
+	onMoreClick?(day: CalendarDate, events: T[]): boolean | void;
 	/** A day number or day header was clicked. Built-in: show that day in the day view. */
 	onDateClick?(date: CalendarDate, nativeEvent: Event): boolean | void;
 	/** An empty day or time range was picked. Built-in: open the dialog for a new event. */
@@ -316,6 +319,11 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 	clickEvent(event: T, nativeEvent: Event) {
 		if (this.#options.onEventClick?.(event, nativeEvent) === false) return;
 		if (this.canEdit(event)) this.draft = { event, isNew: false };
+	}
+
+	/** Whether "+N" should open its built-in list, after `onMoreClick` had its say. */
+	clickMore(day: CalendarDate, events: T[]) {
+		return this.#options.onMoreClick?.(day, events) !== false;
 	}
 
 	clickDate(date: CalendarDate, nativeEvent: Event) {
