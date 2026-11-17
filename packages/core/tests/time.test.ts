@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { CalendarDate } from '@internationalized/date';
-import { monthGrid } from '../src/index.js';
+import { monthGrid, shiftDate, viewRange, weekDays } from '../src/index.js';
 
-const iso = (weeks: CalendarDate[][]) => weeks.map((week) => week.map((day) => day.toString()));
+const locale = 'es-PE';
+const iso = (dates: CalendarDate[]) => dates.map((date) => date.toString());
 
 describe('monthGrid', () => {
 	it('returns full weeks that cover the month, starting on the locale first day', () => {
-		// November 2026 starts on a Sunday and ends on a Monday.
-		const weeks = iso(monthGrid(new CalendarDate(2026, 11, 17), { locale: 'en-US' }));
+		// November 2026 starts on a Sunday and ends on a Monday; es-PE weeks start on Sunday.
+		const weeks = monthGrid(new CalendarDate(2026, 11, 17), { locale }).map(iso);
 
 		expect(weeks).toHaveLength(5);
 		expect(weeks[0]).toEqual([
@@ -23,20 +24,55 @@ describe('monthGrid', () => {
 	});
 
 	it('honors an explicit first day of the week', () => {
-		const weeks = iso(
-			monthGrid(new CalendarDate(2026, 11, 1), { locale: 'en-US', firstDayOfWeek: 'mon' })
-		);
+		const weeks = monthGrid(new CalendarDate(2026, 11, 1), {
+			locale,
+			firstDayOfWeek: 'mon'
+		}).map(iso);
 
 		expect(weeks).toHaveLength(6);
 		expect(weeks[0]?.[0]).toBe('2026-10-26');
 		expect(weeks.at(-1)?.at(-1)).toBe('2026-12-06');
 	});
+});
 
-	it('uses the locale week start when none is given', () => {
-		// es-ES weeks start on Monday.
-		const weeks = iso(monthGrid(new CalendarDate(2026, 2, 10), { locale: 'es-ES' }));
+describe('weekDays', () => {
+	it('returns the 7 days of the week that contains the date', () => {
+		expect(iso(weekDays(new CalendarDate(2026, 11, 18), { locale }))).toEqual([
+			'2026-11-15',
+			'2026-11-16',
+			'2026-11-17',
+			'2026-11-18',
+			'2026-11-19',
+			'2026-11-20',
+			'2026-11-21'
+		]);
+	});
+});
 
-		expect(weeks[0]?.[0]).toBe('2026-01-26');
-		expect(weeks.every((week) => week.length === 7)).toBe(true);
+describe('viewRange', () => {
+	const date = new CalendarDate(2026, 11, 18);
+
+	it('covers the visible month grid for the month view (end is exclusive)', () => {
+		const range = viewRange(date, 'month', { locale });
+		expect([range.start.toString(), range.end.toString()]).toEqual(['2026-11-01', '2026-12-06']);
+	});
+
+	it('covers one week for the week view', () => {
+		const range = viewRange(date, 'week', { locale });
+		expect([range.start.toString(), range.end.toString()]).toEqual(['2026-11-15', '2026-11-22']);
+	});
+
+	it('covers one day for the day view', () => {
+		const range = viewRange(date, 'day', { locale });
+		expect([range.start.toString(), range.end.toString()]).toEqual(['2026-11-18', '2026-11-19']);
+	});
+});
+
+describe('shiftDate', () => {
+	it('moves by one unit of the view', () => {
+		const date = new CalendarDate(2026, 1, 31);
+		expect(shiftDate(date, 'month', 1).toString()).toBe('2026-02-28');
+		expect(shiftDate(date, 'week', -1).toString()).toBe('2026-01-24');
+		expect(shiftDate(date, 'day', 1).toString()).toBe('2026-02-01');
 	});
 });
