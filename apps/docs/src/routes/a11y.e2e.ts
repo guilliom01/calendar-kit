@@ -31,7 +31,17 @@ for (const colorScheme of ['light', 'dark'] as const) {
 		await page.getByRole('button', { name: /Svelte workshop/ }).click();
 		expect(await scan(page), 'event dialog').toEqual([]);
 
-		for (const path of ['/minimo', '/ganchos', '/carga']) {
+		for (const path of [
+			'/minimo',
+			'/ganchos',
+			'/carga',
+			'/docs',
+			'/docs/blocks',
+			'/docs/state',
+			'/docs/recurrence',
+			'/docs/import-export',
+			'/docs/i18n-a11y'
+		]) {
 			await page.goto(path);
 			expect(await scan(page), path).toEqual([]);
 		}

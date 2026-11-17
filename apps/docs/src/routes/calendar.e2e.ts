@@ -585,3 +585,36 @@ test.describe('languages and directions', () => {
 		await expect(page.locator('svg path[marker-end]')).toHaveCount(3);
 	});
 });
+
+test('the documentation covers every block and links its sections', async ({ page }) => {
+	await page.goto('/docs');
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText('calendar-kit');
+	const docs = page.getByRole('navigation', { name: 'Documentation' });
+	await docs.getByRole('link', { name: 'Blocks' }).click();
+	for (const item of [
+		'calendar',
+		'month-view',
+		'time-grid',
+		'agenda-view',
+		'year-view',
+		'timeline-view',
+		'gantt-view',
+		'event-dialog',
+		'recurrence-editor',
+		'import-export'
+	]) {
+		await expect(page.getByRole('heading', { level: 2, name: item, exact: true })).toBeVisible();
+	}
+	await expect(docs.getByRole('link', { name: 'Blocks' })).toHaveAttribute('aria-current', 'page');
+	await expect(
+		page.getByRole('navigation', { name: 'Demos' }).getByRole('link', { name: 'Documentación' })
+	).toHaveAttribute('aria-current', 'page');
+});
+
+test('the documentation sections are reachable on a phone', async ({ page }) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto('/docs');
+	const docs = page.getByRole('navigation', { name: 'Documentation' });
+	await docs.getByRole('link', { name: 'State and hooks' }).click();
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText('State and hooks');
+});

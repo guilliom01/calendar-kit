@@ -26,7 +26,8 @@
 		{ href: resolve('/'), label: 'Completo' },
 		{ href: resolve('/minimo'), label: 'Solo mes' },
 		{ href: resolve('/ganchos'), label: 'Ganchos' },
-		{ href: resolve('/carga'), label: 'Carga por rango' }
+		{ href: resolve('/carga'), label: 'Carga por rango' },
+		{ href: resolve('/docs'), label: 'Documentación' }
 	];
 </script>
 
@@ -39,7 +40,10 @@
 		<div class="mx-auto flex max-w-6xl flex-wrap items-center gap-1 px-4 py-2">
 			<span class="me-3 font-semibold">calendar-kit</span>
 			{#each links as link (link.href)}
-				{@const current = page.url.pathname === link.href}
+				{@const current =
+					link.href === resolve('/docs')
+						? page.url.pathname.startsWith(link.href)
+						: page.url.pathname === link.href}
 				<Button
 					href={link.href}
 					size="sm"
