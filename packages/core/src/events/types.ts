@@ -16,6 +16,21 @@ interface EventBase<TData> {
 	seriesId?: string | undefined;
 	/** Set on expanded occurrences: their original start in the series (RECURRENCE-ID). */
 	recurrenceId?: CalendarDate | ZonedDateTime | undefined;
+	/** Resources (people, rooms...) the event is assigned to, for the timeline and resource views. */
+	resourceIds?: readonly string[] | undefined;
+	/** Gantt: completion from 0 to 1. */
+	progress?: number | undefined;
+	/** Gantt: ids of the events that must finish before this one. */
+	dependsOn?: readonly string[] | undefined;
+}
+
+/** Someone or something events are assigned to: a person, a room, a vehicle... */
+export interface Resource {
+	id: string;
+	title: string;
+	color?: string | undefined;
+	/** Makes this resource a child of another one, for grouped rows. */
+	parentId?: string | undefined;
 }
 
 /** Date-only event. `end` is exclusive, as in iCalendar: a one-day event ends the next day. */

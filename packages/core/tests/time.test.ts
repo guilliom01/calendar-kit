@@ -83,3 +83,26 @@ describe('daysBetween', () => {
 		expect(daysBetween(new CalendarDate(2026, 11, 18), new CalendarDate(2026, 11, 15))).toBe(-3);
 	});
 });
+
+describe('viewRange for the phase 4 views', () => {
+	const date = new CalendarDate(2026, 11, 18);
+	const range = (view: Parameters<typeof viewRange>[1]) => {
+		const { start, end } = viewRange(date, view, { locale });
+		return [start.toString(), end.toString()];
+	};
+
+	it('covers the calendar year, month, week or day without grid padding', () => {
+		expect(range('year')).toEqual(['2026-01-01', '2027-01-01']);
+		expect(range('agenda')).toEqual(['2026-11-01', '2026-12-01']);
+		expect(range('gantt')).toEqual(['2026-11-01', '2026-12-01']);
+		expect(range('timeline')).toEqual(['2026-11-15', '2026-11-22']);
+		expect(range('resources')).toEqual(['2026-11-18', '2026-11-19']);
+	});
+
+	it('moves by the unit each view shows', () => {
+		expect(shiftDate(date, 'year', 1).toString()).toBe('2027-11-18');
+		expect(shiftDate(date, 'agenda', -1).toString()).toBe('2026-10-18');
+		expect(shiftDate(date, 'timeline', 1).toString()).toBe('2026-11-25');
+		expect(shiftDate(date, 'resources', 1).toString()).toBe('2026-11-19');
+	});
+});

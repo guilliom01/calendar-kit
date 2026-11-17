@@ -90,6 +90,22 @@ export class EventStore<T extends CalendarEvent = CalendarEvent> {
 	}
 
 	/**
+	 * Adds or replaces events that came from your backend (for example, a loaded month).
+	 * It is not a user change: it skips `onMutate` and the undo history.
+	 */
+	merge(events: readonly T[]) {
+		if (events.length === 0) return;
+		const incoming = new Map(events.map((event) => [event.id, event]));
+		const updated = this.#events.map((event) => {
+			const replacement = incoming.get(event.id);
+			incoming.delete(event.id);
+			return replacement ?? event;
+		});
+		this.#events = [...updated, ...incoming.values()];
+		this.#notify();
+	}
+
+	/**
 	 * Applies several changes as one undo step (e.g. ending a series and starting a new one).
 	 * Each change is still sent to `onMutate` on its own; the ones that fail are rolled back.
 	 * Resolves with the saved event of each change (`undefined` for deletes and failures).
