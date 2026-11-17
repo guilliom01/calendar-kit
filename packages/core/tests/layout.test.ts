@@ -132,3 +132,26 @@ describe('layoutWeekRow', () => {
 		]);
 	});
 });
+
+describe('layoutWeekRow with overnight events', () => {
+	const days = weekDays(day, { locale });
+
+	it('shows a timed event shorter than a day only on its start day', () => {
+		const [item] = layoutWeekRow(
+			[timed('deploy', '2026-11-19T22:00', '2026-11-20T01:00')],
+			days,
+			timeZone
+		);
+		expect(item).toMatchObject({ startIndex: 4, span: 1, continuesAfter: false });
+	});
+
+	it('skips it in a row that does not contain its start day', () => {
+		const nextWeek = weekDays(day.add({ weeks: 1 }), { locale });
+		const items = layoutWeekRow(
+			[timed('late', '2026-11-21T22:00', '2026-11-22T01:00')],
+			nextWeek,
+			timeZone
+		);
+		expect(items).toEqual([]);
+	});
+});

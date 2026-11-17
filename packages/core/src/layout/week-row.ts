@@ -1,5 +1,5 @@
 import type { CalendarDate } from '@internationalized/date';
-import { eventBounds, startOfDayMs } from '../events/queries.js';
+import { eventBounds, spansDays, startOfDayMs } from '../events/queries.js';
 import type { CalendarEvent } from '../events/types.js';
 
 export interface RowEventLayout<T extends CalendarEvent = CalendarEvent> {
@@ -33,7 +33,10 @@ export function layoutWeekRow<T extends CalendarEvent>(
 	const placed: (RowEventLayout<T> & { sortStart: number })[] = [];
 
 	for (const event of events) {
-		const { start, end } = eventBounds(event, timeZone);
+		const bounds = eventBounds(event, timeZone);
+		const start = bounds.start;
+		// Short timed events (e.g. 22:00 to 01:00) show only on the day they start.
+		const end = spansDays(event) ? bounds.end : start + 1;
 		if (start >= rowEnd || end <= rowStart) continue;
 
 		const startIndex = days.findIndex((_, i) => start < edges[i + 1]!);
