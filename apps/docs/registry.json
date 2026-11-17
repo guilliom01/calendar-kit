@@ -1,0 +1,25 @@
+{
+	"$schema": "https://shadcn-svelte.com/schema/registry.json",
+	"name": "calendar-kit",
+	"homepage": "https://github.com/calendar-kit/calendar-kit",
+	"items": [
+		{
+			"name": "month-grid",
+			"type": "registry:ui",
+			"title": "Month grid",
+			"description": "A month view grid built on @calendar-kit/core. Copy it, edit it, style it with Tailwind.",
+			"dependencies": ["@calendar-kit/core", "@internationalized/date"],
+			"registryDependencies": ["utils"],
+			"files": [
+				{
+					"path": "src/lib/registry/month-grid/month-grid.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/month-grid/index.ts",
+					"type": "registry:ui"
+				}
+			]
+		}
+	]
+}
