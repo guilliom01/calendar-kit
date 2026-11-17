@@ -7,6 +7,11 @@ test.beforeEach(async ({ page }) => {
 });
 
 const title = (page: Page) => page.getByRole('heading', { level: 2 });
+/** Confirms the pending drag or resize in the confirmation dialog. */
+async function confirm(page: Page, action: 'Mover' | 'Cambiar') {
+	await page.getByRole('dialog').getByRole('button', { name: action, exact: true }).click();
+	await expect(page.getByRole('dialog')).toBeHidden();
+}
 const viewButton = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
 
 test('month view shows the current month with its events', async ({ page }) => {
@@ -109,18 +114,21 @@ test.describe('editing', () => {
 		await workshop.scrollIntoViewIfNeeded();
 		let box = (await workshop.boundingBox())!;
 		await drag(page, box.x + box.width / 2, box.y + 20, 0, HOUR);
+		await confirm(page, 'Mover');
 		await expect(workshop).toContainText('4:00 – 7:00 p. m.');
 
 		const lunch = page.getByRole('button', { name: /Almuerzo/ });
 		await lunch.scrollIntoViewIfNeeded();
 		box = (await lunch.boundingBox())!;
 		await drag(page, box.x + box.width / 2, box.y + box.height - 3, 0, HOUR);
+		await confirm(page, 'Cambiar');
 		await expect(lunch).toContainText('1:00 – 3:30 p. m.');
 
 		// One column to the right: Wednesday 18 -> Thursday 19.
 		await workshop.scrollIntoViewIfNeeded();
 		box = (await workshop.boundingBox())!;
 		await drag(page, box.x + box.width / 2, box.y + 20, box.width, 0);
+		await confirm(page, 'Mover');
 		await page.getByRole('button', { name: 'jueves, 19 de noviembre de 2026' }).click();
 		await expect(page.getByRole('button', { name: /Svelte workshop/ })).toContainText(
 			'4:00 – 7:00 p. m.'
@@ -139,6 +147,7 @@ test.describe('editing', () => {
 			target.x + target.width / 2 - (from.x + 10),
 			0
 		);
+		await confirm(page, 'Mover');
 
 		await page.getByRole('button', { name: 'jueves, 26 de noviembre de 2026' }).click();
 		await expect(page.getByRole('button', { name: 'Feriado' })).toBeVisible();
@@ -326,6 +335,7 @@ test.describe('more views', () => {
 			center((await workshop.boundingBox())!),
 			center((await roomA.boundingBox())!)
 		);
+		await confirm(page, 'Mover');
 		const bar = center((await workshop.boundingBox())!);
 		const row = (await roomA.boundingBox())!;
 		expect(bar.y).toBeGreaterThan(row.y);
@@ -575,6 +585,7 @@ test.describe('languages and directions', () => {
 		await page.mouse.move(box.x + box.width / 2 - box.width / 2, box.y + 20, { steps: 5 });
 		await page.mouse.move(box.x + box.width / 2 - box.width, box.y + 20, { steps: 5 });
 		await page.mouse.up();
+		await confirm(page, 'Mover');
 		await page.getByRole('button', { name: 'jueves, 19 de noviembre de 2026' }).click();
 		await expect(page.getByRole('button', { name: /Svelte workshop/ })).toContainText(
 			'3:00 – 6:00 p. m.'
@@ -644,5 +655,93 @@ test.describe('+N in the month view', () => {
 		await more(page).click();
 		await expect(page.getByTestId('message')).toHaveText('Más eventos el 2026-11-20: 5');
 		await expect(page.getByRole('dialog')).toHaveCount(0);
+	});
+});
+
+test.describe('confirming changes', () => {
+	test('a drag waits for confirmation and can be cancelled', async ({ page }) => {
+		await viewButton(page, 'semana').click();
+		const workshop = page.getByRole('button', { name: /Svelte workshop/ });
+		await workshop.scrollIntoViewIfNeeded();
+		const box = (await workshop.boundingBox())!;
+		await page.mouse.move(box.x + box.width / 2, box.y + 20);
+		await page.mouse.down();
+		await page.mouse.move(box.x + box.width / 2, box.y + 44, { steps: 5 });
+		await page.mouse.move(box.x + box.width / 2, box.y + 68, { steps: 5 });
+		await page.mouse.up();
+
+		const dialog = page.getByRole('dialog');
+		await expect(dialog.getByRole('heading', { name: '¿Mover evento?' })).toBeVisible();
+		await expect(dialog).toContainText(
+			'«Svelte workshop» se moverá al miércoles, 18 de noviembre de 2026'
+		);
+		await expect(dialog).toContainText('4:00');
+		await dialog.getByRole('button', { name: 'Cancelar' }).click();
+
+		await expect(workshop).toContainText('3:00 – 6:00 p. m.');
+		await expect(page.getByRole('button', { name: 'Deshacer' })).toBeDisabled();
+	});
+
+	test('without a confirmation dialog mounted, changes apply directly', async ({ page }) => {
+		// /ganchos does not mount <ChangeConfirmDialog>.
+		await page.goto('/ganchos');
+		const from = (await page.getByRole('button', { name: /Svelte workshop/ }).boundingBox())!;
+		const to = (await page.locator('[data-date="2026-11-26"]').boundingBox())!;
+		await page.mouse.move(from.x + 10, from.y + from.height / 2);
+		await page.mouse.down();
+		await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 8 });
+		await page.mouse.up();
+		await expect(page.getByTestId('message')).toHaveText('Movido: Svelte workshop');
+		await expect(page.getByRole('dialog')).toHaveCount(0);
+	});
+});
+
+test.describe('touch', () => {
+	/** Sends touch pointer events: down on the event, then moves and up on the page. */
+	async function touchDrag(page: Page, name: RegExp, dy: number, holdMs: number) {
+		const target = page.getByRole('button', { name });
+		await target.scrollIntoViewIfNeeded();
+		const box = (await target.boundingBox())!;
+		const x = box.x + box.width / 2;
+		const y = box.y + 20;
+		const init = (clientY: number) => ({
+			pointerType: 'touch',
+			isPrimary: true,
+			button: 0,
+			buttons: 1,
+			clientX: x,
+			clientY,
+			bubbles: true
+		});
+		await target.dispatchEvent('pointerdown', init(y));
+		await page.waitForTimeout(holdMs);
+		for (let step = 1; step <= 6; step++) {
+			await page.evaluate(
+				(options) => window.dispatchEvent(new PointerEvent('pointermove', options)),
+				init(y + (dy * step) / 6)
+			);
+		}
+		await page.evaluate(
+			(options) => window.dispatchEvent(new PointerEvent('pointerup', { ...options, buttons: 0 })),
+			init(y + dy)
+		);
+	}
+
+	test('a quick swipe over an event scrolls instead of moving it', async ({ page }) => {
+		await viewButton(page, 'semana').click();
+		await touchDrag(page, /Svelte workshop/, 48, 0);
+		await expect(page.getByRole('dialog')).toHaveCount(0);
+		await expect(page.getByRole('button', { name: /Svelte workshop/ })).toContainText(
+			'3:00 – 6:00 p. m.'
+		);
+	});
+
+	test('a long press lifts the event so it can be dragged', async ({ page }) => {
+		await viewButton(page, 'semana').click();
+		await touchDrag(page, /Svelte workshop/, 48, 500);
+		await confirm(page, 'Mover');
+		await expect(page.getByRole('button', { name: /Svelte workshop/ })).toContainText(
+			'4:00 – 7:00 p. m.'
+		);
 	});
 });

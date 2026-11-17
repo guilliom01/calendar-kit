@@ -8,6 +8,9 @@
 	const labels = $derived(calendar.labels);
 	const request = $derived(calendar.scopeRequest);
 
+	// While mounted, changes to recurring events ask for their scope here.
+	$effect(() => calendar.registerScopeDialog());
+
 	let scope: SeriesScope = $state('this');
 
 	// Start on the narrowest scope allowed each time the dialog opens.

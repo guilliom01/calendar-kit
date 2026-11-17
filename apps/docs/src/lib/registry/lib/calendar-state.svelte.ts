@@ -84,7 +84,13 @@ export const defaultLabels = {
 	importIcs: 'Import .ics',
 	exportCsv: 'Export CSV',
 	print: 'Print',
-	moreEvents: { one: '{count} more event', other: '{count} more events' } as PluralForms
+	moreEvents: { one: '{count} more event', other: '{count} more events' } as PluralForms,
+	confirmMoveTitle: 'Move event?',
+	confirmResizeTitle: 'Change duration?',
+	confirmMoveDescription: '"{title}" will move to {when}.',
+	confirmResizeDescription: '"{title}" will be {when}.',
+	move: 'Move',
+	change: 'Change'
 };
 
 export type CalendarLabels = typeof defaultLabels;
@@ -165,6 +171,16 @@ export interface CalendarStateOptions<T extends CalendarEvent> extends EventStor
 	onSelect?(selection: Selection<T>): boolean | void;
 	/** An event was dragged or resized. Return false to cancel, or an event to save instead. */
 	onEventChange?(change: EventChange<T>): boolean | T | void;
+	/**
+	 * Ask before saving a drag or resize (with `<ChangeConfirmDialog>` mounted). Default true;
+	 * false saves directly; a function decides per change, e.g. only when the day changes.
+	 */
+	// Written as a method type so a state of a narrower event type still fits `CalendarState`.
+	confirmChanges?: boolean | { decide(change: EventChange<T>): boolean }['decide'];
+	/** Let touch users drag events (after a long press). Default true. */
+	touchDrag?: boolean;
+	/** Milliseconds a finger must rest on an event before it can be dragged. Default 400. */
+	touchDragDelay?: number;
 	/** Decide the scope of a change to a recurring event yourself instead of asking the user. */
 	resolveScope?(request: ScopeRequest<T>): SeriesScope | null;
 }
@@ -220,6 +236,10 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 	labels: CalendarLabels = $state(defaultLabels);
 	draft: EventDraft<T> | null = $state.raw(null);
 	scopeRequest: ScopeRequest<T> | null = $state.raw(null);
+	/** A drag or resize waiting for the user to confirm it. */
+	changeRequest: EventChange<T> | null = $state.raw(null);
+	touchDrag = $state(true);
+	touchDragDelay = $state(400);
 	/** True while events of the visible range are being loaded. */
 	loading = $state(false);
 	/** Views registered by `<Calendar.View>`, in order. */
@@ -228,6 +248,9 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 	#options: CalendarStateOptions<T>;
 	#createId: () => string;
 	#loader: RangeLoader<T> | undefined;
+	// Mounted dialogs. Without one, the request it would show is resolved by a safe default.
+	#confirmDialogs = 0;
+	#scopeDialogs = 0;
 
 	constructor(options: CalendarStateOptions<T> = {}) {
 		this.#options = options;
@@ -239,6 +262,8 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 		this.firstDayOfWeek = firstDayOfWeek;
 		if (snapStep) this.snapStep = snapStep;
 		if (editable !== undefined) this.editable = editable;
+		if (options.touchDrag !== undefined) this.touchDrag = options.touchDrag;
+		if (options.touchDragDelay !== undefined) this.touchDragDelay = options.touchDragDelay;
 		this.labels = { ...defaultLabels, ...labels };
 		this.#createId = options.createId ?? (() => crypto.randomUUID());
 
@@ -341,7 +366,41 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 	changeEvent(change: EventChange<T>) {
 		const verdict = this.#options.onEventChange?.(change);
 		if (verdict === false) return Promise.resolve(undefined);
-		return this.update(verdict && verdict !== true ? verdict : change.event);
+		const approved = { ...change, event: verdict && verdict !== true ? verdict : change.event };
+		// Recurring events already ask "this / following / all", which confirms the change.
+		if (
+			this.#confirmDialogs > 0 &&
+			!this.#occurrence(approved.event.id) &&
+			this.#needsConfirm(approved)
+		) {
+			this.changeRequest = approved;
+			return Promise.resolve(undefined);
+		}
+		return this.update(approved.event);
+	}
+
+	/** Saves the pending drag or resize when `accept` is true, drops it otherwise. */
+	confirmChange(accept: boolean) {
+		const request = this.changeRequest;
+		this.changeRequest = null;
+		return request && accept ? this.update(request.event) : Promise.resolve(undefined);
+	}
+
+	/** Called by a mounted confirmation dialog; returns the function that unregisters it. */
+	registerConfirmDialog() {
+		this.#confirmDialogs++;
+		return () => void this.#confirmDialogs--;
+	}
+
+	/** Called by a mounted scope dialog; returns the function that unregisters it. */
+	registerScopeDialog() {
+		this.#scopeDialogs++;
+		return () => void this.#scopeDialogs--;
+	}
+
+	#needsConfirm(change: EventChange<T>) {
+		const rule = this.#options.confirmChanges ?? true;
+		return typeof rule === 'function' ? rule(change) : rule;
 	}
 
 	create(event: T) {
@@ -445,6 +504,9 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 		if (this.#options.resolveScope) {
 			return this.#applyScope(request, this.#options.resolveScope(request));
 		}
+		// Without a dialog to ask, change only this occurrence: the least destructive choice.
+		if (this.#scopeDialogs === 0)
+			return this.#applyScope(request, request.allowThis ? 'this' : 'all');
 		this.scopeRequest = request;
 		return Promise.resolve(undefined);
 	}

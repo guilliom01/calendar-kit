@@ -11,9 +11,18 @@ export interface PointerTracking {
 	onDrop: (event: PointerEvent) => void;
 	/** Pointer released without dragging. */
 	onClick?: (event: PointerEvent) => void;
-	/** Escape pressed or the browser cancelled the pointer. */
+	/** Escape pressed, the browser cancelled the pointer, or a touch turned into scrolling. */
 	onCancel?: () => void;
+	/** A touch rested long enough: the item is lifted and can be dragged. */
+	onLift?: () => void;
 }
+
+/** Long-press delay for touch, or false when touch should never drag. */
+export type TouchDrag = number | false;
+
+/** The touch setting of a calendar state, for `trackPointer` and `dragAcrossDays`. */
+export const touchOf = (calendar: { touchDrag: boolean; touchDragDelay: number }): TouchDrag =>
+	calendar.touchDrag ? calendar.touchDragDelay : false;
 
 /** Stops the click the browser fires right after a drag, so dropping does not also open the event. */
 function swallowNextClick() {
@@ -26,14 +35,41 @@ function swallowNextClick() {
 	setTimeout(() => window.removeEventListener('click', swallow, { capture: true }));
 }
 
-/** Follows a primary-button press until it is released or cancelled. */
-export function trackPointer(down: PointerEvent, handlers: PointerTracking) {
+const preventDefault = (event: Event) => event.preventDefault();
+
+/**
+ * Follows a primary-button press until it is released or cancelled.
+ *
+ * Mouse and pen drag at once. A finger must rest for `touch` milliseconds first: moving earlier
+ * is a scroll, so tracking stops and the page scrolls normally. Once lifted, page scrolling and
+ * the long-press menu are blocked until the finger is released. `touch = false` never drags.
+ */
+export function trackPointer(
+	down: PointerEvent,
+	handlers: PointerTracking,
+	touch: TouchDrag = 400
+) {
 	if (down.button !== 0) return;
+	const isTouch = down.pointerType === 'touch';
+	let lifted = !isTouch;
 	let dragging = false;
+	let timer: ReturnType<typeof setTimeout> | undefined;
+
+	if (isTouch && touch !== false) {
+		timer = setTimeout(() => {
+			lifted = true;
+			// Non-passive, so it can stop the page from scrolling while dragging.
+			window.addEventListener('touchmove', preventDefault, { passive: false });
+			window.addEventListener('contextmenu', preventDefault);
+			navigator.vibrate?.(10);
+			handlers.onLift?.();
+		}, touch);
+	}
 
 	const move = (event: PointerEvent) => {
 		const distance = Math.hypot(event.clientX - down.clientX, event.clientY - down.clientY);
 		if (!dragging && distance < DRAG_THRESHOLD) return;
+		if (!lifted) return cancel(); // a touch that moved too soon is a scroll
 		dragging = true;
 		handlers.onMove(event);
 	};
@@ -52,10 +88,13 @@ export function trackPointer(down: PointerEvent, handlers: PointerTracking) {
 		if (event.key === 'Escape') cancel();
 	};
 	const stop = () => {
+		clearTimeout(timer);
 		window.removeEventListener('pointermove', move);
 		window.removeEventListener('pointerup', up);
 		window.removeEventListener('pointercancel', cancel);
 		window.removeEventListener('keydown', key);
+		window.removeEventListener('touchmove', preventDefault);
+		window.removeEventListener('contextmenu', preventDefault);
 	};
 
 	window.addEventListener('pointermove', move);
@@ -104,36 +143,42 @@ export interface DayDragHandlers<T> {
 export function dragAcrossDays<T extends CalendarEvent>(
 	down: PointerEvent,
 	event: T,
-	handlers: DayDragHandlers<T>
+	handlers: DayDragHandlers<T>,
+	touch: TouchDrag = 400
 ) {
 	const from = cellAtPoint(down.clientX, down.clientY);
 	if (!from) return;
 	let moved: T | null = null;
 
-	trackPointer(down, {
-		onMove: (move) => {
-			const to = cellAtPoint(move.clientX, move.clientY);
-			if (!to) return;
-			const days = daysBetween(from.date, to.date);
-			const sameRow = from.resource === to.resource;
-			if (days === 0 && sameRow) moved = null;
-			else {
-				const shifted = moveEvent(event, event.start.add({ days }));
-				moved = sameRow
-					? shifted
-					: {
-							...shifted,
-							resourceIds: moveResource(event.resourceIds, from.resource, to.resource)
-						};
-			}
-			handlers.onPreview(moved ?? event);
+	trackPointer(
+		down,
+		{
+			onMove: (move) => {
+				const to = cellAtPoint(move.clientX, move.clientY);
+				if (!to) return;
+				const days = daysBetween(from.date, to.date);
+				const sameRow = from.resource === to.resource;
+				if (days === 0 && sameRow) moved = null;
+				else {
+					const shifted = moveEvent(event, event.start.add({ days }));
+					moved = sameRow
+						? shifted
+						: {
+								...shifted,
+								resourceIds: moveResource(event.resourceIds, from.resource, to.resource)
+							};
+				}
+				handlers.onPreview(moved ?? event);
+			},
+			onDrop: () => {
+				handlers.onPreview(null);
+				handlers.onDrop(moved);
+			},
+			onCancel: () => handlers.onPreview(null),
+			onLift: () => handlers.onPreview(event)
 		},
-		onDrop: () => {
-			handlers.onPreview(null);
-			handlers.onDrop(moved);
-		},
-		onCancel: () => handlers.onPreview(null)
-	});
+		touch
+	);
 }
 
 /** `events` with `preview` shown instead of the event with the same id (or added, if new). */

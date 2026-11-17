@@ -194,7 +194,7 @@
 			"name": "event-dialog",
 			"type": "registry:ui",
 			"title": "Event dialog",
-			"description": "Dialogs to create, edit and delete events (title, all-day, dates, repeat, color) and to choose the scope of changes to recurring events.",
+			"description": "Dialogs to create, edit and delete events, to choose the scope of changes to recurring events, and to confirm drags and resizes.",
 			"dependencies": ["@calendar-kit/core", "@internationalized/date"],
 			"registryDependencies": [
 				"button",
@@ -212,6 +212,10 @@
 				},
 				{
 					"path": "src/lib/registry/ui/event-dialog/event-form.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/event-dialog/change-confirm-dialog.svelte",
 					"type": "registry:ui"
 				},
 				{

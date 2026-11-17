@@ -24,7 +24,12 @@
 		type TimedEventLayout
 	} from '@calendar-kit/core';
 	import type { Snippet } from 'svelte';
-	import { dragAcrossDays, trackPointer, withPreview } from '#lib/registry/lib/calendar-drag.js';
+	import {
+		dragAcrossDays,
+		touchOf,
+		trackPointer,
+		withPreview
+	} from '#lib/registry/lib/calendar-drag.js';
 	import { getCalendar } from '#lib/registry/lib/calendar-state.svelte.js';
 	import { cn } from '#lib/utils.js';
 
@@ -160,18 +165,23 @@
 		const source = pointAt(down);
 		const grab = source.minutes - item.start;
 
-		trackPointer(down, {
-			onMove: (move) => {
-				const { column, day, minutes } = pointAt(move);
-				const moved = moveEvent(event, at(day, snapMinutes(minutes - grab, step)));
-				const from = source.column.resource?.id;
-				const to = column.resource?.id;
-				preview =
-					from && to ? { ...moved, resourceIds: reassign(event.resourceIds, from, to) } : moved;
+		trackPointer(
+			down,
+			{
+				onMove: (move) => {
+					const { column, day, minutes } = pointAt(move);
+					const moved = moveEvent(event, at(day, snapMinutes(minutes - grab, step)));
+					const from = source.column.resource?.id;
+					const to = column.resource?.id;
+					preview =
+						from && to ? { ...moved, resourceIds: reassign(event.resourceIds, from, to) } : moved;
+				},
+				onDrop: () => finishDrag(event, 'move'),
+				onCancel: () => (preview = null),
+				onLift: () => (preview = event)
 			},
-			onDrop: () => finishDrag(event, 'move'),
-			onCancel: () => (preview = null)
-		});
+			touchOf(calendar)
+		);
 	}
 
 	function startResize(down: PointerEvent, item: TimedEventLayout) {
@@ -179,14 +189,19 @@
 		if (!calendar.canEdit(item.event)) return;
 		const event = item.event as TimedEvent;
 
-		trackPointer(down, {
-			onMove: (move) => {
-				const { day, minutes } = pointAt(move);
-				preview = resizeEvent(event, at(day, snapMinutes(minutes, step)), { minDuration: step });
+		trackPointer(
+			down,
+			{
+				onMove: (move) => {
+					const { day, minutes } = pointAt(move);
+					preview = resizeEvent(event, at(day, snapMinutes(minutes, step)), { minDuration: step });
+				},
+				onDrop: () => finishDrag(event, 'resize'),
+				onCancel: () => (preview = null),
+				onLift: () => (preview = event)
 			},
-			onDrop: () => finishDrag(event, 'resize'),
-			onCancel: () => (preview = null)
-		});
+			touchOf(calendar)
+		);
 	}
 
 	/** Press on an empty slot: click creates a one-hour event, drag draws its range. */
@@ -201,35 +216,44 @@
 			calendar.select({ start: at(day, range[0]), end: at(day, range[1]), allDay: false, fields });
 		};
 
-		trackPointer(down, {
-			onMove: (move) => {
-				const minutes = snapMinutes(pointAt(move).minutes, step);
-				range =
-					minutes > anchor
-						? [anchor, minutes]
-						: [minutes, Math.min(anchor + step, MINUTES_PER_DAY)];
-				preview = {
-					...fields,
-					id: NEW_EVENT_ID,
-					title: '',
-					start: at(day, range[0]),
-					end: at(day, range[1])
-				};
+		trackPointer(
+			down,
+			{
+				onMove: (move) => {
+					const minutes = snapMinutes(pointAt(move).minutes, step);
+					range =
+						minutes > anchor
+							? [anchor, minutes]
+							: [minutes, Math.min(anchor + step, MINUTES_PER_DAY)];
+					preview = {
+						...fields,
+						id: NEW_EVENT_ID,
+						title: '',
+						start: at(day, range[0]),
+						end: at(day, range[1])
+					};
+				},
+				onDrop: select,
+				onClick: select,
+				onCancel: () => (preview = null)
 			},
-			onDrop: select,
-			onClick: select,
-			onCancel: () => (preview = null)
-		});
+			touchOf(calendar)
+		);
 	}
 
 	function startAllDayDrag(down: PointerEvent, event: CalendarEvent) {
 		if (!calendar.canEdit(event)) return;
-		dragAcrossDays(down, event, {
-			onPreview: (moved) => (preview = moved),
-			onDrop: (moved) => {
-				if (moved) void calendar.changeEvent({ event: moved, previous: event, kind: 'move' });
-			}
-		});
+		dragAcrossDays(
+			down,
+			event,
+			{
+				onPreview: (moved) => (preview = moved),
+				onDrop: (moved) => {
+					if (moved) void calendar.changeEvent({ event: moved, previous: event, kind: 'move' });
+				}
+			},
+			touchOf(calendar)
+		);
 	}
 
 	function openEvent(event: CalendarEvent, click: Event) {
@@ -317,7 +341,7 @@
 			<button
 				type="button"
 				class={cn(
-					'mx-0.5 flex min-w-0 touch-none items-center rounded bg-(--event-color)/15 px-1.5 text-start text-xs font-medium hover:bg-(--event-color)/25',
+					'mx-0.5 flex min-w-0 items-center rounded bg-(--event-color)/15 px-1.5 text-start text-xs font-medium [-webkit-touch-callout:none] hover:bg-(--event-color)/25',
 					item.continuesBefore && 'ms-0 rounded-s-none',
 					item.continuesAfter && 'me-0 rounded-e-none',
 					preview?.id === event.id && 'opacity-70 shadow-md'
@@ -377,7 +401,7 @@
 						<button
 							type="button"
 							class={cn(
-								'group absolute flex touch-none flex-col overflow-hidden rounded-md border-s-4 border-(--event-color) bg-(--event-color)/15 px-1.5 py-0.5 text-start text-xs ring-1 ring-background hover:bg-(--event-color)/25',
+								'group absolute flex flex-col overflow-hidden rounded-md border-s-4 border-(--event-color) bg-(--event-color)/15 px-1.5 py-0.5 text-start text-xs ring-1 ring-background [-webkit-touch-callout:none] hover:bg-(--event-color)/25',
 								item.continuesBefore && 'rounded-t-none',
 								item.continuesAfter && 'rounded-b-none',
 								preview?.id === event.id && 'z-20 opacity-80 shadow-lg'

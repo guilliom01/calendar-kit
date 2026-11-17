@@ -2,7 +2,7 @@
 	import { DateFormatter, isToday, type CalendarDate } from '@internationalized/date';
 	import { eventBounds, layoutWeekRow, type CalendarEvent } from '@calendar-kit/core';
 	import type { Snippet } from 'svelte';
-	import { dragAcrossDays, withPreview } from '#lib/registry/lib/calendar-drag.js';
+	import { dragAcrossDays, touchOf, withPreview } from '#lib/registry/lib/calendar-drag.js';
 	import { getCalendar } from '#lib/registry/lib/calendar-state.svelte.js';
 	import { cn } from '#lib/utils.js';
 
@@ -85,12 +85,17 @@
 
 	function startDrag(down: PointerEvent, event: CalendarEvent) {
 		if (!calendar.canEdit(event)) return;
-		dragAcrossDays(down, event, {
-			onPreview: (moved) => (preview = moved),
-			onDrop: (moved) => {
-				if (moved) void calendar.changeEvent({ event: moved, previous: event, kind: 'move' });
-			}
-		});
+		dragAcrossDays(
+			down,
+			event,
+			{
+				onPreview: (moved) => (preview = moved),
+				onDrop: (moved) => {
+					if (moved) void calendar.changeEvent({ event: moved, previous: event, kind: 'move' });
+				}
+			},
+			touchOf(calendar)
+		);
 	}
 </script>
 
@@ -165,7 +170,7 @@
 						<button
 							type="button"
 							class={cn(
-								'absolute inset-y-2 flex touch-none items-center overflow-hidden rounded bg-(--event-color)/25 text-start text-xs font-medium hover:ring-2 hover:ring-(--event-color)/50',
+								'absolute inset-y-2 flex items-center overflow-hidden rounded bg-(--event-color)/25 text-start text-xs font-medium [-webkit-touch-callout:none] hover:ring-2 hover:ring-(--event-color)/50',
 								preview?.id === event.id && 'opacity-80 shadow-md'
 							)}
 							style:inset-inline-start="{(item!.startIndex / days.length) * 100}%"

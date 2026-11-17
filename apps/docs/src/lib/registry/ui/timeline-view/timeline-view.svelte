@@ -12,7 +12,7 @@
 	} from '@calendar-kit/core';
 	import type { Snippet } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { dragAcrossDays, withPreview } from '#lib/registry/lib/calendar-drag.js';
+	import { dragAcrossDays, touchOf, withPreview } from '#lib/registry/lib/calendar-drag.js';
 	import { getCalendar } from '#lib/registry/lib/calendar-state.svelte.js';
 	import { cn } from '#lib/utils.js';
 
@@ -71,12 +71,17 @@
 
 	function startDrag(down: PointerEvent, event: CalendarEvent) {
 		if (!calendar.canEdit(event)) return;
-		dragAcrossDays(down, event, {
-			onPreview: (moved) => (preview = moved),
-			onDrop: (moved) => {
-				if (moved) void calendar.changeEvent({ event: moved, previous: event, kind: 'move' });
-			}
-		});
+		dragAcrossDays(
+			down,
+			event,
+			{
+				onPreview: (moved) => (preview = moved),
+				onDrop: (moved) => {
+					if (moved) void calendar.changeEvent({ event: moved, previous: event, kind: 'move' });
+				}
+			},
+			touchOf(calendar)
+		);
 	}
 
 	function onEventKey(key: KeyboardEvent, event: CalendarEvent) {
@@ -177,7 +182,7 @@
 						<button
 							type="button"
 							class={cn(
-								'pointer-events-auto mx-0.5 flex min-w-0 touch-none items-center gap-1 rounded bg-(--event-color)/20 px-1.5 text-start text-xs font-medium hover:bg-(--event-color)/30',
+								'pointer-events-auto mx-0.5 flex min-w-0 items-center gap-1 rounded bg-(--event-color)/20 px-1.5 text-start text-xs font-medium [-webkit-touch-callout:none] hover:bg-(--event-color)/30',
 								item.continuesBefore && 'ms-0 rounded-s-none',
 								item.continuesAfter && 'me-0 rounded-e-none',
 								preview?.id === event.id && 'opacity-70 shadow-md'

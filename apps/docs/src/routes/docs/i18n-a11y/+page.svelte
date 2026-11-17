@@ -49,7 +49,8 @@
 	</li>
 	<li>
 		Events, days and controls are buttons: reachable with Tab, activated with Enter or Space. Delete
-		or Backspace removes the focused event; Escape cancels a drag.
+		or Backspace removes the focused event; Escape cancels a drag. On touch screens a quick swipe
+		scrolls and a long press lifts an event to drag it.
 	</li>
 	<li>
 		Day headers are named with the full date for screen readers; the title is a live region that

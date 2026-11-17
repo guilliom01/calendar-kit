@@ -25,6 +25,7 @@
 
 	<EventDialog {resources} />
 	<RecurrenceScopeDialog />
+	<ChangeConfirmDialog />
 </Calendar.Root>`;
 
 	const customView = `<Calendar.View
@@ -210,9 +211,15 @@
 <h2>event-dialog</h2>
 <p>
 	<code>EventDialog</code> creates, edits and deletes events (title, all-day, dates, repeat,
-	resources, progress, color). <code>RecurrenceScopeDialog</code> asks whether a change to a recurring
-	event applies to one, the following, or all occurrences. Without them, nothing opens: use the hooks
-	to show your own UI.
+	resources, progress, color). <code>RecurrenceScopeDialog</code> asks whether a change to a
+	recurring event applies to one, the following, or all occurrences. Without them, nothing opens:
+	use the hooks to show your own UI.
+
+	<code>ChangeConfirmDialog</code> asks before a drag or resize is saved (turn it off with
+	<code>confirmChanges: false</code>). Each dialog registers itself when mounted: without
+	<code>ChangeConfirmDialog</code>, changes save directly; without
+	<code>RecurrenceScopeDialog</code>
+	(or <code>resolveScope</code>), changes to a recurring event apply to that occurrence only.
 </p>
 <PropsTable
 	caption="EventDialog props"

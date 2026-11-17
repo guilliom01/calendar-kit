@@ -74,6 +74,23 @@
 		},
 		{ name: 'editable', type: 'boolean', description: 'Set to false for a read-only calendar.' },
 		{
+			name: 'confirmChanges',
+			type: 'boolean | (change) => boolean',
+			description:
+				'Ask before saving a drag or resize, with <ChangeConfirmDialog> mounted. Default true; a function decides per change.'
+		},
+		{
+			name: 'touchDrag',
+			type: 'boolean',
+			description:
+				'Let fingers drag events after a long press. Default true; a quick swipe always scrolls.'
+		},
+		{
+			name: 'touchDragDelay',
+			type: 'number',
+			description: 'Long-press milliseconds. Default 400.'
+		},
+		{
 			name: 'labels',
 			type: 'Partial<CalendarLabels>',
 			description: 'Texts Intl cannot provide. See defaultLabels.'

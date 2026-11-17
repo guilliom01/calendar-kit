@@ -2,7 +2,7 @@
 	import { DateFormatter, isSameMonth, isToday, type CalendarDate } from '@internationalized/date';
 	import { isAllDay, layoutWeekRow, monthGrid, type CalendarEvent } from '@calendar-kit/core';
 	import type { Snippet } from 'svelte';
-	import { dragAcrossDays, withPreview } from '#lib/registry/lib/calendar-drag.js';
+	import { dragAcrossDays, touchOf, withPreview } from '#lib/registry/lib/calendar-drag.js';
 	import * as Popover from '#lib/registry/ui/popover/index.js';
 	import { getCalendar, pluralLabel } from '#lib/registry/lib/calendar-state.svelte.js';
 	import { cn } from '#lib/utils.js';
@@ -64,12 +64,17 @@
 
 	function startDrag(down: PointerEvent, event: CalendarEvent) {
 		if (!calendar.canEdit(event)) return;
-		dragAcrossDays(down, event, {
-			onPreview: (moved) => (preview = moved),
-			onDrop: (moved) => {
-				if (moved) void calendar.changeEvent({ event: moved, previous: event, kind: 'move' });
-			}
-		});
+		dragAcrossDays(
+			down,
+			event,
+			{
+				onPreview: (moved) => (preview = moved),
+				onDrop: (moved) => {
+					if (moved) void calendar.changeEvent({ event: moved, previous: event, kind: 'move' });
+				}
+			},
+			touchOf(calendar)
+		);
 	}
 
 	function onEventKey(key: KeyboardEvent, event: CalendarEvent) {
@@ -140,7 +145,7 @@
 					<button
 						type="button"
 						class={cn(
-							'pointer-events-auto mx-0.5 flex min-w-0 touch-none items-center gap-1 rounded px-1.5 text-start text-xs',
+							'pointer-events-auto mx-0.5 flex min-w-0 items-center gap-1 rounded px-1.5 text-start text-xs [-webkit-touch-callout:none]',
 							bar
 								? 'bg-(--event-color)/15 font-medium text-foreground hover:bg-(--event-color)/25'
 								: 'text-foreground hover:bg-muted',

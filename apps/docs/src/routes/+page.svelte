@@ -3,7 +3,11 @@
 	import * as Calendar from '#lib/registry/ui/calendar/index.js';
 	import { CalendarState } from '#lib/registry/ui/calendar/index.js';
 	import { AgendaView } from '#lib/registry/ui/agenda-view/index.js';
-	import { EventDialog, RecurrenceScopeDialog } from '#lib/registry/ui/event-dialog/index.js';
+	import {
+		ChangeConfirmDialog,
+		EventDialog,
+		RecurrenceScopeDialog
+	} from '#lib/registry/ui/event-dialog/index.js';
 	import { GanttView } from '#lib/registry/ui/gantt-view/index.js';
 	import * as Exchange from '#lib/registry/ui/import-export/index.js';
 	import { MonthView } from '#lib/registry/ui/month-view/index.js';
@@ -78,5 +82,6 @@
 			{/snippet}
 		</EventDialog>
 		<RecurrenceScopeDialog />
+		<ChangeConfirmDialog />
 	</Calendar.Root>
 </main>

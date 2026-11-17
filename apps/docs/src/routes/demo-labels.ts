@@ -56,5 +56,11 @@ export const spanishLabels: Partial<CalendarLabels> = {
 	importIcs: 'Importar .ics',
 	exportCsv: 'Exportar CSV',
 	print: 'Imprimir',
-	moreEvents: { one: '{count} evento más', other: '{count} eventos más' }
+	moreEvents: { one: '{count} evento más', other: '{count} eventos más' },
+	confirmMoveTitle: '¿Mover evento?',
+	confirmResizeTitle: '¿Cambiar duración?',
+	confirmMoveDescription: '«{title}» se moverá al {when}.',
+	confirmResizeDescription: '«{title}» quedará el {when}.',
+	move: 'Mover',
+	change: 'Cambiar'
 };
