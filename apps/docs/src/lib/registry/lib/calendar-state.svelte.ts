@@ -1,4 +1,5 @@
 import { createContext } from 'svelte';
+import { SvelteSet } from 'svelte/reactivity';
 import {
 	DateFormatter,
 	getLocalTimeZone,
@@ -9,6 +10,7 @@ import {
 import {
 	EventStore,
 	expandEvents,
+	RangeLoader,
 	seriesChanges,
 	shiftDate,
 	viewRange,
@@ -16,7 +18,9 @@ import {
 	type CalendarEvent,
 	type CalendarView,
 	type DayOfWeek,
+	type DateRange,
 	type EventStoreOptions,
+	type Resource,
 	type SeriesScope
 } from '@calendar-kit/core';
 
@@ -60,7 +64,16 @@ export const defaultLabels = {
 	thisEvent: 'This event',
 	followingEvents: 'This and following events',
 	allEvents: 'All events',
-	ok: 'OK'
+	ok: 'OK',
+	agenda: 'Agenda',
+	timeline: 'Timeline',
+	resources: 'Resources',
+	gantt: 'Gantt',
+	noEvents: 'No events',
+	loading: 'Loading…',
+	events: 'events',
+	unassigned: 'Unassigned',
+	progress: 'Progress'
 };
 
 export type CalendarLabels = typeof defaultLabels;
@@ -86,6 +99,21 @@ export interface CalendarStateOptions<T extends CalendarEvent> extends EventStor
 	labels?: Partial<CalendarLabels>;
 	/** Builds ids for events created in the UI. Your backend can replace them in `onMutate`. */
 	createId?: () => string;
+	/** People, rooms... for the timeline and resource views. */
+	resources?: Resource[];
+	/** Views offered in the toolbar. Defaults to month, week, day, agenda and year (plus timeline and resources when there are resources). */
+	views?: CalendarView[];
+	/** Loads events on demand, one month at a time, as the user navigates. */
+	loadEvents?: (range: DateRange) => Promise<readonly T[]>;
+	/** Months to load ahead on each side of the visible range (default 1). */
+	preload?: number;
+	onLoadError?: (error: unknown, range: DateRange) => void;
+}
+
+/** A column of the time grid: a day, or a resource on the shown day. */
+export interface TimeGridColumn {
+	day: CalendarDate;
+	resource?: Resource;
 }
 
 /** An event being created or edited in the event dialog. */
@@ -125,13 +153,34 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 	labels: CalendarLabels = $state(defaultLabels);
 	draft: EventDraft<T> | null = $state.raw(null);
 	scopeRequest: ScopeRequest<T> | null = $state.raw(null);
+	resources: readonly Resource[] = $state.raw([]);
+	views: CalendarView[] = $state(['month', 'week', 'day', 'agenda', 'year']);
+	/** Resources whose children are hidden in the timeline. */
+	collapsed = new SvelteSet<string>();
+	/** True while events of the visible range are being loaded. */
+	loading = $state(false);
 
 	#createId: () => string;
+	#loader: RangeLoader<T> | undefined;
 
 	constructor(options: CalendarStateOptions<T> = {}) {
-		const { events, onMutate, onError, historyLimit, labels, createId, ...settings } = options;
+		const {
+			events,
+			onMutate,
+			onError,
+			historyLimit,
+			labels,
+			createId,
+			loadEvents,
+			preload,
+			onLoadError,
+			...settings
+		} = options;
 		Object.assign(this, settings);
 		if (!settings.date) this.date = today(this.timeZone);
+		if (!settings.views && settings.resources?.length) {
+			this.views = [...this.views, 'timeline', 'resources'];
+		}
 		this.labels = { ...defaultLabels, ...labels };
 		this.#createId = createId ?? (() => crypto.randomUUID());
 		this.store = new EventStore({ events, onMutate, onError, historyLimit });
@@ -139,13 +188,41 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 			this.events = list;
 			this.#syncHistory();
 		});
+		if (loadEvents) {
+			this.#loader = new RangeLoader({
+				store: this.store,
+				load: loadEvents,
+				preload: preload ?? 1,
+				onError: onLoadError,
+				onLoadingChange: (loading) => (this.loading = loading)
+			});
+		}
+	}
+
+	/** Loads the events of `range` when `loadEvents` is set; the calendar calls it on navigation. */
+	ensureLoaded(range: DateRange = this.range) {
+		return this.#loader?.ensure(range) ?? Promise.resolve();
 	}
 
 	readonly weekOptions = $derived({ locale: this.locale, firstDayOfWeek: this.firstDayOfWeek });
 	readonly range = $derived(viewRange(this.date, this.view, this.weekOptions));
 	/** Days shown as columns by the time grid views. */
 	readonly days = $derived(
-		this.view === 'day' ? [this.date] : weekDays(this.date, this.weekOptions)
+		this.view === 'day' || this.view === 'resources'
+			? [this.date]
+			: weekDays(this.date, this.weekOptions)
+	);
+	/** Resources without children: the columns of the resource view. */
+	readonly leafResources = $derived(
+		this.resources.filter(
+			(resource) => !this.resources.some((child) => child.parentId === resource.id)
+		)
+	);
+	/** Columns of the time grid: the days, or one column per resource in the resource view. */
+	readonly columns: TimeGridColumn[] = $derived(
+		this.view === 'resources'
+			? this.leafResources.map((resource) => ({ day: this.date, resource }))
+			: this.days.map((day) => ({ day }))
 	);
 	/** Events and occurrences of recurring events that overlap the visible range. */
 	readonly visibleEvents = $derived(expandEvents(this.events, this.range, this.timeZone));
@@ -225,11 +302,15 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 	}
 
 	/** Opens the event dialog for a new event covering `start` to `end`. */
-	compose(start: CalendarDate, end: CalendarDate): void;
-	compose(start: ZonedDateTime, end: ZonedDateTime): void;
-	compose(start: CalendarDate | ZonedDateTime, end: CalendarDate | ZonedDateTime) {
+	compose(start: CalendarDate, end: CalendarDate, fields?: Partial<T>): void;
+	compose(start: ZonedDateTime, end: ZonedDateTime, fields?: Partial<T>): void;
+	compose(
+		start: CalendarDate | ZonedDateTime,
+		end: CalendarDate | ZonedDateTime,
+		fields: Partial<T> = {}
+	) {
 		if (!this.editable) return;
-		const event = { id: this.#createId(), title: '', start, end } as T;
+		const event = { ...fields, id: this.#createId(), title: '', start, end } as T;
 		this.draft = { event, isNew: true };
 	}
 
@@ -262,12 +343,15 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 }
 
 function formatTitle({ view, date, range, locale, timeZone }: CalendarState) {
-	if (view === 'month') {
+	if (view === 'year') {
+		return new DateFormatter(locale, { year: 'numeric', timeZone }).format(date.toDate(timeZone));
+	}
+	if (view === 'month' || view === 'agenda' || view === 'gantt') {
 		return new DateFormatter(locale, { month: 'long', year: 'numeric', timeZone }).format(
 			date.toDate(timeZone)
 		);
 	}
-	if (view === 'day') {
+	if (view === 'day' || view === 'resources') {
 		return new DateFormatter(locale, { dateStyle: 'full', timeZone }).format(date.toDate(timeZone));
 	}
 	return new DateFormatter(locale, {

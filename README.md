@@ -85,6 +85,26 @@ Give an event an RFC 5545 `rrule` (for example `FREQ=WEEKLY;BYDAY=MO,WE` or `FRE
 
 The event dialog offers common patterns ("every week on Monday", "every month on the last Friday", ...) and how the series ends (never, on a date, after N times). Editing, moving or deleting an occurrence asks whether the change applies to this event, this and the following ones, or all of them. Each choice is one undo step. Outside the UI, `seriesChanges()` from `@calendar-kit/core` returns the same changes for `EventStore.batch()`.
 
+### Views
+
+`views` lists the views offered in the toolbar (default: month, week, day, agenda and year; timeline and resources are added when you pass `resources`):
+
+| View         | What it shows                                                               |
+| ------------ | --------------------------------------------------------------------------- |
+| `month`      | Month grid with multi-day bars and "+N" overflow                            |
+| `week`/`day` | Time grid with an all-day row                                               |
+| `agenda`     | The month's events listed day by day                                        |
+| `year`       | Twelve small months; busier days are tinted                                 |
+| `timeline`   | Resources as rows (nested, collapsible), the week's days as columns         |
+| `resources`  | A day with one time column per resource                                     |
+| `gantt`      | Tasks (events with `progress` or `dependsOn`) across the month, with arrows |
+
+Resources are `{ id, title, color?, parentId? }`; assign events with `resourceIds`. Dragging an event to another row or column moves it to that resource.
+
+### Loading events on demand
+
+Pass `loadEvents(range)` instead of (or as well as) `events`. The calendar asks for whole months as the user navigates, caches them, shares in-flight requests, preloads `preload` months on each side (default 1) and shows a spinner while loading. Loaded events go into the store without entering the undo history. A month that fails (`onLoadError`) is requested again next time.
+
 ### Time zones
 
 `timeZone` decides where events are shown. The toolbar has a time zone switcher; timed events move to the new local time, and all-day events stay on their dates.

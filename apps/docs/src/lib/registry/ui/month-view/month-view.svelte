@@ -20,7 +20,6 @@
 
 	// Event being dragged, at its preview position.
 	let preview: CalendarEvent | null = $state.raw(null);
-	let suppressClick = false;
 
 	const events = $derived(withPreview(calendar.visibleEvents, preview));
 	const weeks = $derived(
@@ -50,15 +49,13 @@
 		dragAcrossDays(down, event, {
 			onPreview: (moved) => (preview = moved),
 			onDrop: (moved) => {
-				suppressClick = true;
 				if (moved) void calendar.update(moved);
 			}
 		});
 	}
 
 	function openEvent(event: CalendarEvent) {
-		if (suppressClick) suppressClick = false;
-		else calendar.edit(event);
+		calendar.edit(event);
 	}
 
 	function onEventKey(key: KeyboardEvent, event: CalendarEvent) {

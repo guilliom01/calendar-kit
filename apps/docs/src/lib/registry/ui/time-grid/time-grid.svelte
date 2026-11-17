@@ -8,6 +8,7 @@
 		type CalendarDate
 	} from '@internationalized/date';
 	import {
+		eventsForResource,
 		isAllDay,
 		layoutTimedEvents,
 		layoutWeekRow,
@@ -22,7 +23,7 @@
 	} from '@calendar-kit/core';
 	import type { Snippet } from 'svelte';
 	import { dragAcrossDays, trackPointer, withPreview } from '#lib/registry/lib/calendar-drag.js';
-	import { getCalendar } from '#lib/registry/lib/calendar-state.svelte.js';
+	import { getCalendar, type TimeGridColumn } from '#lib/registry/lib/calendar-state.svelte.js';
 	import { cn } from '#lib/utils.js';
 
 	interface Props {
@@ -44,16 +45,35 @@
 
 	// Event being dragged, resized or drawn, at its preview position.
 	let preview: CalendarEvent | null = $state.raw(null);
-	let suppressClick = false;
 	let columnElements: HTMLElement[] = $state([]);
 
-	const days = $derived(calendar.days);
+	// Columns are days, or the resources of one day in the resource view.
+	const cols = $derived(calendar.columns);
+	const byResource = $derived(cols.some((column) => column.resource));
 	const step = $derived(calendar.snapStep);
 	const events = $derived(withPreview(calendar.visibleEvents, preview));
-	const columns = $derived(`4rem repeat(${days.length}, minmax(0, 1fr))`);
-	const allDayItems = $derived(layoutWeekRow(events.filter(spansDays), days, calendar.timeZone));
+	const template = $derived(`4rem repeat(${cols.length}, minmax(0, 1fr))`);
+	const eventsOf = (list: readonly CalendarEvent[], column: TimeGridColumn) =>
+		column.resource ? eventsForResource(list, column.resource.id) : list;
+	const allDayItems = $derived(
+		byResource
+			? cols.flatMap((column, index) =>
+					layoutWeekRow(
+						eventsOf(events.filter(spansDays), column),
+						[column.day],
+						calendar.timeZone
+					).map((item) => ({ ...item, startIndex: index }))
+				)
+			: layoutWeekRow(
+					events.filter(spansDays),
+					cols.map((column) => column.day),
+					calendar.timeZone
+				)
+	);
 	const allDayLanes = $derived(Math.max(1, ...allDayItems.map((item) => item.lane + 1)));
-	const dayItems = $derived(days.map((day) => layoutTimedEvents(events, day, calendar.timeZone)));
+	const dayItems = $derived(
+		cols.map((column) => layoutTimedEvents(eventsOf(events, column), column.day, calendar.timeZone))
+	);
 
 	const formatter = (options: Intl.DateTimeFormatOptions) =>
 		new DateFormatter(calendar.locale, { ...options, timeZone: calendar.timeZone });
@@ -73,38 +93,48 @@
 
 	const toDate = (day: CalendarDate) => day.toDate(calendar.timeZone);
 	const hourLabel = (h: number) =>
-		hour.format(toZoned(days[0]!, calendar.timeZone).set({ hour: h }).toDate());
+		hour.format(toZoned(cols[0]!.day, calendar.timeZone).set({ hour: h }).toDate());
 	const at = (day: CalendarDate, minutes: number) => zonedAt(day, minutes, calendar.timeZone);
 
-	/** Day column and minute of the day under the pointer. */
+	/** Column, its day and the minute of the day under the pointer. */
 	function pointAt(pointer: PointerEvent) {
 		const first = columnElements[0]!.getBoundingClientRect();
-		const last = columnElements[days.length - 1]!.getBoundingClientRect();
+		const last = columnElements[cols.length - 1]!.getBoundingClientRect();
 		const ratio = (pointer.clientX - first.left) / (last.right - first.left);
-		const index = Math.min(days.length - 1, Math.max(0, Math.floor(ratio * days.length)));
+		const index = Math.min(cols.length - 1, Math.max(0, Math.floor(ratio * cols.length)));
 		const minutes = ((pointer.clientY - first.top) / first.height) * MINUTES_PER_DAY;
-		return { day: days[index]!, minutes };
+		return { column: cols[index]!, day: cols[index]!.day, minutes };
 	}
+
+	/** Resource ids after moving an event from one resource column to another. */
+	const reassign = (ids: readonly string[] | undefined, from: string, to: string) => [
+		...new Set((ids ?? []).map((id) => (id === from ? to : id)))
+	];
 
 	function finishDrag(original: CalendarEvent) {
 		const changed =
 			preview &&
 			(preview.start.toString() !== original.start.toString() ||
-				preview.end.toString() !== original.end.toString());
+				preview.end.toString() !== original.end.toString() ||
+				preview.resourceIds?.join() !== original.resourceIds?.join());
 		if (changed) void calendar.update(preview!);
 		preview = null;
-		suppressClick = true;
 	}
 
 	function startMove(down: PointerEvent, item: TimedEventLayout) {
 		if (!calendar.editable) return;
 		const event = item.event as TimedEvent;
-		const grab = pointAt(down).minutes - item.start;
+		const source = pointAt(down);
+		const grab = source.minutes - item.start;
 
 		trackPointer(down, {
 			onMove: (move) => {
-				const { day, minutes } = pointAt(move);
-				preview = moveEvent(event, at(day, snapMinutes(minutes - grab, step)));
+				const { column, day, minutes } = pointAt(move);
+				const moved = moveEvent(event, at(day, snapMinutes(minutes - grab, step)));
+				const from = source.column.resource?.id;
+				const to = column.resource?.id;
+				preview =
+					from && to ? { ...moved, resourceIds: reassign(event.resourceIds, from, to) } : moved;
 			},
 			onDrop: () => finishDrag(event),
 			onCancel: () => (preview = null)
@@ -127,8 +157,10 @@
 	}
 
 	/** Press on an empty slot: click creates a one-hour event, drag draws its range. */
-	function startCreate(down: PointerEvent, day: CalendarDate) {
+	function startCreate(down: PointerEvent, column: TimeGridColumn) {
 		if (!calendar.editable || down.target !== down.currentTarget) return;
+		const day = column.day;
+		const fields = column.resource ? { resourceIds: [column.resource.id] } : {};
 		const anchor = Math.floor(pointAt(down).minutes / step) * step;
 		let range: [number, number] = [anchor, Math.min(anchor + 60, MINUTES_PER_DAY)];
 
@@ -139,13 +171,19 @@
 					minutes > anchor
 						? [anchor, minutes]
 						: [minutes, Math.min(anchor + step, MINUTES_PER_DAY)];
-				preview = { id: NEW_EVENT_ID, title: '', start: at(day, range[0]), end: at(day, range[1]) };
+				preview = {
+					...fields,
+					id: NEW_EVENT_ID,
+					title: '',
+					start: at(day, range[0]),
+					end: at(day, range[1])
+				};
 			},
 			onDrop: () => {
 				preview = null;
-				calendar.compose(at(day, range[0]), at(day, range[1]));
+				calendar.compose(at(day, range[0]), at(day, range[1]), fields);
 			},
-			onClick: () => calendar.compose(at(day, range[0]), at(day, range[1])),
+			onClick: () => calendar.compose(at(day, range[0]), at(day, range[1]), fields),
 			onCancel: () => (preview = null)
 		});
 	}
@@ -155,15 +193,13 @@
 		dragAcrossDays(down, event, {
 			onPreview: (moved) => (preview = moved),
 			onDrop: (moved) => {
-				suppressClick = true;
 				if (moved) void calendar.update(moved);
 			}
 		});
 	}
 
 	function openEvent(event: CalendarEvent) {
-		if (suppressClick) suppressClick = false;
-		else if (event.id !== NEW_EVENT_ID) calendar.edit(event);
+		if (event.id !== NEW_EVENT_ID) calendar.edit(event);
 	}
 
 	function onEventKey(key: KeyboardEvent, event: CalendarEvent) {
@@ -175,33 +211,43 @@
 </script>
 
 <div class={cn('flex min-h-0 flex-col overflow-hidden rounded-lg border select-none', className)}>
-	<div class="grid border-b bg-muted/40" style:grid-template-columns={columns}>
+	<div class="grid border-b bg-muted/40" style:grid-template-columns={template}>
 		<div></div>
-		{#each days as day (day.toString())}
-			<button
-				type="button"
-				class="flex flex-col items-center gap-0.5 py-1.5 hover:bg-muted"
-				aria-label={fullDate.format(toDate(day))}
-				onclick={() => calendar.openDay(day)}
-			>
-				<span class="text-xs font-medium text-muted-foreground capitalize">
-					{weekday.format(toDate(day))}
-				</span>
-				<span
-					class={cn(
-						'inline-flex size-8 items-center justify-center rounded-full text-lg',
-						isToday(day, calendar.timeZone) && 'bg-primary text-primary-foreground'
-					)}
+		{#each cols as { day, resource }, index (index)}
+			{#if resource}
+				<div class="flex min-w-0 items-center justify-center gap-1.5 px-1 py-3 text-sm font-medium">
+					<span
+						class="size-2.5 shrink-0 rounded-full bg-(--resource-color)"
+						style:--resource-color={resource.color ?? 'var(--primary)'}
+					></span>
+					<span class="truncate">{resource.title}</span>
+				</div>
+			{:else}
+				<button
+					type="button"
+					class="flex flex-col items-center gap-0.5 py-1.5 hover:bg-muted"
+					aria-label={fullDate.format(toDate(day))}
+					onclick={() => calendar.openDay(day)}
 				>
-					{day.day}
-				</span>
-			</button>
+					<span class="text-xs font-medium text-muted-foreground capitalize">
+						{weekday.format(toDate(day))}
+					</span>
+					<span
+						class={cn(
+							'inline-flex size-8 items-center justify-center rounded-full text-lg',
+							isToday(day, calendar.timeZone) && 'bg-primary text-primary-foreground'
+						)}
+					>
+						{day.day}
+					</span>
+				</button>
+			{/if}
 		{/each}
 	</div>
 
 	<div
 		class="grid auto-rows-[1.5rem] gap-y-0.5 border-b py-1"
-		style:grid-template-columns={columns}
+		style:grid-template-columns={template}
 	>
 		<div
 			class="self-center pe-2 text-end text-xs leading-tight text-muted-foreground first-letter:uppercase"
@@ -209,18 +255,23 @@
 		>
 			{calendar.labels.allDay}
 		</div>
-		{#each days as day, dayIndex (day.toString())}
+		{#each cols as { day, resource }, index (index)}
 			<!-- Clicking an empty spot creates an all-day event; keyboard users use the toolbar. -->
 			<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 			<div
 				data-date={day.toString()}
 				class="border-s"
-				style:grid-column={dayIndex + 2}
+				style:grid-column={index + 2}
 				style:grid-row="1 / span {allDayLanes}"
-				onclick={() => calendar.compose(day, day.add({ days: 1 }))}
+				onclick={() =>
+					calendar.compose(
+						day,
+						day.add({ days: 1 }),
+						resource ? { resourceIds: [resource.id] } : {}
+					)}
 			></div>
 		{/each}
-		{#each allDayItems as item (item.event.id)}
+		{#each allDayItems as item (`${item.event.id}:${item.startIndex}`)}
 			{@const event = item.event}
 			<button
 				type="button"
@@ -255,7 +306,7 @@
 	>
 		<div
 			class="relative grid"
-			style:grid-template-columns={columns}
+			style:grid-template-columns={template}
 			style:height="calc({hourHeight} * 24)"
 		>
 			<div class="relative">
@@ -269,7 +320,8 @@
 				{/each}
 			</div>
 
-			{#each days as day, dayIndex (day.toString())}
+			{#each cols as column, dayIndex (dayIndex)}
+				{@const day = column.day}
 				<!-- Pressing an empty slot creates an event; keyboard users use the toolbar. -->
 				<!-- svelte-ignore a11y_no_static_element_interactions -->
 				<div
@@ -277,7 +329,7 @@
 					class="relative border-s"
 					style:background-image="repeating-linear-gradient(to bottom, var(--border) 0 1px,
 					transparent 1px {hourHeight})"
-					onpointerdown={(down) => startCreate(down, day)}
+					onpointerdown={(down) => startCreate(down, column)}
 				>
 					{#each dayItems[dayIndex] ?? [] as item (item.event.id)}
 						{@const event = item.event}

@@ -15,6 +15,17 @@ export interface PointerTracking {
 	onCancel?: () => void;
 }
 
+/** Stops the click the browser fires right after a drag, so dropping does not also open the event. */
+function swallowNextClick() {
+	const swallow = (click: MouseEvent) => {
+		click.stopPropagation();
+		click.preventDefault();
+	};
+	window.addEventListener('click', swallow, { capture: true, once: true });
+	// No click follows when the pointer was released over another element.
+	setTimeout(() => window.removeEventListener('click', swallow, { capture: true }));
+}
+
 /** Follows a primary-button press until it is released or cancelled. */
 export function trackPointer(down: PointerEvent, handlers: PointerTracking) {
 	if (down.button !== 0) return;
@@ -28,8 +39,10 @@ export function trackPointer(down: PointerEvent, handlers: PointerTracking) {
 	};
 	const up = (event: PointerEvent) => {
 		stop();
-		if (dragging) handlers.onDrop(event);
-		else handlers.onClick?.(event);
+		if (dragging) {
+			swallowNextClick();
+			handlers.onDrop(event);
+		} else handlers.onClick?.(event);
 	};
 	const cancel = () => {
 		stop();
@@ -51,13 +64,29 @@ export function trackPointer(down: PointerEvent, handlers: PointerTracking) {
 	window.addEventListener('keydown', key);
 }
 
-/** The day under the pointer, read from the nearest element with a `data-date` attribute. */
-export function dayAtPoint(x: number, y: number): CalendarDate | undefined {
+/**
+ * The cell under the pointer: the nearest element with a `data-date` attribute, and its
+ * `data-resource` (empty or missing when the row has no resource).
+ */
+export function cellAtPoint(
+	x: number,
+	y: number
+): { date: CalendarDate; resource: string | undefined } | undefined {
 	for (const element of document.elementsFromPoint(x, y)) {
-		const date = (element as HTMLElement).dataset?.date;
-		if (date) return parseDate(date);
+		const { date, resource } = (element as HTMLElement).dataset ?? {};
+		if (date) return { date: parseDate(date), resource: resource || undefined };
 	}
 	return undefined;
+}
+
+/** The day under the pointer. */
+export const dayAtPoint = (x: number, y: number) => cellAtPoint(x, y)?.date;
+
+/** Resource ids after moving an event from the `from` row to the `to` row. */
+function moveResource(ids: readonly string[] | undefined, from?: string, to?: string) {
+	if (from === to) return ids;
+	const rest = (ids ?? []).filter((id) => id !== from && id !== to);
+	return to ? [...rest, to] : rest;
 }
 
 export interface DayDragHandlers<T> {
@@ -69,23 +98,34 @@ export interface DayDragHandlers<T> {
 
 /**
  * Drags `event` across day cells (elements with `data-date`), keeping its time of day and
- * duration. Used by the month view and the all-day row of the time grid.
+ * duration. When cells also have `data-resource` (timeline rows), dropping on another row moves
+ * the event to that resource. Used by the month, timeline and gantt views and the all-day row.
  */
 export function dragAcrossDays<T extends CalendarEvent>(
 	down: PointerEvent,
 	event: T,
 	handlers: DayDragHandlers<T>
 ) {
-	const from = dayAtPoint(down.clientX, down.clientY);
+	const from = cellAtPoint(down.clientX, down.clientY);
 	if (!from) return;
 	let moved: T | null = null;
 
 	trackPointer(down, {
 		onMove: (move) => {
-			const to = dayAtPoint(move.clientX, move.clientY);
+			const to = cellAtPoint(move.clientX, move.clientY);
 			if (!to) return;
-			const days = daysBetween(from, to);
-			moved = days === 0 ? null : moveEvent(event, event.start.add({ days }));
+			const days = daysBetween(from.date, to.date);
+			const sameRow = from.resource === to.resource;
+			if (days === 0 && sameRow) moved = null;
+			else {
+				const shifted = moveEvent(event, event.start.add({ days }));
+				moved = sameRow
+					? shifted
+					: {
+							...shifted,
+							resourceIds: moveResource(event.resourceIds, from.resource, to.resource)
+						};
+			}
 			handlers.onPreview(moved ?? event);
 		},
 		onDrop: () => {

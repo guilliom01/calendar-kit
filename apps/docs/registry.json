@@ -65,6 +65,78 @@
 			]
 		},
 		{
+			"name": "year-view",
+			"type": "registry:ui",
+			"title": "Year view",
+			"description": "Twelve small months; busier days get a stronger tint. Click a day to open it.",
+			"dependencies": ["@calendar-kit/core", "@internationalized/date"],
+			"registryDependencies": ["utils", "./calendar-state.json"],
+			"files": [
+				{
+					"path": "src/lib/registry/ui/year-view/year-view.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/year-view/index.ts",
+					"type": "registry:ui"
+				}
+			]
+		},
+		{
+			"name": "agenda-view",
+			"type": "registry:ui",
+			"title": "Agenda view",
+			"description": "The month's events listed day by day, with times and resources.",
+			"dependencies": ["@calendar-kit/core", "@internationalized/date"],
+			"registryDependencies": ["utils", "./calendar-state.json"],
+			"files": [
+				{
+					"path": "src/lib/registry/ui/agenda-view/agenda-view.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/agenda-view/index.ts",
+					"type": "registry:ui"
+				}
+			]
+		},
+		{
+			"name": "timeline-view",
+			"type": "registry:ui",
+			"title": "Timeline view",
+			"description": "Resources as rows (nested, collapsible) and the week's days as columns; drag events between days and resources.",
+			"dependencies": ["@calendar-kit/core", "@internationalized/date", "@lucide/svelte"],
+			"registryDependencies": ["utils", "./calendar-state.json"],
+			"files": [
+				{
+					"path": "src/lib/registry/ui/timeline-view/timeline-view.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/timeline-view/index.ts",
+					"type": "registry:ui"
+				}
+			]
+		},
+		{
+			"name": "gantt-view",
+			"type": "registry:ui",
+			"title": "Gantt view",
+			"description": "One row per task across the month, with progress bars and dependency arrows.",
+			"dependencies": ["@calendar-kit/core", "@internationalized/date"],
+			"registryDependencies": ["utils", "./calendar-state.json"],
+			"files": [
+				{
+					"path": "src/lib/registry/ui/gantt-view/gantt-view.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/gantt-view/index.ts",
+					"type": "registry:ui"
+				}
+			]
+		},
+		{
 			"name": "event-dialog",
 			"type": "registry:ui",
 			"title": "Event dialog",
@@ -102,7 +174,7 @@
 			"name": "calendar",
 			"type": "registry:ui",
 			"title": "Calendar",
-			"description": "Full calendar: toolbar with time zone switcher, month, week and day views, drag and drop, recurring events, event dialog, undo/redo.",
+			"description": "Full calendar: toolbar, month, week, day, agenda, year, timeline, resource and gantt views, drag and drop, recurring events, range loading, undo/redo.",
 			"dependencies": ["@calendar-kit/core", "@internationalized/date", "@lucide/svelte"],
 			"registryDependencies": [
 				"button",
@@ -110,6 +182,10 @@
 				"./calendar-state.json",
 				"./month-view.json",
 				"./time-grid.json",
+				"./year-view.json",
+				"./agenda-view.json",
+				"./timeline-view.json",
+				"./gantt-view.json",
 				"./event-dialog.json"
 			],
 			"files": [

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { today } from '@internationalized/date';
 	import { Calendar, CalendarState } from '#lib/registry/ui/calendar/index.js';
-	import { demoEvents } from './demo-events.js';
+	import { demoEvents, demoResources } from './demo-events.js';
 
 	const locale = 'es-PE';
 	const timeZone = 'America/Lima';
@@ -10,6 +10,8 @@
 		locale,
 		timeZone,
 		events: demoEvents(today(timeZone), locale, timeZone),
+		resources: demoResources,
+		views: ['month', 'week', 'day', 'agenda', 'year', 'timeline', 'resources', 'gantt'],
 		// Simulates a backend call: changes show at once and "save" a moment later.
 		onMutate: () => new Promise((resolve) => setTimeout(resolve, 300)),
 		labels: {
@@ -48,7 +50,16 @@
 			thisEvent: 'Este evento',
 			followingEvents: 'Este y los eventos siguientes',
 			allEvents: 'Todos los eventos',
-			ok: 'Aceptar'
+			ok: 'Aceptar',
+			agenda: 'Agenda',
+			timeline: 'Línea de tiempo',
+			resources: 'Recursos',
+			gantt: 'Gantt',
+			noEvents: 'No hay eventos',
+			loading: 'Cargando…',
+			events: 'eventos',
+			unassigned: 'Sin asignar',
+			progress: 'Avance'
 		}
 	});
 </script>

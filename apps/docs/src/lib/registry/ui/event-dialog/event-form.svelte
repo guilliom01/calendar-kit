@@ -61,6 +61,8 @@
 	let endDate = $state(
 		isAllDay(original) ? original.end.subtract({ days: 1 }).toString() : dateOf(original.end)
 	);
+	let resourceIds = $state([...(original.resourceIds ?? [])]);
+	let progress = $state(Math.round((original.progress ?? 0) * 100));
 	let startTime = $state(isAllDay(original) ? '09:00' : timeOf(original.start));
 	let endTime = $state(isAllDay(original) ? '10:00' : timeOf(original.end));
 
@@ -182,7 +184,15 @@
 	}
 
 	function buildEvent(): CalendarEvent {
-		const base = { ...original, title: title.trim(), color, rrule: buildRule() };
+		const base = {
+			...original,
+			title: title.trim(),
+			color,
+			rrule: buildRule(),
+			resourceIds: resourceIds.length ? resourceIds : undefined,
+			progress:
+				original.progress === undefined ? undefined : Math.min(100, Math.max(0, progress)) / 100
+		};
 		if (!base.rrule) delete base.exdates;
 		if (allDay) {
 			const start = parseDate(startDate);
@@ -308,6 +318,35 @@
 				</div>
 			</div>
 		</fieldset>
+	{/if}
+
+	{#if calendar.resources.length}
+		<fieldset class="grid gap-2">
+			<legend class="mb-2 text-sm font-medium">{labels.resources}</legend>
+			<div class="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+				{#each calendar.leafResources as resource (resource.id)}
+					<label class="flex items-center gap-2">
+						<input type="checkbox" value={resource.id} bind:group={resourceIds} />
+						{resource.title}
+					</label>
+				{/each}
+			</div>
+		</fieldset>
+	{/if}
+
+	{#if original.progress !== undefined}
+		<div class="grid gap-2">
+			<Label for="calendar-event-progress">{labels.progress} (%)</Label>
+			<Input
+				id="calendar-event-progress"
+				type="number"
+				min="0"
+				max="100"
+				step="5"
+				class="w-24"
+				bind:value={progress}
+			/>
+		</div>
 	{/if}
 
 	<fieldset class="grid gap-2">

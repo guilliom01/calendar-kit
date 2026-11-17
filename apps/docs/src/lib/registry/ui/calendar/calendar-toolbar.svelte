@@ -1,6 +1,7 @@
 <script lang="ts">
 	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
+	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
 	import PlusIcon from '@lucide/svelte/icons/plus';
 	import Redo2Icon from '@lucide/svelte/icons/redo-2';
 	import Undo2Icon from '@lucide/svelte/icons/undo-2';
@@ -13,12 +14,39 @@
 	let { class: className }: { class?: string } = $props();
 
 	const calendar = getCalendar();
-	const views: CalendarView[] = ['month', 'week', 'day'];
-	const viewFields = { month: 'month', week: 'weekOfYear', day: 'day' } as const;
 
 	// Labels come from Intl, so the toolbar is translated for any locale.
 	const relative = $derived(new Intl.RelativeTimeFormat(calendar.locale, { numeric: 'auto' }));
 	const fields = $derived(new Intl.DisplayNames(calendar.locale, { type: 'dateTimeField' }));
+
+	/** Calendar units come from Intl; the other view names from `labels`. */
+	function viewLabel(view: CalendarView) {
+		const { labels } = calendar;
+		const intlField = { month: 'month', week: 'weekOfYear', day: 'day', year: 'year' } as const;
+		if (view in intlField) return fields.of(intlField[view as keyof typeof intlField]);
+		return {
+			agenda: labels.agenda,
+			timeline: labels.timeline,
+			resources: labels.resources,
+			gantt: labels.gantt
+		}[view as 'agenda' | 'timeline' | 'resources' | 'gantt'];
+	}
+
+	/** Previous/next labels: "last month", "next week"... in the unit the view moves by. */
+	const unit = $derived(
+		(
+			{
+				month: 'month',
+				week: 'week',
+				day: 'day',
+				year: 'year',
+				agenda: 'month',
+				timeline: 'week',
+				resources: 'day',
+				gantt: 'month'
+			} as const
+		)[calendar.view]
+	);
 
 	/** Every IANA time zone with its current offset, e.g. "America/Lima (GMT-5)". */
 	const timeZones = $derived.by(() => {
@@ -52,14 +80,14 @@
 			{calendar.labels.newEvent}
 		</Button>
 	{/if}
-	<Button variant="outline" class="capitalize" onclick={() => calendar.goToday()}>
+	<Button variant="outline" class="first-letter:uppercase" onclick={() => calendar.goToday()}>
 		{relative.format(0, 'day')}
 	</Button>
 	<div class="flex">
 		<Button
 			variant="ghost"
 			size="icon"
-			aria-label={relative.format(-1, calendar.view)}
+			aria-label={relative.format(-1, unit)}
 			onclick={() => calendar.previous()}
 		>
 			<ChevronLeftIcon />
@@ -67,13 +95,19 @@
 		<Button
 			variant="ghost"
 			size="icon"
-			aria-label={relative.format(1, calendar.view)}
+			aria-label={relative.format(1, unit)}
 			onclick={() => calendar.next()}
 		>
 			<ChevronRightIcon />
 		</Button>
 	</div>
 	<h2 class="text-lg font-semibold first-letter:uppercase" aria-live="polite">{calendar.title}</h2>
+	{#if calendar.loading}
+		<span role="status" class="text-muted-foreground" title={calendar.labels.loading}>
+			<LoaderCircleIcon class="size-4 animate-spin" aria-hidden="true" />
+			<span class="sr-only">{calendar.labels.loading}</span>
+		</span>
+	{/if}
 
 	<div class="ms-auto flex flex-wrap items-center gap-2">
 		<select
@@ -111,15 +145,15 @@
 			</div>
 		{/if}
 		<div class="flex gap-0.5 rounded-lg border p-0.5" role="group">
-			{#each views as view (view)}
+			{#each calendar.views as view (view)}
 				<Button
 					size="sm"
 					variant={calendar.view === view ? 'secondary' : 'ghost'}
-					class="capitalize"
+					class="first-letter:uppercase"
 					aria-pressed={calendar.view === view}
 					onclick={() => (calendar.view = view)}
 				>
-					{fields.of(viewFields[view])}
+					{viewLabel(view)}
 				</Button>
 			{/each}
 		</div>

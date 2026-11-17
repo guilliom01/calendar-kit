@@ -114,6 +114,7 @@ test.describe('editing', () => {
 		await expect(lunch).toContainText('1:00 – 3:30 p. m.');
 
 		// One column to the right: Wednesday 18 -> Thursday 19.
+		await workshop.scrollIntoViewIfNeeded();
 		box = (await workshop.boundingBox())!;
 		await drag(page, box.x + box.width / 2, box.y + 20, box.width, 0);
 		await page.getByRole('button', { name: 'jueves, 19 de noviembre de 2026' }).click();
@@ -246,4 +247,110 @@ test('switching the time zone shows timed events at the new local time', async (
 
 	await page.getByRole('combobox', { name: 'Zona horaria' }).selectOption('Europe/Madrid');
 	await expect(review).toContainText('3:15 – 4:30 p. m.');
+});
+
+test.describe('more views', () => {
+	async function dragTo(page: Page, from: { x: number; y: number }, to: { x: number; y: number }) {
+		await page.mouse.move(from.x, from.y);
+		await page.mouse.down();
+		await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 5 });
+		await page.mouse.move(to.x, to.y, { steps: 5 });
+		await page.mouse.up();
+	}
+	const center = (box: { x: number; y: number; width: number; height: number }) => ({
+		x: box.x + box.width / 2,
+		y: box.y + box.height / 2
+	});
+
+	test('year view shows the year, how busy each day is, and opens a day', async ({ page }) => {
+		await viewButton(page, 'año').click();
+		await expect(title(page)).toHaveText('2026');
+
+		await page
+			.getByRole('button', { name: 'miércoles, 18 de noviembre de 2026, 3 eventos' })
+			.click();
+		await expect(title(page)).toHaveText('miércoles, 18 de noviembre de 2026');
+	});
+
+	test('agenda lists the month day by day with resources, and opens events', async ({ page }) => {
+		await viewButton(page, 'Agenda').click();
+		const standup = page.getByRole('button', { name: /Daily standup/ });
+		await expect(standup).toContainText('Ana y Luis');
+		await expect(standup).toContainText('9:00 – 9:30 a. m.');
+
+		await standup.click();
+		await expect(page.getByRole('dialog').getByLabel('Título')).toHaveValue('Daily standup');
+	});
+
+	test('timeline groups resources and moves events between them', async ({ page }) => {
+		await viewButton(page, 'Línea de tiempo').click();
+		const workshop = page.getByRole('button', { name: /Svelte workshop/ });
+		const roomA = page.locator('[data-date="2026-11-18"][data-resource="room-a"]');
+
+		await dragTo(
+			page,
+			center((await workshop.boundingBox())!),
+			center((await roomA.boundingBox())!)
+		);
+		const bar = center((await workshop.boundingBox())!);
+		const row = (await roomA.boundingBox())!;
+		expect(bar.y).toBeGreaterThan(row.y);
+		expect(bar.y).toBeLessThan(row.y + row.height);
+
+		await workshop.click();
+		await expect(page.getByRole('dialog').getByLabel('Sala A')).toBeChecked();
+		await expect(page.getByRole('dialog').getByLabel('Sala B')).not.toBeChecked();
+		await page.keyboard.press('Escape');
+
+		const rooms = page.getByRole('button', { name: 'Salas' });
+		await rooms.click();
+		await expect(rooms).toHaveAttribute('aria-expanded', 'false');
+		await expect(page.getByText('Sala A')).toBeHidden();
+	});
+
+	test('resource view shows one column per resource and creates events for it', async ({
+		page
+	}) => {
+		await viewButton(page, 'Recursos').click();
+		await expect(page.getByRole('button', { name: /Almuerzo/ })).toBeVisible();
+
+		const column = (await page
+			.locator('[style*="repeating-linear-gradient"]')
+			.nth(2)
+			.boundingBox())!;
+		await page.mouse.click(column.x + column.width / 2, column.y + 10 * 48 + 5);
+		const dialog = page.getByRole('dialog');
+		await expect(dialog.getByLabel('Ana')).toBeChecked();
+		await expect(dialog.getByLabel('Luis')).not.toBeChecked();
+		await expect(dialog.getByLabel('Inicio, hora')).toHaveValue('10:00');
+	});
+
+	test('gantt shows tasks with progress and dependency arrows', async ({ page }) => {
+		await viewButton(page, 'Gantt').click();
+		for (const task of ['Análisis', 'Diseño', 'Desarrollo', 'Pruebas']) {
+			await expect(page.getByRole('button', { name: new RegExp(`^${task}`) })).toBeVisible();
+		}
+		await expect(page.getByRole('button', { name: /^Diseño, Avance 60/ })).toBeVisible();
+		await expect(page.locator('svg path[marker-end]')).toHaveCount(3);
+	});
+});
+
+test('loads events month by month with a cache', async ({ page }) => {
+	await page.goto('/carga');
+	const requests = page.getByTestId('requests');
+	await expect(page.getByRole('button', { name: /Evento remoto 1\/11/ })).toBeVisible();
+	await expect(requests).toHaveText(/2026-11/);
+
+	await page.getByRole('button', { name: 'el próximo mes' }).click();
+	await expect(page.getByRole('button', { name: /Evento remoto 1\/12/ })).toBeVisible();
+	await page.getByRole('button', { name: 'el mes pasado' }).click();
+	await expect(page.getByRole('button', { name: /Evento remoto 1\/11/ })).toBeVisible();
+
+	// Each month was requested once, including the preloaded neighbours.
+	const months = (await requests.textContent())!
+		.replace('Meses pedidos:', '')
+		.split(',')
+		.map((m) => m.trim());
+	expect(months.filter((month) => month === '2026-11')).toHaveLength(1);
+	expect(months.filter((month) => month === '2026-12')).toHaveLength(1);
 });
