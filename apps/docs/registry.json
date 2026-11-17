@@ -29,6 +29,60 @@
 			]
 		},
 		{
+			"name": "calendar",
+			"type": "registry:ui",
+			"title": "Calendar",
+			"description": "Calendar building blocks: Root, View, Toolbar, Nav, Title, ViewSwitcher, NewEvent, UndoRedo, TimeZoneSelect and Loading. Add only the views you need.",
+			"dependencies": ["@calendar-kit/core", "@internationalized/date", "@lucide/svelte"],
+			"registryDependencies": ["button", "utils", "./calendar-state.json"],
+			"files": [
+				{
+					"path": "src/lib/registry/ui/calendar/calendar-loading.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/calendar/calendar-nav.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/calendar/calendar-new-event.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/calendar/calendar-root.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/calendar/calendar-time-zone-select.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/calendar/calendar-title.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/calendar/calendar-toolbar.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/calendar/calendar-undo-redo.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/calendar/calendar-view-switcher.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/calendar/calendar-view.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/calendar/index.ts",
+					"type": "registry:ui"
+				}
+			]
+		},
+		{
 			"name": "month-view",
 			"type": "registry:ui",
 			"title": "Month view",
@@ -65,24 +119,6 @@
 			]
 		},
 		{
-			"name": "year-view",
-			"type": "registry:ui",
-			"title": "Year view",
-			"description": "Twelve small months; busier days get a stronger tint. Click a day to open it.",
-			"dependencies": ["@calendar-kit/core", "@internationalized/date"],
-			"registryDependencies": ["utils", "./calendar-state.json"],
-			"files": [
-				{
-					"path": "src/lib/registry/ui/year-view/year-view.svelte",
-					"type": "registry:ui"
-				},
-				{
-					"path": "src/lib/registry/ui/year-view/index.ts",
-					"type": "registry:ui"
-				}
-			]
-		},
-		{
 			"name": "agenda-view",
 			"type": "registry:ui",
 			"title": "Agenda view",
@@ -96,6 +132,24 @@
 				},
 				{
 					"path": "src/lib/registry/ui/agenda-view/index.ts",
+					"type": "registry:ui"
+				}
+			]
+		},
+		{
+			"name": "year-view",
+			"type": "registry:ui",
+			"title": "Year view",
+			"description": "Twelve small months; busier days get a stronger tint. Click a day to open it.",
+			"dependencies": ["@calendar-kit/core", "@internationalized/date"],
+			"registryDependencies": ["utils", "./calendar-state.json"],
+			"files": [
+				{
+					"path": "src/lib/registry/ui/year-view/year-view.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/year-view/index.ts",
 					"type": "registry:ui"
 				}
 			]
@@ -171,34 +225,19 @@
 			]
 		},
 		{
-			"name": "calendar",
+			"name": "recurrence-editor",
 			"type": "registry:ui",
-			"title": "Calendar",
-			"description": "Full calendar: toolbar, month, week, day, agenda, year, timeline, resource and gantt views, drag and drop, recurring events, range loading, undo/redo.",
-			"dependencies": ["@calendar-kit/core", "@internationalized/date", "@lucide/svelte"],
-			"registryDependencies": [
-				"button",
-				"utils",
-				"./calendar-state.json",
-				"./month-view.json",
-				"./time-grid.json",
-				"./year-view.json",
-				"./agenda-view.json",
-				"./timeline-view.json",
-				"./gantt-view.json",
-				"./event-dialog.json"
-			],
+			"title": "Recurrence editor",
+			"description": "Optional editor for repeat rules: every N days/weeks/months/years, several weekdays, day of month or nth weekday. Plug it into the event dialog or your own form.",
+			"dependencies": ["@calendar-kit/core", "@internationalized/date"],
+			"registryDependencies": ["input", "utils", "./calendar-state.json"],
 			"files": [
 				{
-					"path": "src/lib/registry/ui/calendar/calendar.svelte",
+					"path": "src/lib/registry/ui/recurrence-editor/recurrence-editor.svelte",
 					"type": "registry:ui"
 				},
 				{
-					"path": "src/lib/registry/ui/calendar/calendar-toolbar.svelte",
-					"type": "registry:ui"
-				},
-				{
-					"path": "src/lib/registry/ui/calendar/index.ts",
+					"path": "src/lib/registry/ui/recurrence-editor/index.ts",
 					"type": "registry:ui"
 				}
 			]

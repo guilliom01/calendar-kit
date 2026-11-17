@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { toZoned, type CalendarDate } from '@internationalized/date';
 	import type { CalendarEvent, DateRange } from '@calendar-kit/core';
-	import { Calendar, CalendarState } from '#lib/registry/ui/calendar/index.js';
+	import * as Calendar from '#lib/registry/ui/calendar/index.js';
+	import { CalendarState } from '#lib/registry/ui/calendar/index.js';
+	import { MonthView } from '#lib/registry/ui/month-view/index.js';
 
 	const timeZone = 'America/Lima';
 	let requests: string[] = $state([]);
@@ -36,5 +38,12 @@
 	<p class="text-sm text-muted-foreground" data-testid="requests">
 		Meses pedidos: {requests.join(', ')}
 	</p>
-	<Calendar state={calendar} class="flex-1" />
+	<Calendar.Root state={calendar} class="flex-1">
+		<Calendar.Toolbar>
+			<Calendar.Nav />
+			<Calendar.Title />
+			<Calendar.Loading />
+		</Calendar.Toolbar>
+		<Calendar.View name="month"><MonthView class="flex-1" /></Calendar.View>
+	</Calendar.Root>
 </main>

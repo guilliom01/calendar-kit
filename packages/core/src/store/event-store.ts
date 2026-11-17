@@ -13,9 +13,9 @@ export interface EventStoreOptions<T extends CalendarEvent> {
 	 * Return the saved event to replace the local one (for example, with a server id).
 	 * Throw or reject to roll the change back.
 	 */
-	onMutate?: ((mutation: Mutation<T>) => Promise<T | void> | T | void) | undefined;
+	onMutate?(mutation: Mutation<T>): Promise<T | void> | T | void;
 	/** Called when `onMutate` fails, after the rollback. */
-	onError?: ((error: unknown, mutation: Mutation<T>) => void) | undefined;
+	onError?(error: unknown, mutation: Mutation<T>): void;
 	/** Undo steps to keep. */
 	historyLimit?: number | undefined;
 }

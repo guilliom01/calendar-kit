@@ -45,21 +45,17 @@
 	}
 
 	function startDrag(down: PointerEvent, event: CalendarEvent) {
-		if (!calendar.editable) return;
+		if (!calendar.canEdit(event)) return;
 		dragAcrossDays(down, event, {
 			onPreview: (moved) => (preview = moved),
 			onDrop: (moved) => {
-				if (moved) void calendar.update(moved);
+				if (moved) void calendar.changeEvent({ event: moved, previous: event, kind: 'move' });
 			}
 		});
 	}
 
-	function openEvent(event: CalendarEvent) {
-		calendar.edit(event);
-	}
-
 	function onEventKey(key: KeyboardEvent, event: CalendarEvent) {
-		if ((key.key === 'Delete' || key.key === 'Backspace') && calendar.editable) {
+		if ((key.key === 'Delete' || key.key === 'Backspace') && calendar.canEdit(event)) {
 			key.preventDefault();
 			void calendar.remove(event.id);
 		}
@@ -89,7 +85,8 @@
 						!isSameMonth(day, calendar.date) && 'bg-muted/30 text-muted-foreground'
 					)}
 					onclick={(click) => {
-						if (click.target === click.currentTarget) calendar.compose(day, day.add({ days: 1 }));
+						if (click.target === click.currentTarget)
+							calendar.select({ start: day, end: day.add({ days: 1 }), allDay: true, fields: {} });
 					}}
 				>
 					<button
@@ -100,7 +97,7 @@
 								'bg-primary text-primary-foreground hover:bg-primary/90'
 						)}
 						aria-label={fullDate.format(toDate(day))}
-						onclick={() => calendar.openDay(day)}
+						onclick={(click) => calendar.clickDate(day, click)}
 					>
 						{day.day}
 					</button>
@@ -129,7 +126,7 @@
 						style:--event-color={event.color ?? 'var(--primary)'}
 						title={event.title || calendar.labels.untitled}
 						onpointerdown={(down) => startDrag(down, event)}
-						onclick={() => openEvent(event)}
+						onclick={(click) => calendar.clickEvent(event, click)}
 						onkeydown={(key) => onEventKey(key, event)}
 					>
 						{#if eventContent}
@@ -156,7 +153,7 @@
 							class="pointer-events-auto mx-0.5 rounded px-1.5 text-start text-xs font-medium text-muted-foreground hover:bg-muted"
 							style:grid-column={dayIndex + 1}
 							style:grid-row={maxLanes + 1}
-							onclick={() => calendar.openDay(day)}
+							onclick={(click) => calendar.clickDate(day, click)}
 						>
 							+{hidden}
 						</button>

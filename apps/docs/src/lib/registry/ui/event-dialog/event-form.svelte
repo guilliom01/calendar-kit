@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import {
 		DateFormatter,
 		endOfMonth,
@@ -12,13 +13,15 @@
 		type ZonedDateTime
 	} from '@internationalized/date';
 	import {
+		flattenResources,
 		formatRRule,
 		isAllDay,
 		parseRRule,
 		resizeEvent,
 		WEEKDAYS,
 		type CalendarEvent,
-		type RecurrenceRule
+		type RecurrenceRule,
+		type Resource
 	} from '@calendar-kit/core';
 	import { Button } from '#lib/registry/ui/button/index.js';
 	import { Checkbox } from '#lib/registry/ui/checkbox/index.js';
@@ -36,9 +39,20 @@
 		draft: EventDraft<CalendarEvent>;
 		/** Colors offered in the picker; `undefined` means the theme color. */
 		colors: (string | undefined)[];
+		resources: Resource[];
+		recurrence?:
+			| Snippet<[{ value: string; setValue: (value: string) => void; start: CalendarDate }]>
+			| undefined;
 	}
 
-	let { draft, colors }: Props = $props();
+	let { draft, colors, resources, recurrence }: Props = $props();
+
+	/** Resources without children: the ones events are assigned to. */
+	const assignable = $derived(
+		flattenResources(resources)
+			.filter((row) => !row.hasChildren)
+			.map((row) => row.resource)
+	);
 
 	const calendar = getCalendar();
 	const labels = calendar.labels;
@@ -119,11 +133,15 @@
 		return fillLabel(labels.weekly, { weekday: list });
 	}
 
+	/** The chosen start date (or the original one while the field is being typed). */
+	const startDay = $derived(
+		safeDate(startDate) ??
+			(isAllDay(original) ? original.start : toCalendarDate(toTimeZone(original.start, timeZone)))
+	);
+
 	/** Repeat choices for the chosen start date, like "Every month on the last Friday". */
 	const repeatOptions = $derived.by(() => {
-		const day =
-			safeDate(startDate) ??
-			(isAllDay(original) ? original.start : toCalendarDate(toTimeZone(original.start, timeZone)));
+		const day = startDay;
 		const asDate = day.toDate(timeZone);
 		const weekdayName = new DateFormatter(calendar.locale, { weekday: 'long', timeZone }).format(
 			asDate
@@ -269,14 +287,18 @@
 		{/if}
 	</div>
 
-	<div class="grid gap-2">
-		<Label for="calendar-event-repeat">{labels.repeat}</Label>
-		<select id="calendar-event-repeat" class={selectClass} bind:value={repeat}>
-			{#each repeatOptions as option (option.value)}
-				<option value={option.value}>{option.label}</option>
-			{/each}
-		</select>
-	</div>
+	{#if recurrence}
+		{@render recurrence({ value: repeat, setValue: (value) => (repeat = value), start: startDay })}
+	{:else}
+		<div class="grid gap-2">
+			<Label for="calendar-event-repeat">{labels.repeat}</Label>
+			<select id="calendar-event-repeat" class={selectClass} bind:value={repeat}>
+				{#each repeatOptions as option (option.value)}
+					<option value={option.value}>{option.label}</option>
+				{/each}
+			</select>
+		</div>
+	{/if}
 
 	{#if repeat}
 		<fieldset class="grid gap-2">
@@ -320,11 +342,11 @@
 		</fieldset>
 	{/if}
 
-	{#if calendar.resources.length}
+	{#if assignable.length}
 		<fieldset class="grid gap-2">
 			<legend class="mb-2 text-sm font-medium">{labels.resources}</legend>
 			<div class="flex flex-wrap gap-x-4 gap-y-2 text-sm">
-				{#each calendar.leafResources as resource (resource.id)}
+				{#each assignable as resource (resource.id)}
 					<label class="flex items-center gap-2">
 						<input type="checkbox" value={resource.id} bind:group={resourceIds} />
 						{resource.title}

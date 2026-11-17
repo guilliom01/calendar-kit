@@ -9,6 +9,7 @@
 	} from '@internationalized/date';
 	import {
 		eventsForResource,
+		flattenResources,
 		isAllDay,
 		layoutTimedEvents,
 		layoutWeekRow,
@@ -18,15 +19,18 @@
 		spansDays,
 		zonedAt,
 		type CalendarEvent,
+		type Resource,
 		type TimedEvent,
 		type TimedEventLayout
 	} from '@calendar-kit/core';
 	import type { Snippet } from 'svelte';
 	import { dragAcrossDays, trackPointer, withPreview } from '#lib/registry/lib/calendar-drag.js';
-	import { getCalendar, type TimeGridColumn } from '#lib/registry/lib/calendar-state.svelte.js';
+	import { getCalendar } from '#lib/registry/lib/calendar-state.svelte.js';
 	import { cn } from '#lib/utils.js';
 
 	interface Props {
+		/** Show one column per resource (for the shown day) instead of one per day. */
+		resources?: Resource[];
 		class?: string;
 		/** Height of one hour, as a CSS length. */
 		hourHeight?: string;
@@ -36,7 +40,13 @@
 		eventContent?: Snippet<[CalendarEvent]>;
 	}
 
-	let { class: className, hourHeight = '3rem', scrollToHour = 7, eventContent }: Props = $props();
+	let {
+		resources,
+		class: className,
+		hourHeight = '3rem',
+		scrollToHour = 7,
+		eventContent
+	}: Props = $props();
 
 	const calendar = getCalendar();
 	const MINUTES_PER_DAY = 24 * 60;
@@ -47,13 +57,25 @@
 	let preview: CalendarEvent | null = $state.raw(null);
 	let columnElements: HTMLElement[] = $state([]);
 
-	// Columns are days, or the resources of one day in the resource view.
-	const cols = $derived(calendar.columns);
+	/** A column of the grid: a day, or a resource on the shown day. */
+	interface Column {
+		day: CalendarDate;
+		resource?: Resource;
+	}
+
+	// Columns are days, or the leaf resources of one day when `resources` is given.
+	const cols: Column[] = $derived(
+		resources
+			? flattenResources(resources)
+					.filter((row) => !row.hasChildren)
+					.map(({ resource }) => ({ day: calendar.date, resource }))
+			: calendar.days.map((day) => ({ day }))
+	);
 	const byResource = $derived(cols.some((column) => column.resource));
 	const step = $derived(calendar.snapStep);
 	const events = $derived(withPreview(calendar.visibleEvents, preview));
 	const template = $derived(`4rem repeat(${cols.length}, minmax(0, 1fr))`);
-	const eventsOf = (list: readonly CalendarEvent[], column: TimeGridColumn) =>
+	const eventsOf = (list: readonly CalendarEvent[], column: Column) =>
 		column.resource ? eventsForResource(list, column.resource.id) : list;
 	const allDayItems = $derived(
 		byResource
@@ -111,18 +133,18 @@
 		...new Set((ids ?? []).map((id) => (id === from ? to : id)))
 	];
 
-	function finishDrag(original: CalendarEvent) {
+	function finishDrag(original: CalendarEvent, kind: 'move' | 'resize') {
 		const changed =
 			preview &&
 			(preview.start.toString() !== original.start.toString() ||
 				preview.end.toString() !== original.end.toString() ||
 				preview.resourceIds?.join() !== original.resourceIds?.join());
-		if (changed) void calendar.update(preview!);
+		if (changed) void calendar.changeEvent({ event: preview!, previous: original, kind });
 		preview = null;
 	}
 
 	function startMove(down: PointerEvent, item: TimedEventLayout) {
-		if (!calendar.editable) return;
+		if (!calendar.canEdit(item.event)) return;
 		const event = item.event as TimedEvent;
 		const source = pointAt(down);
 		const grab = source.minutes - item.start;
@@ -136,14 +158,14 @@
 				preview =
 					from && to ? { ...moved, resourceIds: reassign(event.resourceIds, from, to) } : moved;
 			},
-			onDrop: () => finishDrag(event),
+			onDrop: () => finishDrag(event, 'move'),
 			onCancel: () => (preview = null)
 		});
 	}
 
 	function startResize(down: PointerEvent, item: TimedEventLayout) {
 		down.stopPropagation();
-		if (!calendar.editable) return;
+		if (!calendar.canEdit(item.event)) return;
 		const event = item.event as TimedEvent;
 
 		trackPointer(down, {
@@ -151,18 +173,22 @@
 				const { day, minutes } = pointAt(move);
 				preview = resizeEvent(event, at(day, snapMinutes(minutes, step)), { minDuration: step });
 			},
-			onDrop: () => finishDrag(event),
+			onDrop: () => finishDrag(event, 'resize'),
 			onCancel: () => (preview = null)
 		});
 	}
 
 	/** Press on an empty slot: click creates a one-hour event, drag draws its range. */
-	function startCreate(down: PointerEvent, column: TimeGridColumn) {
+	function startCreate(down: PointerEvent, column: Column) {
 		if (!calendar.editable || down.target !== down.currentTarget) return;
 		const day = column.day;
 		const fields = column.resource ? { resourceIds: [column.resource.id] } : {};
 		const anchor = Math.floor(pointAt(down).minutes / step) * step;
 		let range: [number, number] = [anchor, Math.min(anchor + 60, MINUTES_PER_DAY)];
+		const select = () => {
+			preview = null;
+			calendar.select({ start: at(day, range[0]), end: at(day, range[1]), allDay: false, fields });
+		};
 
 		trackPointer(down, {
 			onMove: (move) => {
@@ -179,31 +205,28 @@
 					end: at(day, range[1])
 				};
 			},
-			onDrop: () => {
-				preview = null;
-				calendar.compose(at(day, range[0]), at(day, range[1]), fields);
-			},
-			onClick: () => calendar.compose(at(day, range[0]), at(day, range[1]), fields),
+			onDrop: select,
+			onClick: select,
 			onCancel: () => (preview = null)
 		});
 	}
 
 	function startAllDayDrag(down: PointerEvent, event: CalendarEvent) {
-		if (!calendar.editable) return;
+		if (!calendar.canEdit(event)) return;
 		dragAcrossDays(down, event, {
 			onPreview: (moved) => (preview = moved),
 			onDrop: (moved) => {
-				if (moved) void calendar.update(moved);
+				if (moved) void calendar.changeEvent({ event: moved, previous: event, kind: 'move' });
 			}
 		});
 	}
 
-	function openEvent(event: CalendarEvent) {
-		if (event.id !== NEW_EVENT_ID) calendar.edit(event);
+	function openEvent(event: CalendarEvent, click: Event) {
+		if (event.id !== NEW_EVENT_ID) calendar.clickEvent(event, click);
 	}
 
 	function onEventKey(key: KeyboardEvent, event: CalendarEvent) {
-		if ((key.key === 'Delete' || key.key === 'Backspace') && calendar.editable) {
+		if ((key.key === 'Delete' || key.key === 'Backspace') && calendar.canEdit(event)) {
 			key.preventDefault();
 			void calendar.remove(event.id);
 		}
@@ -227,7 +250,7 @@
 					type="button"
 					class="flex flex-col items-center gap-0.5 py-1.5 hover:bg-muted"
 					aria-label={fullDate.format(toDate(day))}
-					onclick={() => calendar.openDay(day)}
+					onclick={(click) => calendar.clickDate(day, click)}
 				>
 					<span class="text-xs font-medium text-muted-foreground capitalize">
 						{weekday.format(toDate(day))}
@@ -264,11 +287,12 @@
 				style:grid-column={index + 2}
 				style:grid-row="1 / span {allDayLanes}"
 				onclick={() =>
-					calendar.compose(
-						day,
-						day.add({ days: 1 }),
-						resource ? { resourceIds: [resource.id] } : {}
-					)}
+					calendar.select({
+						start: day,
+						end: day.add({ days: 1 }),
+						allDay: true,
+						fields: resource ? { resourceIds: [resource.id] } : {}
+					})}
 			></div>
 		{/each}
 		{#each allDayItems as item (`${item.event.id}:${item.startIndex}`)}
@@ -286,7 +310,7 @@
 				style:--event-color={event.color ?? 'var(--primary)'}
 				title={event.title || calendar.labels.untitled}
 				onpointerdown={(down) => startAllDayDrag(down, event)}
-				onclick={() => openEvent(event)}
+				onclick={(click) => openEvent(event, click)}
 				onkeydown={(key) => onEventKey(key, event)}
 			>
 				{#if eventContent}
@@ -348,7 +372,7 @@
 							style:--event-color={event.color ?? 'var(--primary)'}
 							title={event.title || calendar.labels.untitled}
 							onpointerdown={(down) => startMove(down, item)}
-							onclick={() => openEvent(event)}
+							onclick={(click) => openEvent(event, click)}
 							onkeydown={(key) => onEventKey(key, event)}
 						>
 							{#if eventContent}
@@ -361,7 +385,7 @@
 									</span>
 								{/if}
 							{/if}
-							{#if calendar.editable && !item.continuesAfter}
+							{#if calendar.canEdit(event) && !item.continuesAfter}
 								<span
 									aria-hidden="true"
 									class="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize"

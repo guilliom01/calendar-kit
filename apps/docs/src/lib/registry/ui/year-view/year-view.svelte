@@ -77,7 +77,7 @@
 								? `, ${count} ${calendar.labels.events}`
 								: ''}"
 							title={count ? `${count} ${calendar.labels.events}` : undefined}
-							onclick={() => calendar.openDay(day)}
+							onclick={(click) => calendar.clickDate(day, click)}
 						>
 							{day.day}
 						</button>

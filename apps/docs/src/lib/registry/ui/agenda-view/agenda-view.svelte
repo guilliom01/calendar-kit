@@ -1,23 +1,25 @@
 <script lang="ts">
 	import { DateFormatter, isToday, type CalendarDate } from '@internationalized/date';
-	import { groupByDay, isAllDay, type CalendarEvent } from '@calendar-kit/core';
+	import { groupByDay, isAllDay, type CalendarEvent, type Resource } from '@calendar-kit/core';
 	import type { Snippet } from 'svelte';
 	import { getCalendar } from '#lib/registry/lib/calendar-state.svelte.js';
 	import { cn } from '#lib/utils.js';
 
 	interface Props {
 		class?: string;
+		/** Resources to name next to each event. */
+		resources?: Resource[];
 		/** Custom content for each event row. */
 		eventContent?: Snippet<[CalendarEvent]>;
 	}
 
-	let { class: className, eventContent }: Props = $props();
+	let { class: className, resources = [], eventContent }: Props = $props();
 
 	const calendar = getCalendar();
 
 	const groups = $derived(groupByDay(calendar.visibleEvents, calendar.range, calendar.timeZone));
 	const resourceNames = $derived(
-		new Map(calendar.resources.map((resource) => [resource.id, resource.title]))
+		new Map(resources.map((resource) => [resource.id, resource.title]))
 	);
 
 	const formatter = (options: Intl.DateTimeFormatOptions) =>
@@ -52,7 +54,7 @@
 					type="button"
 					class="flex items-center gap-2 rounded text-start hover:bg-muted"
 					aria-label={fullDate.format(toDate(day))}
-					onclick={() => calendar.openDay(day)}
+					onclick={(click) => calendar.clickDate(day, click)}
 				>
 					<span
 						class={cn(
@@ -74,7 +76,7 @@
 							type="button"
 							class="grid w-full grid-cols-[auto_1fr] items-center gap-x-3 rounded-md px-3 py-1.5 text-start text-sm hover:bg-muted sm:grid-cols-[auto_11rem_1fr]"
 							style:--event-color={event.color ?? 'var(--primary)'}
-							onclick={() => calendar.edit(event)}
+							onclick={(click) => calendar.clickEvent(event, click)}
 						>
 							<span class="size-2.5 rounded-full bg-(--event-color)"></span>
 							<span class="text-muted-foreground first-letter:uppercase max-sm:col-start-2">

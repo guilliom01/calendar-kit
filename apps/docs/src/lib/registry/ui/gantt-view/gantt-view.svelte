@@ -80,17 +80,13 @@
 	const dayColumns = $derived(`repeat(${days.length}, minmax(0, 1fr))`);
 
 	function startDrag(down: PointerEvent, event: CalendarEvent) {
-		if (!calendar.editable) return;
+		if (!calendar.canEdit(event)) return;
 		dragAcrossDays(down, event, {
 			onPreview: (moved) => (preview = moved),
 			onDrop: (moved) => {
-				if (moved) void calendar.update(moved);
+				if (moved) void calendar.changeEvent({ event: moved, previous: event, kind: 'move' });
 			}
 		});
-	}
-
-	function openEvent(event: CalendarEvent) {
-		calendar.edit(event);
 	}
 </script>
 
@@ -115,7 +111,7 @@
 							isToday(day, calendar.timeZone) && 'font-semibold text-primary'
 						)}
 						aria-label={fullDate.format(toDate(day))}
-						onclick={() => calendar.openDay(day)}
+						onclick={(click) => calendar.clickDate(day, click)}
 					>
 						<span class="text-muted-foreground uppercase">{weekday.format(toDate(day))}</span>
 						{day.day}
@@ -162,7 +158,7 @@
 								? `, ${calendar.labels.progress} ${percent.format(event.progress)}`
 								: ''}"
 							onpointerdown={(down) => startDrag(down, event)}
-							onclick={() => openEvent(event)}
+							onclick={(click) => calendar.clickEvent(event, click)}
 						>
 							<span
 								class="absolute inset-y-0 left-0 bg-(--event-color)/60"

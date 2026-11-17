@@ -216,15 +216,45 @@ test.describe('recurring events', () => {
 		await expect(english(page)).toHaveCount(2);
 	});
 
-	test('a new event can repeat every week', async ({ page }) => {
+	test('the recurrence editor builds custom rules: every 2 weeks on Tuesday and Thursday', async ({
+		page
+	}) => {
 		await page.getByRole('button', { name: 'Nuevo evento' }).click();
 		await dialog(page).getByLabel('Título').fill('Gimnasio');
-		await dialog(page).getByLabel('Repetir').selectOption({ label: 'Cada semana el martes' });
+		await dialog(page).getByRole('combobox', { name: 'Repetir' }).selectOption({ label: 'semana' });
+		// Tuesday comes from the start date; add Thursday and make it every 2 weeks.
+		await expect(dialog(page).getByRole('button', { name: 'martes' })).toHaveAttribute(
+			'aria-pressed',
+			'true'
+		);
+		await dialog(page).getByRole('button', { name: 'jueves' }).click();
+		await dialog(page).getByRole('spinbutton', { name: 'Repetir cada' }).fill('2');
 		await dialog(page).getByRole('button', { name: 'Guardar' }).click();
 
+		const gym = page.getByRole('button', { name: /Gimnasio/ });
 		await viewButton(page, 'semana').click();
+		await expect(gym).toHaveCount(2);
 		await page.getByRole('button', { name: 'la próxima semana' }).click();
-		await expect(page.getByRole('button', { name: /Gimnasio/ })).toContainText('3:00 – 4:00 p. m.');
+		await expect(gym).toHaveCount(0);
+		await page.getByRole('button', { name: 'la próxima semana' }).click();
+		await expect(gym).toHaveCount(2);
+	});
+
+	test('the recurrence editor shows the rule of an existing series', async ({ page }) => {
+		await viewButton(page, 'semana').click();
+		await english(page).first().click();
+		await expect(dialog(page).getByRole('button', { name: 'lunes' })).toHaveAttribute(
+			'aria-pressed',
+			'true'
+		);
+		await expect(dialog(page).getByRole('button', { name: 'miércoles' })).toHaveAttribute(
+			'aria-pressed',
+			'true'
+		);
+		await expect(dialog(page).getByRole('button', { name: 'martes' })).toHaveAttribute(
+			'aria-pressed',
+			'false'
+		);
 	});
 
 	test('a monthly series on the last day lands on 30 and 31', async ({ page }) => {
@@ -353,4 +383,68 @@ test('loads events month by month with a cache', async ({ page }) => {
 		.map((m) => m.trim());
 	expect(months.filter((month) => month === '2026-11')).toHaveLength(1);
 	expect(months.filter((month) => month === '2026-12')).toHaveLength(1);
+});
+
+test.describe('building blocks', () => {
+	test('a month-only calendar has no other views, no dialog, and its own click handling', async ({
+		page
+	}) => {
+		await page.goto('/minimo');
+		await expect(title(page)).toHaveText('noviembre de 2026');
+		await expect(page.getByRole('group', { name: 'Vistas' })).toHaveCount(0);
+		await expect(page.getByRole('button', { name: 'Nuevo evento' })).toHaveCount(0);
+
+		await page.getByRole('button', { name: /Svelte workshop/ }).click();
+		await expect(page.getByTestId('panel')).toHaveText('Evento elegido: Svelte workshop');
+		await expect(page.getByRole('dialog')).toHaveCount(0);
+
+		await page.getByRole('button', { name: 'miércoles, 25 de noviembre de 2026' }).click();
+		await expect(page.getByTestId('panel')).toHaveText('Día elegido: 2026-11-25');
+		await expect(title(page)).toHaveText('noviembre de 2026');
+	});
+
+	test('hooks can veto changes, lock events and replace the new-event dialog', async ({ page }) => {
+		await page.goto('/ganchos');
+		const message = page.getByTestId('message');
+		const cell = (date: string) => page.locator(`[data-date="${date}"]`);
+		const centerOf = async (locator: ReturnType<Page['locator']>) => {
+			const box = (await locator.boundingBox())!;
+			return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+		};
+		async function dragTo(name: RegExp | string, date: string) {
+			const from = await centerOf(page.getByRole('button', { name }));
+			const to = await centerOf(cell(date));
+			await page.mouse.move(from.x, from.y);
+			await page.mouse.down();
+			await page.mouse.move(to.x, to.y, { steps: 8 });
+			await page.mouse.up();
+		}
+		async function expectIn(name: RegExp | string, date: string) {
+			const chip = await centerOf(page.getByRole('button', { name }));
+			const box = (await cell(date).boundingBox())!;
+			expect(chip.x).toBeGreaterThan(box.x);
+			expect(chip.x).toBeLessThan(box.x + box.width);
+			expect(chip.y).toBeGreaterThan(box.y);
+			expect(chip.y).toBeLessThan(box.y + box.height);
+		}
+
+		// onEventChange vetoes Sundays.
+		await dragTo(/Svelte workshop/, '2026-11-22');
+		await expect(message).toHaveText('No se permiten eventos en domingo');
+		await expectIn(/Svelte workshop/, '2026-11-18');
+
+		await dragTo(/Svelte workshop/, '2026-11-26');
+		await expect(message).toHaveText('Movido: Svelte workshop');
+		await expectIn(/Svelte workshop/, '2026-11-26');
+
+		// isEditable locks the holiday.
+		await dragTo('Feriado', '2026-11-25');
+		await expectIn('Feriado', '2026-11-24');
+
+		// onSelect replaces the new-event dialog.
+		const empty = (await cell('2026-11-27').boundingBox())!;
+		await page.mouse.click(empty.x + empty.width / 2, empty.y + empty.height - 8);
+		await expect(message).toHaveText('Selección: 2026-11-27');
+		await expect(page.getByRole('dialog')).toHaveCount(0);
+	});
 });

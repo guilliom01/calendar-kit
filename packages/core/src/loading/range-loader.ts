@@ -6,11 +6,11 @@ import type { DateRange } from '../time/view.js';
 export interface RangeLoaderOptions<T extends CalendarEvent> {
 	store: EventStore<T>;
 	/** Fetches the events of a range (always one whole month; `end` exclusive). */
-	load: (range: DateRange) => Promise<readonly T[]>;
+	load(range: DateRange): Promise<readonly T[]>;
 	/** Months to fetch ahead on each side of what is shown, so navigation feels instant. */
 	preload?: number | undefined;
-	onError?: ((error: unknown, range: DateRange) => void) | undefined;
-	onLoadingChange?: ((loading: boolean) => void) | undefined;
+	onError?(error: unknown, range: DateRange): void;
+	onLoadingChange?(loading: boolean): void;
 }
 
 /**
