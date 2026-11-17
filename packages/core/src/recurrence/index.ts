@@ -1,5 +1,6 @@
 export { endSeriesBefore, excludeOccurrence } from './edit.js';
 export { expandEvents, occurrences, OCCURRENCE_SEPARATOR } from './expand.js';
+export { seriesChanges, type SeriesScope } from './series-changes.js';
 export {
 	formatRRule,
 	FREQUENCIES,
