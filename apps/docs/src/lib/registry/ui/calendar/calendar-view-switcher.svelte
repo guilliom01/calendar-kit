@@ -32,11 +32,10 @@
 			<Button
 				size="sm"
 				variant={calendar.view === view.name ? 'secondary' : 'ghost'}
-				class="first-letter:uppercase"
 				aria-pressed={calendar.view === view.name}
 				onclick={() => (calendar.view = view.name)}
 			>
-				{labelOf(view.name, view.label)}
+				<span class="inline-block first-letter:uppercase">{labelOf(view.name, view.label)}</span>
 			</Button>
 		{/each}
 	</div>

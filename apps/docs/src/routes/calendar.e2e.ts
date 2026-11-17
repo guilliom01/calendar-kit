@@ -104,11 +104,13 @@ test.describe('editing', () => {
 		await viewButton(page, 'semana').click();
 
 		const workshop = page.getByRole('button', { name: /Svelte workshop/ });
+		await workshop.scrollIntoViewIfNeeded();
 		let box = (await workshop.boundingBox())!;
 		await drag(page, box.x + box.width / 2, box.y + 20, 0, HOUR);
 		await expect(workshop).toContainText('4:00 – 7:00 p. m.');
 
 		const lunch = page.getByRole('button', { name: /Almuerzo/ });
+		await lunch.scrollIntoViewIfNeeded();
 		box = (await lunch.boundingBox())!;
 		await drag(page, box.x + box.width / 2, box.y + box.height - 3, 0, HOUR);
 		await expect(lunch).toContainText('1:00 – 3:30 p. m.');
@@ -447,4 +449,18 @@ test.describe('building blocks', () => {
 		await expect(message).toHaveText('Selección: 2026-11-27');
 		await expect(page.getByRole('dialog')).toHaveCount(0);
 	});
+});
+
+test('the demo navigation opens each page and marks the current one', async ({ page }) => {
+	const nav = page.getByRole('navigation', { name: 'Demos' });
+	for (const [label, heading] of [
+		['Solo mes', 'Solo vista de mes'],
+		['Ganchos', 'Ganchos de interacción'],
+		['Carga por rango', 'Carga por rango'],
+		['Completo', 'Calendario completo']
+	]) {
+		await nav.getByRole('link', { name: label }).click();
+		await expect(page.getByRole('heading', { level: 1 })).toHaveText(heading);
+		await expect(nav.getByRole('link', { name: label })).toHaveAttribute('aria-current', 'page');
+	}
 });

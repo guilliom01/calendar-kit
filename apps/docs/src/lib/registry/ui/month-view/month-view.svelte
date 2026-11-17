@@ -64,7 +64,7 @@
 	const toDate = (day: CalendarDate) => day.toDate(calendar.timeZone);
 </script>
 
-<div class={cn('flex flex-col overflow-hidden rounded-lg border select-none', className)}>
+<div class={cn('flex flex-col overflow-y-auto rounded-lg border select-none', className)}>
 	<div class="grid grid-cols-7 border-b bg-muted/40">
 		{#each weeks[0]?.days ?? [] as day (day.toString())}
 			<div class="px-2 py-1.5 text-center text-xs font-medium text-muted-foreground capitalize">
@@ -74,7 +74,11 @@
 	</div>
 
 	{#each weeks as week (week.days[0]?.toString())}
-		<div class="relative grid min-h-28 flex-1 grid-cols-7 border-b last:border-b-0">
+		<!-- Tall enough for the day number, `maxLanes` lanes and the "+N" row. -->
+		<div
+			class="relative grid flex-1 grid-cols-7 border-b last:border-b-0"
+			style:min-height="calc(2.5rem + {maxLanes + 1} * 1.5rem)"
+		>
 			{#each week.days as day (day.toString())}
 				<!-- Clicking an empty spot creates an all-day event; keyboard users use the toolbar. -->
 				<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->

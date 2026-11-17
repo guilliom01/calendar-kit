@@ -29,8 +29,9 @@
 
 <div class={cn('flex items-center gap-1', className)}>
 	{#if today}
-		<Button variant="outline" class="first-letter:uppercase" onclick={() => calendar.goToday()}>
-			{relative.format(0, 'day')}
+		<Button variant="outline" onclick={() => calendar.goToday()}>
+			<!-- first-letter needs a block box; the button itself is inline-flex -->
+			<span class="inline-block first-letter:uppercase">{relative.format(0, 'day')}</span>
 		</Button>
 	{/if}
 	<Button

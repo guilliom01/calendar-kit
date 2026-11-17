@@ -26,8 +26,8 @@
 	});
 </script>
 
-<main class="mx-auto flex h-dvh max-w-6xl flex-col gap-4 p-4">
-	<h1 class="text-2xl font-semibold">calendar-kit</h1>
+<main class="mx-auto flex h-full max-w-6xl flex-col gap-4 p-4">
+	<h1 class="text-2xl font-semibold">Calendario completo</h1>
 
 	<!-- Every block composed together. Each one is optional: keep only what you need. -->
 	<Calendar.Root state={calendar} class="flex-1">

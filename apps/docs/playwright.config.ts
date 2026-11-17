@@ -3,5 +3,5 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
 	webServer: { command: 'bun run build && bun run preview', port: 4173 },
 	testMatch: '**/*.e2e.{ts,js}',
-	use: { locale: 'es-PE', timezoneId: 'America/Lima' }
+	use: { locale: 'es-PE', timezoneId: 'America/Lima', viewport: { width: 1280, height: 1000 } }
 });

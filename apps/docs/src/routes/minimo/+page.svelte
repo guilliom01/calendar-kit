@@ -15,7 +15,9 @@
 		locale: 'es-PE',
 		timeZone,
 		editable: false,
-		events: demoEvents(today(timeZone), 'es-PE', timeZone).filter((event) => !event.progress),
+		events: demoEvents(today(timeZone), 'es-PE', timeZone).filter(
+			(event) => event.progress === undefined
+		),
 		onEventClick: (event) => {
 			selected = event;
 			picked = '';
@@ -28,7 +30,7 @@
 	});
 </script>
 
-<main class="mx-auto flex h-dvh max-w-5xl flex-col gap-4 p-4">
+<main class="mx-auto flex h-full max-w-5xl flex-col gap-4 p-4">
 	<h1 class="text-2xl font-semibold">Solo vista de mes</h1>
 
 	<Calendar.Root state={calendar} class="flex-1">

@@ -33,7 +33,7 @@
 	});
 </script>
 
-<main class="mx-auto flex h-dvh max-w-6xl flex-col gap-4 p-4">
+<main class="mx-auto flex h-full max-w-6xl flex-col gap-4 p-4">
 	<h1 class="text-2xl font-semibold">Carga por rango</h1>
 	<p class="text-sm text-muted-foreground" data-testid="requests">
 		Meses pedidos: {requests.join(', ')}
