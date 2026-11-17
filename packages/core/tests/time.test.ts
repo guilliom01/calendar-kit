@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CalendarDate } from '@internationalized/date';
-import { monthGrid, shiftDate, viewRange, weekDays } from '../src/index.js';
+import { daysBetween, monthGrid, shiftDate, viewRange, weekDays } from '../src/index.js';
 
 const locale = 'es-PE';
 const iso = (dates: CalendarDate[]) => dates.map((date) => date.toString());
@@ -74,5 +74,12 @@ describe('shiftDate', () => {
 		expect(shiftDate(date, 'month', 1).toString()).toBe('2026-02-28');
 		expect(shiftDate(date, 'week', -1).toString()).toBe('2026-01-24');
 		expect(shiftDate(date, 'day', 1).toString()).toBe('2026-02-01');
+	});
+});
+
+describe('daysBetween', () => {
+	it('counts calendar days, also across months and backwards', () => {
+		expect(daysBetween(new CalendarDate(2026, 11, 28), new CalendarDate(2026, 12, 3))).toBe(5);
+		expect(daysBetween(new CalendarDate(2026, 11, 18), new CalendarDate(2026, 11, 15))).toBe(-3);
 	});
 });

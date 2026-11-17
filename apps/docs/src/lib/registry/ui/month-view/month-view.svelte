@@ -2,6 +2,7 @@
 	import { DateFormatter, isSameMonth, isToday, type CalendarDate } from '@internationalized/date';
 	import { isAllDay, layoutWeekRow, monthGrid, type CalendarEvent } from '@calendar-kit/core';
 	import type { Snippet } from 'svelte';
+	import { dragAcrossDays, withPreview } from '#lib/registry/lib/calendar-drag.js';
 	import { getCalendar } from '#lib/registry/lib/calendar-state.svelte.js';
 	import { cn } from '#lib/utils.js';
 
@@ -17,25 +18,23 @@
 
 	const calendar = getCalendar();
 
+	// Event being dragged, at its preview position.
+	let preview: CalendarEvent | null = $state.raw(null);
+	let suppressClick = false;
+
+	const events = $derived(withPreview(calendar.visibleEvents, preview));
 	const weeks = $derived(
 		monthGrid(calendar.date, calendar.weekOptions).map((days) => ({
 			days,
-			items: layoutWeekRow(calendar.visibleEvents, days, calendar.timeZone)
+			items: layoutWeekRow(events, days, calendar.timeZone)
 		}))
 	);
-	const weekday = $derived(
-		new DateFormatter(calendar.locale, { weekday: 'short', timeZone: calendar.timeZone })
-	);
-	const time = $derived(
-		new DateFormatter(calendar.locale, {
-			hour: 'numeric',
-			minute: '2-digit',
-			timeZone: calendar.timeZone
-		})
-	);
-	const fullDate = $derived(
-		new DateFormatter(calendar.locale, { dateStyle: 'full', timeZone: calendar.timeZone })
-	);
+
+	const formatter = (options: Intl.DateTimeFormatOptions) =>
+		new DateFormatter(calendar.locale, { ...options, timeZone: calendar.timeZone });
+	const weekday = $derived(formatter({ weekday: 'short' }));
+	const time = $derived(formatter({ hour: 'numeric', minute: '2-digit' }));
+	const fullDate = $derived(formatter({ dateStyle: 'full' }));
 
 	function hiddenCount(items: (typeof weeks)[number]['items'], dayIndex: number) {
 		return items.filter(
@@ -46,10 +45,33 @@
 		).length;
 	}
 
+	function startDrag(down: PointerEvent, event: CalendarEvent) {
+		if (!calendar.editable) return;
+		dragAcrossDays(down, event, {
+			onPreview: (moved) => (preview = moved),
+			onDrop: (moved) => {
+				suppressClick = true;
+				if (moved) void calendar.update(moved);
+			}
+		});
+	}
+
+	function openEvent(event: CalendarEvent) {
+		if (suppressClick) suppressClick = false;
+		else calendar.edit(event);
+	}
+
+	function onEventKey(key: KeyboardEvent, event: CalendarEvent) {
+		if ((key.key === 'Delete' || key.key === 'Backspace') && calendar.editable) {
+			key.preventDefault();
+			void calendar.remove(event.id);
+		}
+	}
+
 	const toDate = (day: CalendarDate) => day.toDate(calendar.timeZone);
 </script>
 
-<div class={cn('flex flex-col overflow-hidden rounded-lg border', className)}>
+<div class={cn('flex flex-col overflow-hidden rounded-lg border select-none', className)}>
 	<div class="grid grid-cols-7 border-b bg-muted/40">
 		{#each weeks[0]?.days ?? [] as day (day.toString())}
 			<div class="px-2 py-1.5 text-center text-xs font-medium text-muted-foreground capitalize">
@@ -61,11 +83,17 @@
 	{#each weeks as week (week.days[0]?.toString())}
 		<div class="relative grid min-h-28 flex-1 grid-cols-7 border-b last:border-b-0">
 			{#each week.days as day (day.toString())}
+				<!-- Clicking an empty spot creates an all-day event; keyboard users use the toolbar. -->
+				<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 				<div
+					data-date={day.toString()}
 					class={cn(
 						'border-e p-1 last:border-e-0',
 						!isSameMonth(day, calendar.date) && 'bg-muted/30 text-muted-foreground'
 					)}
+					onclick={(click) => {
+						if (click.target === click.currentTarget) calendar.compose(day, day.add({ days: 1 }));
+					}}
 				>
 					<button
 						type="button"
@@ -88,19 +116,24 @@
 				{#each week.items.filter((item) => item.lane < maxLanes) as item (item.event.id)}
 					{@const event = item.event}
 					{@const bar = isAllDay(event) || item.span > 1}
-					<div
+					<button
+						type="button"
 						class={cn(
-							'pointer-events-auto mx-0.5 flex min-w-0 items-center gap-1 rounded px-1.5 text-xs',
+							'pointer-events-auto mx-0.5 flex min-w-0 touch-none items-center gap-1 rounded px-1.5 text-start text-xs',
 							bar
-								? 'bg-(--event-color)/15 font-medium text-foreground'
+								? 'bg-(--event-color)/15 font-medium text-foreground hover:bg-(--event-color)/25'
 								: 'text-foreground hover:bg-muted',
 							item.continuesBefore && 'ms-0 rounded-s-none',
-							item.continuesAfter && 'me-0 rounded-e-none'
+							item.continuesAfter && 'me-0 rounded-e-none',
+							preview?.id === event.id && 'opacity-70 shadow-md'
 						)}
 						style:grid-column="{item.startIndex + 1} / span {item.span}"
 						style:grid-row={item.lane + 1}
 						style:--event-color={event.color ?? 'var(--primary)'}
-						title={event.title}
+						title={event.title || calendar.labels.untitled}
+						onpointerdown={(down) => startDrag(down, event)}
+						onclick={() => openEvent(event)}
+						onkeydown={(key) => onEventKey(key, event)}
 					>
 						{#if eventContent}
 							{@render eventContent(event)}
@@ -113,9 +146,9 @@
 									>
 								{/if}
 							{/if}
-							<span class="truncate">{event.title}</span>
+							<span class="truncate">{event.title || calendar.labels.untitled}</span>
 						{/if}
-					</div>
+					</button>
 				{/each}
 
 				{#each week.days as day, dayIndex (day.toString())}

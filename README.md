@@ -34,7 +34,7 @@ Run the docs site with `bun run --filter @calendar-kit/docs dev`.
 npx shadcn-svelte@latest add <registry-url>/r/calendar.json
 ```
 
-This copies `calendar`, `month-view`, `time-grid` (into your `ui` alias) and `calendar-state.svelte.ts` (into your `lib` alias), and adds `@calendar-kit/core`.
+This copies the calendar items into your `ui` alias, `calendar-state.svelte.ts` and `calendar-drag.ts` into your `lib` alias, the shadcn components they use (`button`, `dialog`, `input`, `label`, `checkbox`), and adds `@calendar-kit/core`. The dialog animations need `tw-animate-css`, which a shadcn-svelte project already has.
 
 ```svelte
 <script lang="ts">
@@ -53,21 +53,41 @@ This copies `calendar`, `month-view`, `time-grid` (into your `ui` alias) and `ca
 				start: toZoned(day, timeZone).set({ hour: 10 }),
 				end: toZoned(day, timeZone).set({ hour: 11 })
 			}
-		]
+		],
+		// Save to your backend. Return the saved event to replace the local one (e.g. a server id).
+		// Throw to roll the change back.
+		onMutate: async (mutation) => {
+			const response = await fetch('/api/events', {
+				method: 'POST',
+				body: JSON.stringify(mutation)
+			});
+			if (!response.ok) throw new Error('Could not save');
+		},
+		onError: (error) => console.error(error),
+		labels: { allDay: 'Todo el día', newEvent: 'Nuevo evento', save: 'Guardar' }
 	});
 </script>
 
-<Calendar state={calendar} allDayLabel="todo el día" />
+<Calendar state={calendar} />
 ```
 
-Events are all-day (`CalendarDate` start/end) or timed (`ZonedDateTime` start/end). `end` is exclusive, as in iCalendar. Labels come from `Intl`, so the calendar follows `locale`.
+Events are all-day (`CalendarDate` start/end) or timed (`ZonedDateTime` start/end). `end` is exclusive, as in iCalendar. Dates, views and navigation labels come from `Intl`, so they follow `locale`. The few texts Intl cannot provide are in `labels` (see `defaultLabels`).
 
-| Item             | What it is                                                  |
-| ---------------- | ----------------------------------------------------------- |
-| `calendar`       | Toolbar (today, previous/next, view switcher) and the views |
-| `month-view`     | Month grid with multi-day bars and "+N" overflow            |
-| `time-grid`      | Week and day views with overlap columns and a "now" line    |
-| `calendar-state` | Runes state shared through context                          |
+What users can do (with `editable: true`, the default):
+
+- Click an event to edit or delete it. Click an empty spot to create one; in the week and day views, drag over empty time to choose its range.
+- Drag events to move them (across days and hours), and drag their bottom edge to resize them. Changes snap to `snapStep` minutes (default 15). Escape cancels a drag.
+- Undo and redo with the toolbar buttons or Ctrl/Cmd+Z and Ctrl/Cmd+Shift+Z (or Ctrl+Y). Delete or Backspace removes the focused event.
+
+Changes show right away and are sent to `onMutate`. Changes to the same event are saved in order, and undo and redo reach `onMutate` as inverse changes.
+
+| Item             | What it is                                                          |
+| ---------------- | ------------------------------------------------------------------- |
+| `calendar`       | Toolbar (new event, today, previous/next, undo/redo, view switcher) |
+| `month-view`     | Month grid with multi-day bars, "+N" overflow and drag between days |
+| `time-grid`      | Week and day views: drag, resize, draw new events, "now" line       |
+| `event-dialog`   | Create, edit and delete events                                      |
+| `calendar-state` | Runes state, event store and drag helpers                           |
 
 ## Adding a registry item
 

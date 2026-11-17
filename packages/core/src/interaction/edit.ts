@@ -1,14 +1,9 @@
 import type { CalendarDate, ZonedDateTime } from '@internationalized/date';
 import { isAllDay } from '../events/queries.js';
 import type { CalendarEvent } from '../events/types.js';
-
-const DAY_MS = 24 * 60 * 60 * 1000;
+import { daysBetween } from '../time/week.js';
 
 const isZoned = (value: CalendarDate | ZonedDateTime): value is ZonedDateTime => 'hour' in value;
-
-/** Whole days from `from` to `to` (calendar days, not affected by DST). */
-const daysBetween = (from: CalendarDate, to: CalendarDate) =>
-	Math.round((to.toDate('UTC').getTime() - from.toDate('UTC').getTime()) / DAY_MS);
 
 /**
  * Returns a copy of `event` starting at `start`, with the same duration.

@@ -8,6 +8,13 @@ export interface WeekOptions {
 	firstDayOfWeek?: DayOfWeek | undefined;
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Whole calendar days from `from` to `to` (negative when `to` is earlier). Not affected by DST. */
+export function daysBetween(from: CalendarDate, to: CalendarDate): number {
+	return Math.round((to.toDate('UTC').getTime() - from.toDate('UTC').getTime()) / DAY_MS);
+}
+
 /** The 7 days of the week that contains `date`. */
 export function weekDays(
 	date: CalendarDate,

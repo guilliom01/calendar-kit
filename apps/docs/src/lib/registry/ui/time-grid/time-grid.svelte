@@ -11,10 +11,17 @@
 		isAllDay,
 		layoutTimedEvents,
 		layoutWeekRow,
+		moveEvent,
+		resizeEvent,
+		snapMinutes,
 		spansDays,
-		type CalendarEvent
+		zonedAt,
+		type CalendarEvent,
+		type TimedEvent,
+		type TimedEventLayout
 	} from '@calendar-kit/core';
 	import type { Snippet } from 'svelte';
+	import { dragAcrossDays, trackPointer, withPreview } from '#lib/registry/lib/calendar-drag.js';
 	import { getCalendar } from '#lib/registry/lib/calendar-state.svelte.js';
 	import { cn } from '#lib/utils.js';
 
@@ -24,33 +31,29 @@
 		hourHeight?: string;
 		/** Hour the grid scrolls to when it mounts. */
 		scrollToHour?: number;
-		/** Text next to the all-day row, e.g. "Todo el día". Intl has no translation for it. */
-		allDayLabel?: string;
 		/** Custom content inside each event block. */
 		eventContent?: Snippet<[CalendarEvent]>;
 	}
 
-	let {
-		class: className,
-		hourHeight = '3rem',
-		scrollToHour = 7,
-		allDayLabel = '',
-		eventContent
-	}: Props = $props();
+	let { class: className, hourHeight = '3rem', scrollToHour = 7, eventContent }: Props = $props();
 
 	const calendar = getCalendar();
 	const MINUTES_PER_DAY = 24 * 60;
+	const NEW_EVENT_ID = 'calendar-new-event';
 	const percent = (minutes: number) => `${(minutes / MINUTES_PER_DAY) * 100}%`;
 
+	// Event being dragged, resized or drawn, at its preview position.
+	let preview: CalendarEvent | null = $state.raw(null);
+	let suppressClick = false;
+	let columnElements: HTMLElement[] = $state([]);
+
 	const days = $derived(calendar.days);
+	const step = $derived(calendar.snapStep);
+	const events = $derived(withPreview(calendar.visibleEvents, preview));
 	const columns = $derived(`4rem repeat(${days.length}, minmax(0, 1fr))`);
-	const allDayItems = $derived(
-		layoutWeekRow(calendar.visibleEvents.filter(spansDays), days, calendar.timeZone)
-	);
-	const allDayLanes = $derived(Math.max(0, ...allDayItems.map((item) => item.lane + 1)));
-	const dayItems = $derived(
-		days.map((day) => layoutTimedEvents(calendar.visibleEvents, day, calendar.timeZone))
-	);
+	const allDayItems = $derived(layoutWeekRow(events.filter(spansDays), days, calendar.timeZone));
+	const allDayLanes = $derived(Math.max(1, ...allDayItems.map((item) => item.lane + 1)));
+	const dayItems = $derived(days.map((day) => layoutTimedEvents(events, day, calendar.timeZone)));
 
 	const formatter = (options: Intl.DateTimeFormatOptions) =>
 		new DateFormatter(calendar.locale, { ...options, timeZone: calendar.timeZone });
@@ -70,9 +73,107 @@
 	const toDate = (day: CalendarDate) => day.toDate(calendar.timeZone);
 	const hourLabel = (h: number) =>
 		hour.format(toZoned(days[0]!, calendar.timeZone).set({ hour: h }).toDate());
+	const at = (day: CalendarDate, minutes: number) => zonedAt(day, minutes, calendar.timeZone);
+
+	/** Day column and minute of the day under the pointer. */
+	function pointAt(pointer: PointerEvent) {
+		const first = columnElements[0]!.getBoundingClientRect();
+		const last = columnElements[days.length - 1]!.getBoundingClientRect();
+		const ratio = (pointer.clientX - first.left) / (last.right - first.left);
+		const index = Math.min(days.length - 1, Math.max(0, Math.floor(ratio * days.length)));
+		const minutes = ((pointer.clientY - first.top) / first.height) * MINUTES_PER_DAY;
+		return { day: days[index]!, minutes };
+	}
+
+	function finishDrag(original: CalendarEvent) {
+		const changed =
+			preview &&
+			(preview.start.toString() !== original.start.toString() ||
+				preview.end.toString() !== original.end.toString());
+		if (changed) void calendar.update(preview!);
+		preview = null;
+		suppressClick = true;
+	}
+
+	function startMove(down: PointerEvent, item: TimedEventLayout) {
+		if (!calendar.editable) return;
+		const event = item.event as TimedEvent;
+		const grab = pointAt(down).minutes - item.start;
+
+		trackPointer(down, {
+			onMove: (move) => {
+				const { day, minutes } = pointAt(move);
+				preview = moveEvent(event, at(day, snapMinutes(minutes - grab, step)));
+			},
+			onDrop: () => finishDrag(event),
+			onCancel: () => (preview = null)
+		});
+	}
+
+	function startResize(down: PointerEvent, item: TimedEventLayout) {
+		down.stopPropagation();
+		if (!calendar.editable) return;
+		const event = item.event as TimedEvent;
+
+		trackPointer(down, {
+			onMove: (move) => {
+				const { day, minutes } = pointAt(move);
+				preview = resizeEvent(event, at(day, snapMinutes(minutes, step)), { minDuration: step });
+			},
+			onDrop: () => finishDrag(event),
+			onCancel: () => (preview = null)
+		});
+	}
+
+	/** Press on an empty slot: click creates a one-hour event, drag draws its range. */
+	function startCreate(down: PointerEvent, day: CalendarDate) {
+		if (!calendar.editable || down.target !== down.currentTarget) return;
+		const anchor = Math.floor(pointAt(down).minutes / step) * step;
+		let range: [number, number] = [anchor, Math.min(anchor + 60, MINUTES_PER_DAY)];
+
+		trackPointer(down, {
+			onMove: (move) => {
+				const minutes = snapMinutes(pointAt(move).minutes, step);
+				range =
+					minutes > anchor
+						? [anchor, minutes]
+						: [minutes, Math.min(anchor + step, MINUTES_PER_DAY)];
+				preview = { id: NEW_EVENT_ID, title: '', start: at(day, range[0]), end: at(day, range[1]) };
+			},
+			onDrop: () => {
+				preview = null;
+				calendar.compose(at(day, range[0]), at(day, range[1]));
+			},
+			onClick: () => calendar.compose(at(day, range[0]), at(day, range[1])),
+			onCancel: () => (preview = null)
+		});
+	}
+
+	function startAllDayDrag(down: PointerEvent, event: CalendarEvent) {
+		if (!calendar.editable) return;
+		dragAcrossDays(down, event, {
+			onPreview: (moved) => (preview = moved),
+			onDrop: (moved) => {
+				suppressClick = true;
+				if (moved) void calendar.update(moved);
+			}
+		});
+	}
+
+	function openEvent(event: CalendarEvent) {
+		if (suppressClick) suppressClick = false;
+		else if (event.id !== NEW_EVENT_ID) calendar.edit(event);
+	}
+
+	function onEventKey(key: KeyboardEvent, event: CalendarEvent) {
+		if ((key.key === 'Delete' || key.key === 'Backspace') && calendar.editable) {
+			key.preventDefault();
+			void calendar.remove(event.id);
+		}
+	}
 </script>
 
-<div class={cn('flex min-h-0 flex-col overflow-hidden rounded-lg border', className)}>
+<div class={cn('flex min-h-0 flex-col overflow-hidden rounded-lg border select-none', className)}>
 	<div class="grid border-b bg-muted/40" style:grid-template-columns={columns}>
 		<div></div>
 		{#each days as day (day.toString())}
@@ -97,38 +198,53 @@
 		{/each}
 	</div>
 
-	{#if allDayLanes > 0}
+	<div
+		class="grid auto-rows-[1.5rem] gap-y-0.5 border-b py-1"
+		style:grid-template-columns={columns}
+	>
 		<div
-			class="grid auto-rows-[1.5rem] gap-y-0.5 border-b py-1"
-			style:grid-template-columns={columns}
+			class="self-center pe-2 text-end text-xs leading-tight text-muted-foreground first-letter:uppercase"
+			style:grid-row="1 / span {allDayLanes}"
 		>
-			<div
-				class="self-center pe-2 text-end text-xs text-muted-foreground first-letter:uppercase"
-				style:grid-row="1 / span {allDayLanes}"
-			>
-				{allDayLabel}
-			</div>
-			{#each allDayItems as item (item.event.id)}
-				<div
-					class={cn(
-						'mx-0.5 flex min-w-0 items-center rounded bg-(--event-color)/15 px-1.5 text-xs font-medium',
-						item.continuesBefore && 'ms-0 rounded-s-none',
-						item.continuesAfter && 'me-0 rounded-e-none'
-					)}
-					style:grid-column="{item.startIndex + 2} / span {item.span}"
-					style:grid-row={item.lane + 1}
-					style:--event-color={item.event.color ?? 'var(--primary)'}
-					title={item.event.title}
-				>
-					{#if eventContent}
-						{@render eventContent(item.event)}
-					{:else}
-						<span class="truncate">{item.event.title}</span>
-					{/if}
-				</div>
-			{/each}
+			{calendar.labels.allDay}
 		</div>
-	{/if}
+		{#each days as day, dayIndex (day.toString())}
+			<!-- Clicking an empty spot creates an all-day event; keyboard users use the toolbar. -->
+			<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+			<div
+				data-date={day.toString()}
+				class="border-s"
+				style:grid-column={dayIndex + 2}
+				style:grid-row="1 / span {allDayLanes}"
+				onclick={() => calendar.compose(day, day.add({ days: 1 }))}
+			></div>
+		{/each}
+		{#each allDayItems as item (item.event.id)}
+			{@const event = item.event}
+			<button
+				type="button"
+				class={cn(
+					'mx-0.5 flex min-w-0 touch-none items-center rounded bg-(--event-color)/15 px-1.5 text-start text-xs font-medium hover:bg-(--event-color)/25',
+					item.continuesBefore && 'ms-0 rounded-s-none',
+					item.continuesAfter && 'me-0 rounded-e-none',
+					preview?.id === event.id && 'opacity-70 shadow-md'
+				)}
+				style:grid-column="{item.startIndex + 2} / span {item.span}"
+				style:grid-row={item.lane + 1}
+				style:--event-color={event.color ?? 'var(--primary)'}
+				title={event.title || calendar.labels.untitled}
+				onpointerdown={(down) => startAllDayDrag(down, event)}
+				onclick={() => openEvent(event)}
+				onkeydown={(key) => onEventKey(key, event)}
+			>
+				{#if eventContent}
+					{@render eventContent(event)}
+				{:else}
+					<span class="truncate">{event.title || calendar.labels.untitled}</span>
+				{/if}
+			</button>
+		{/each}
+	</div>
 
 	<div
 		class="min-h-0 flex-1 overflow-y-auto"
@@ -153,37 +269,53 @@
 			</div>
 
 			{#each days as day, dayIndex (day.toString())}
+				<!-- Pressing an empty slot creates an event; keyboard users use the toolbar. -->
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
 				<div
+					bind:this={columnElements[dayIndex]}
 					class="relative border-s"
 					style:background-image="repeating-linear-gradient(to bottom, var(--border) 0 1px,
 					transparent 1px {hourHeight})"
+					onpointerdown={(down) => startCreate(down, day)}
 				>
 					{#each dayItems[dayIndex] ?? [] as item (item.event.id)}
 						{@const event = item.event}
-						<div
+						<button
+							type="button"
 							class={cn(
-								'absolute overflow-hidden rounded-md border-s-4 border-(--event-color) bg-(--event-color)/15 px-1.5 py-0.5 text-xs ring-1 ring-background',
+								'group absolute flex touch-none flex-col overflow-hidden rounded-md border-s-4 border-(--event-color) bg-(--event-color)/15 px-1.5 py-0.5 text-start text-xs ring-1 ring-background hover:bg-(--event-color)/25',
 								item.continuesBefore && 'rounded-t-none',
-								item.continuesAfter && 'rounded-b-none'
+								item.continuesAfter && 'rounded-b-none',
+								preview?.id === event.id && 'z-20 opacity-80 shadow-lg'
 							)}
 							style:top={percent(item.start)}
 							style:height={percent(item.end - item.start)}
 							style:left="{(item.column / item.columns) * 100}%"
 							style:width="{100 / item.columns}%"
 							style:--event-color={event.color ?? 'var(--primary)'}
-							title={event.title}
+							title={event.title || calendar.labels.untitled}
+							onpointerdown={(down) => startMove(down, item)}
+							onclick={() => openEvent(event)}
+							onkeydown={(key) => onEventKey(key, event)}
 						>
 							{#if eventContent}
 								{@render eventContent(event)}
 							{:else}
-								<p class="truncate font-medium">{event.title}</p>
+								<span class="truncate font-medium">{event.title || calendar.labels.untitled}</span>
 								{#if !isAllDay(event)}
-									<p class="truncate text-muted-foreground">
+									<span class="truncate text-muted-foreground">
 										{time.formatRange(event.start.toDate(), event.end.toDate())}
-									</p>
+									</span>
 								{/if}
 							{/if}
-						</div>
+							{#if calendar.editable && !item.continuesAfter}
+								<span
+									aria-hidden="true"
+									class="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize"
+									onpointerdown={(down) => startResize(down, item)}
+								></span>
+							{/if}
+						</button>
 					{/each}
 
 					{#if toCalendarDate(current).compare(day) === 0}

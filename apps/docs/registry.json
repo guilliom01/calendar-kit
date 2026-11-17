@@ -14,12 +14,16 @@
 			"name": "calendar-state",
 			"type": "registry:lib",
 			"title": "Calendar state",
-			"description": "Reactive calendar state (Svelte 5 runes) shared by the calendar components through context.",
+			"description": "Reactive calendar state (Svelte 5 runes) shared through context, plus pointer drag helpers.",
 			"dependencies": ["@calendar-kit/core", "@internationalized/date"],
 			"registryDependencies": [],
 			"files": [
 				{
 					"path": "src/lib/registry/lib/calendar-state.svelte.ts",
+					"type": "registry:lib"
+				},
+				{
+					"path": "src/lib/registry/lib/calendar-drag.ts",
 					"type": "registry:lib"
 				}
 			]
@@ -61,17 +65,48 @@
 			]
 		},
 		{
+			"name": "event-dialog",
+			"type": "registry:ui",
+			"title": "Event dialog",
+			"description": "Dialog to create, edit and delete events: title, all-day, start, end and color.",
+			"dependencies": ["@calendar-kit/core", "@internationalized/date"],
+			"registryDependencies": [
+				"button",
+				"checkbox",
+				"dialog",
+				"input",
+				"label",
+				"utils",
+				"./calendar-state.json"
+			],
+			"files": [
+				{
+					"path": "src/lib/registry/ui/event-dialog/event-dialog.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/event-dialog/event-form.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/event-dialog/index.ts",
+					"type": "registry:ui"
+				}
+			]
+		},
+		{
 			"name": "calendar",
 			"type": "registry:ui",
 			"title": "Calendar",
-			"description": "Full calendar: toolbar with navigation and view switcher, month, week and day views.",
+			"description": "Full calendar: toolbar, month, week and day views, drag and drop, event dialog, undo/redo.",
 			"dependencies": ["@calendar-kit/core", "@internationalized/date", "@lucide/svelte"],
 			"registryDependencies": [
 				"button",
 				"utils",
 				"./calendar-state.json",
 				"./month-view.json",
-				"./time-grid.json"
+				"./time-grid.json",
+				"./event-dialog.json"
 			],
 			"files": [
 				{
