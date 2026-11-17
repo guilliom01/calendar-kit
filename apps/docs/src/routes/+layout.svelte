@@ -20,8 +20,8 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-<div class="flex h-dvh flex-col">
-	<nav aria-label="Demos" class="border-b">
+<div class="flex h-dvh flex-col print:h-auto">
+	<nav aria-label="Demos" class="border-b print:hidden">
 		<div class="mx-auto flex max-w-6xl flex-wrap items-center gap-1 px-4 py-2">
 			<span class="me-3 font-semibold">calendar-kit</span>
 			{#each links as link (link.href)}

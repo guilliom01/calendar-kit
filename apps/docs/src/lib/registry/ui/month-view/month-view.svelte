@@ -64,7 +64,12 @@
 	const toDate = (day: CalendarDate) => day.toDate(calendar.timeZone);
 </script>
 
-<div class={cn('flex flex-col overflow-y-auto rounded-lg border select-none', className)}>
+<div
+	class={cn(
+		'flex flex-col overflow-y-auto rounded-lg border select-none print:overflow-visible',
+		className
+	)}
+>
 	<div class="grid grid-cols-7 border-b bg-muted/40">
 		{#each weeks[0]?.days ?? [] as day (day.toString())}
 			<div class="px-2 py-1.5 text-center text-xs font-medium text-muted-foreground capitalize">

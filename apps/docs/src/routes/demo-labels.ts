@@ -51,5 +51,9 @@ export const spanishLabels: Partial<CalendarLabels> = {
 	repeatEvery: 'Repetir cada',
 	repeatOn: 'Repetir el',
 	onDay: 'El día {day}',
-	onWeekday: 'El {ordinal} {weekday}'
+	onWeekday: 'El {ordinal} {weekday}',
+	exportIcs: 'Exportar .ics',
+	importIcs: 'Importar .ics',
+	exportCsv: 'Exportar CSV',
+	print: 'Imprimir'
 };

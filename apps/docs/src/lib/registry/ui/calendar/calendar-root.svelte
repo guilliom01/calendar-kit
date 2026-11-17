@@ -41,6 +41,6 @@
 
 <svelte:window onkeydown={onKeydown} />
 
-<div class={cn('flex h-full min-h-0 flex-col gap-3', className)}>
+<div class={cn('flex h-full min-h-0 flex-col gap-3 print:h-auto', className)}>
 	{@render children?.()}
 </div>

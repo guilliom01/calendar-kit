@@ -5,6 +5,7 @@
 	import { AgendaView } from '#lib/registry/ui/agenda-view/index.js';
 	import { EventDialog, RecurrenceScopeDialog } from '#lib/registry/ui/event-dialog/index.js';
 	import { GanttView } from '#lib/registry/ui/gantt-view/index.js';
+	import * as Exchange from '#lib/registry/ui/import-export/index.js';
 	import { MonthView } from '#lib/registry/ui/month-view/index.js';
 	import { RecurrenceEditor } from '#lib/registry/ui/recurrence-editor/index.js';
 	import { TimeGrid } from '#lib/registry/ui/time-grid/index.js';
@@ -15,6 +16,8 @@
 
 	const locale = 'es-PE';
 	const timeZone = 'America/Lima';
+
+	let importWarnings: string[] = $state([]);
 
 	const calendar = new CalendarState({
 		locale,
@@ -37,11 +40,20 @@
 			<Calendar.Title />
 			<Calendar.Loading />
 			<div class="ms-auto flex flex-wrap items-center gap-2">
+				<Exchange.ImportIcs onImport={({ warnings }) => (importWarnings = warnings)} />
+				<Exchange.ExportIcs filename="calendario.ics" name="calendar-kit" />
+				<Exchange.ExportCsv filename="calendario.csv" />
+				<Exchange.Print />
 				<Calendar.TimeZoneSelect />
 				<Calendar.UndoRedo />
 				<Calendar.ViewSwitcher />
 			</div>
 		</Calendar.Toolbar>
+		{#if importWarnings.length}
+			<ul class="rounded-lg border p-3 text-sm text-muted-foreground" data-testid="import-warnings">
+				{#each importWarnings as warning (warning)}<li>{warning}</li>{/each}
+			</ul>
+		{/if}
 
 		<Calendar.View name="month"><MonthView class="flex-1" /></Calendar.View>
 		<Calendar.View name="week"><TimeGrid class="flex-1" /></Calendar.View>

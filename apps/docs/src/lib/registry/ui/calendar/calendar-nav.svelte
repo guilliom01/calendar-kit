@@ -27,7 +27,7 @@
 	});
 </script>
 
-<div class={cn('flex items-center gap-1', className)}>
+<div class={cn('flex items-center gap-1 print:hidden', className)}>
 	{#if today}
 		<Button variant="outline" onclick={() => calendar.goToday()}>
 			<!-- first-letter needs a block box; the button itself is inline-flex -->

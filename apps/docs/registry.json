@@ -241,6 +241,40 @@
 					"type": "registry:ui"
 				}
 			]
+		},
+		{
+			"name": "import-export",
+			"type": "registry:ui",
+			"title": "Import and export",
+			"description": "Optional buttons: import and export iCalendar (.ics), export the visible events as CSV, and print (or save as PDF).",
+			"dependencies": ["@calendar-kit/core", "@lucide/svelte"],
+			"registryDependencies": ["button", "utils", "./calendar-state.json"],
+			"files": [
+				{
+					"path": "src/lib/registry/ui/import-export/export-ics-button.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/import-export/import-ics-button.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/import-export/export-csv-button.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/import-export/print-button.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/import-export/download.ts",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/import-export/index.ts",
+					"type": "registry:ui"
+				}
+			]
 		}
 	]
 }

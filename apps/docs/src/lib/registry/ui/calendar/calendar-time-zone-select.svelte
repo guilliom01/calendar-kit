@@ -32,7 +32,7 @@
 	aria-label={calendar.labels.timeZone}
 	title={calendar.labels.timeZone}
 	class={cn(
-		'h-9 max-w-48 rounded-md border border-input bg-transparent px-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30',
+		'h-9 max-w-48 rounded-md border border-input bg-transparent px-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30 print:hidden',
 		className
 	)}
 	bind:value={calendar.timeZone}

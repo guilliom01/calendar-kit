@@ -41,7 +41,7 @@
 
 <div
 	class={cn(
-		'grid min-h-0 grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] content-start gap-6 overflow-y-auto rounded-lg border p-4',
+		'grid min-h-0 grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] content-start gap-6 overflow-y-auto rounded-lg border p-4 print:overflow-visible',
 		className
 	)}
 >

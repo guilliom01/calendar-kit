@@ -43,7 +43,7 @@
 	}
 </script>
 
-<div class={cn('min-h-0 overflow-y-auto rounded-lg border', className)}>
+<div class={cn('min-h-0 overflow-y-auto rounded-lg border print:overflow-visible', className)}>
 	{#if groups.length === 0}
 		<p class="p-10 text-center text-muted-foreground">{calendar.labels.noEvents}</p>
 	{/if}

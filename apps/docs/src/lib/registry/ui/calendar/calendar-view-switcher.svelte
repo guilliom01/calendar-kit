@@ -24,7 +24,7 @@
 
 {#if calendar.views.size > 1}
 	<div
-		class={cn('flex flex-wrap gap-0.5 rounded-lg border p-0.5', className)}
+		class={cn('flex flex-wrap gap-0.5 rounded-lg border p-0.5 print:hidden', className)}
 		role="group"
 		aria-label={calendar.labels.views}
 	>

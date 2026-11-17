@@ -78,7 +78,11 @@ export const defaultLabels = {
 	repeatEvery: 'Repeat every',
 	repeatOn: 'Repeat on',
 	onDay: 'On day {day}',
-	onWeekday: 'On the {ordinal} {weekday}'
+	onWeekday: 'On the {ordinal} {weekday}',
+	exportIcs: 'Export .ics',
+	importIcs: 'Import .ics',
+	exportCsv: 'Export CSV',
+	print: 'Print'
 };
 
 export type CalendarLabels = typeof defaultLabels;
@@ -358,6 +362,26 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 
 	redo() {
 		return this.#track(this.store.redo());
+	}
+
+	/**
+	 * Adds events from outside (e.g. an imported .ics) as one undo step: events with a known id
+	 * replace the current ones, the rest are created.
+	 */
+	importEvents(events: readonly T[]) {
+		// A plain lookup table used once here, not reactive state.
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const current = new Map(this.events.map((event) => [event.id, event]));
+		return this.#track(
+			this.store.batch(
+				events.map((event) => {
+					const before = current.get(event.id);
+					return before
+						? { type: 'update' as const, before, after: event }
+						: { type: 'create' as const, event };
+				})
+			)
+		);
 	}
 
 	/** Opens the event dialog for an existing event. */

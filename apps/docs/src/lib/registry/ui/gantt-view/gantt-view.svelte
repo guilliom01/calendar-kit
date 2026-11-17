@@ -90,7 +90,12 @@
 	}
 </script>
 
-<div class={cn('min-h-0 overflow-auto rounded-lg border select-none', className)}>
+<div
+	class={cn(
+		'min-h-0 overflow-auto rounded-lg border select-none print:overflow-visible',
+		className
+	)}
+>
 	{#if rows.length === 0}
 		<p class="p-10 text-center text-muted-foreground">{calendar.labels.noEvents}</p>
 	{:else}

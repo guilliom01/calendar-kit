@@ -464,3 +464,87 @@ test('the demo navigation opens each page and marks the current one', async ({ p
 		await expect(nav.getByRole('link', { name: label })).toHaveAttribute('aria-current', 'page');
 	}
 });
+
+test.describe('import and export', () => {
+	const readDownload = async (download: import('@playwright/test').Download) => {
+		const chunks: Buffer[] = [];
+		for await (const chunk of (await download.createReadStream())!) chunks.push(chunk as Buffer);
+		return Buffer.concat(chunks).toString('utf8');
+	};
+
+	test('exports the events as .ics, with series and their rules', async ({ page }) => {
+		const [download] = await Promise.all([
+			page.waitForEvent('download'),
+			page.getByRole('button', { name: 'Exportar .ics' }).click()
+		]);
+		expect(download.suggestedFilename()).toBe('calendario.ics');
+		const ics = await readDownload(download);
+		expect(ics).toContain('SUMMARY:Daily standup');
+		expect(ics).toContain('RRULE:FREQ=WEEKLY;BYDAY=MO,WE');
+		expect(ics).toContain('X-WR-CALNAME:calendar-kit');
+	});
+
+	test('exports the visible events as CSV with local times', async ({ page }) => {
+		const [download] = await Promise.all([
+			page.waitForEvent('download'),
+			page.getByRole('button', { name: 'Exportar CSV' }).click()
+		]);
+		const csv = await readDownload(download);
+		expect(csv).toContain('id,title,start,end,all_day,rrule,resources,color');
+		expect(csv).toContain(
+			'standup,Daily standup,2026-11-16 09:00,2026-11-16 09:30,false,,ana;luis,'
+		);
+	});
+
+	test('imports a .ics file as one undo step and reports what it could not use', async ({
+		page
+	}) => {
+		const ics = [
+			'BEGIN:VCALENDAR',
+			'BEGIN:VEVENT',
+			'UID:imported-1',
+			'SUMMARY:Evento importado',
+			'DTSTART;TZID=America/Lima:20261119T100000',
+			'DTEND;TZID=America/Lima:20261119T110000',
+			'END:VEVENT',
+			'BEGIN:VEVENT',
+			'UID:imported-2',
+			'SUMMARY:Cada hora',
+			'DTSTART;TZID=America/Lima:20261120T080000',
+			'RRULE:FREQ=HOURLY',
+			'END:VEVENT',
+			'END:VCALENDAR'
+		].join('\r\n');
+		await page.locator('input[type="file"]').setInputFiles({
+			name: 'otro.ics',
+			mimeType: 'text/calendar',
+			buffer: Buffer.from(ics)
+		});
+
+		await expect(page.getByTestId('import-warnings')).toContainText(
+			'imported-2: unsupported recurrence rule'
+		);
+		await viewButton(page, 'semana').click();
+		await expect(page.getByRole('button', { name: /Evento importado/ })).toContainText(
+			'10:00 – 11:00 a. m.'
+		);
+
+		await page.keyboard.press('Control+z');
+		await expect(page.getByRole('button', { name: /Evento importado/ })).toHaveCount(0);
+		await expect(page.getByRole('button', { name: /Cada hora/ })).toHaveCount(0);
+	});
+
+	test('prints with the controls hidden', async ({ page }) => {
+		await page.evaluate(() => {
+			window.print = () => document.body.setAttribute('data-printed', 'true');
+		});
+		await page.getByRole('button', { name: 'Imprimir' }).click();
+		await expect(page.locator('body')).toHaveAttribute('data-printed', 'true');
+
+		await page.emulateMedia({ media: 'print' });
+		await expect(page.getByRole('button', { name: 'Nuevo evento' })).toBeHidden();
+		await expect(page.getByRole('navigation', { name: 'Demos' })).toBeHidden();
+		await expect(title(page)).toBeVisible();
+		await expect(page.getByText('Conferencia en Cusco')).toBeVisible();
+	});
+});

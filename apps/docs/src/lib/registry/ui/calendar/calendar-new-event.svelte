@@ -3,6 +3,7 @@
 	import { isToday, now, toZoned } from '@internationalized/date';
 	import { Button } from '#lib/registry/ui/button/index.js';
 	import { getCalendar } from '#lib/registry/lib/calendar-state.svelte.js';
+	import { cn } from '#lib/utils.js';
 
 	let { class: className }: { class?: string } = $props();
 
@@ -19,7 +20,7 @@
 </script>
 
 {#if calendar.editable}
-	<Button class={className} onclick={newEvent}>
+	<Button class={cn('print:hidden', className)} onclick={newEvent}>
 		<PlusIcon />
 		{calendar.labels.newEvent}
 	</Button>

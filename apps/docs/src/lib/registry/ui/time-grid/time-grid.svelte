@@ -233,7 +233,12 @@
 	}
 </script>
 
-<div class={cn('flex min-h-0 flex-col overflow-hidden rounded-lg border select-none', className)}>
+<div
+	class={cn(
+		'flex min-h-0 flex-col overflow-hidden rounded-lg border select-none print:overflow-visible',
+		className
+	)}
+>
 	<div class="grid border-b bg-muted/40" style:grid-template-columns={template}>
 		<div></div>
 		{#each cols as { day, resource }, index (index)}
@@ -323,7 +328,7 @@
 	</div>
 
 	<div
-		class="min-h-0 flex-1 overflow-y-auto"
+		class="min-h-0 flex-1 overflow-y-auto print:overflow-visible"
 		{@attach (node) => {
 			node.scrollTop = (node.scrollHeight * scrollToHour) / 24;
 		}}

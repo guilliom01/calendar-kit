@@ -11,7 +11,7 @@
 </script>
 
 {#if calendar.editable}
-	<div class={cn('flex', className)}>
+	<div class={cn('flex print:hidden', className)}>
 		<Button
 			variant="ghost"
 			size="icon"

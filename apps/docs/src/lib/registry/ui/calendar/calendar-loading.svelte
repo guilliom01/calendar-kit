@@ -11,7 +11,7 @@
 {#if calendar.loading}
 	<span
 		role="status"
-		class={cn('text-muted-foreground', className)}
+		class={cn('text-muted-foreground print:hidden', className)}
 		title={calendar.labels.loading}
 	>
 		<LoaderCircleIcon class="size-4 animate-spin" aria-hidden="true" />

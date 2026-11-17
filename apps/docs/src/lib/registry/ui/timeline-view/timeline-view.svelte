@@ -87,7 +87,12 @@
 	}
 </script>
 
-<div class={cn('min-h-0 overflow-auto rounded-lg border select-none', className)}>
+<div
+	class={cn(
+		'min-h-0 overflow-auto rounded-lg border select-none print:overflow-visible',
+		className
+	)}
+>
 	<div class="grid min-w-3xl grid-cols-[minmax(9rem,14rem)_1fr]">
 		<div class="sticky top-0 left-0 z-20 border-e border-b bg-muted"></div>
 		<div class="sticky top-0 z-10 grid border-b bg-muted" style:grid-template-columns={dayColumns}>
