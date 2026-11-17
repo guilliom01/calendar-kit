@@ -1,0 +1,15 @@
+{
+	"detector": {
+		"ignoreRules": [],
+		"ignoreFiles": [],
+		"ignoreValues": [
+			{
+				"rule": "side-tab",
+				"value": "*",
+				"files": ["apps/docs/src/lib/registry/ui/time-grid/time-grid.svelte"],
+				"createdAt": "2026-11-17T19:15:13.243Z",
+				"reason": "user confirmed (2026-11-17): event color edge is wanted; quality and requirements matter, not AI look"
+			}
+		]
+	}
+}
