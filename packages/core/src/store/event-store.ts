@@ -21,6 +21,8 @@ export interface EventStoreOptions<T extends CalendarEvent> {
 }
 
 type Listener<T> = (events: readonly T[]) => void;
+/** One undo step: the changes made together, in order. */
+type Entry<T extends CalendarEvent> = Mutation<T>[];
 
 const invert = <T extends CalendarEvent>(mutation: Mutation<T>): Mutation<T> =>
 	mutation.type === 'create'
@@ -42,8 +44,8 @@ const targetId = (mutation: Mutation) =>
 export class EventStore<T extends CalendarEvent = CalendarEvent> {
 	#events: T[];
 	#listeners = new Set<Listener<T>>();
-	#past: Mutation<T>[] = [];
-	#future: Mutation<T>[] = [];
+	#past: Entry<T>[] = [];
+	#future: Entry<T>[] = [];
 	#queues = new Map<string, Promise<unknown>>();
 	#options: EventStoreOptions<T>;
 
@@ -71,65 +73,81 @@ export class EventStore<T extends CalendarEvent = CalendarEvent> {
 	}
 
 	/** Adds an event. Resolves with the saved event, or `undefined` if saving failed. */
-	create(event: T): Promise<T | undefined> {
-		return this.#record({ type: 'create', event });
+	async create(event: T): Promise<T | undefined> {
+		return (await this.#record([{ type: 'create', event }]))[0];
 	}
 
 	/** Replaces the event with the same id. Resolves with the saved event, or `undefined`. */
-	update(event: T): Promise<T | undefined> {
+	async update(event: T): Promise<T | undefined> {
 		const before = this.#find(event.id);
-		if (!before) return Promise.resolve(undefined);
-		return this.#record({ type: 'update', before, after: event });
+		if (!before) return undefined;
+		return (await this.#record([{ type: 'update', before, after: event }]))[0];
 	}
 
 	async remove(id: string): Promise<void> {
 		const event = this.#find(id);
-		if (event) await this.#record({ type: 'delete', event });
+		if (event) await this.#record([{ type: 'delete', event }]);
+	}
+
+	/**
+	 * Applies several changes as one undo step (e.g. ending a series and starting a new one).
+	 * Each change is still sent to `onMutate` on its own; the ones that fail are rolled back.
+	 * Resolves with the saved event of each change (`undefined` for deletes and failures).
+	 */
+	batch(mutations: Mutation<T>[]): Promise<(T | undefined)[]> {
+		return this.#record([...mutations]);
 	}
 
 	async undo(): Promise<void> {
-		const mutation = this.#past.pop();
-		if (!mutation) return;
-		this.#future.push(mutation);
-		const ok = await this.#run(invert(mutation), mutation);
-		if (!ok) this.#move(mutation, this.#future, this.#past);
+		const entry = this.#past.pop();
+		if (!entry) return;
+		this.#future.push(entry);
+		const results = await Promise.all(
+			entry.toReversed().map((mutation) => this.#run(invert(mutation), mutation))
+		);
+		if (results.includes(false)) this.#move(entry, this.#future, this.#past);
 	}
 
 	async redo(): Promise<void> {
-		const mutation = this.#future.pop();
-		if (!mutation) return;
-		this.#past.push(mutation);
-		const ok = await this.#run(mutation, mutation);
-		if (!ok) this.#move(mutation, this.#past, this.#future);
+		const entry = this.#future.pop();
+		if (!entry) return;
+		this.#past.push(entry);
+		const results = await Promise.all(entry.map((mutation) => this.#run(mutation, mutation)));
+		if (results.includes(false)) this.#move(entry, this.#past, this.#future);
 	}
 
 	#find(id: string) {
 		return this.#events.find((event) => event.id === id);
 	}
 
-	/** Runs a new user change and adds it to the undo history. */
-	async #record(mutation: Mutation<T>): Promise<T | undefined> {
-		this.#past.push(mutation);
+	/** Runs new user changes and adds them to the undo history as one step. */
+	async #record(entry: Entry<T>): Promise<(T | undefined)[]> {
+		if (entry.length === 0) return [];
+		this.#past.push(entry);
 		this.#future = [];
 		const limit = this.#options.historyLimit ?? 100;
 		if (this.#past.length > limit) this.#past.shift();
 
-		let saved: T | undefined;
-		const ok = await this.#run(mutation, mutation, (event) => (saved = event));
-		if (!ok) {
-			this.#remove(mutation, this.#past);
-			return undefined;
-		}
-		return saved;
+		const saved: (T | undefined)[] = [];
+		const results = await Promise.all(
+			entry.map((mutation, index) =>
+				this.#run(mutation, mutation, (event) => (saved[index] = event))
+			)
+		);
+		// Forget the changes that were rolled back; drop the step if none is left.
+		const kept = entry.filter((_, index) => results[index]);
+		entry.splice(0, entry.length, ...kept);
+		if (entry.length === 0) this.#removeEntry(entry, this.#past);
+		return results.map((ok, index) => (ok ? saved[index] : undefined));
 	}
 
 	/**
 	 * Applies `mutation` locally, then saves it after earlier saves of the same event.
-	 * `entry` is the history entry to fix up when the backend assigns a new id.
+	 * `original` is the mutation as stored in the history, fixed up when the backend assigns a new id.
 	 */
 	#run(
 		mutation: Mutation<T>,
-		entry: Mutation<T>,
+		original: Mutation<T>,
 		onSaved?: (event: T | undefined) => void
 	): Promise<boolean> {
 		this.#apply(mutation);
@@ -140,7 +158,7 @@ export class EventStore<T extends CalendarEvent = CalendarEvent> {
 			try {
 				const saved = (await this.#options.onMutate?.(mutation)) ?? undefined;
 				const local = mutation.type === 'update' ? mutation.after : mutation.event;
-				if (saved && mutation.type !== 'delete') this.#replace(local, saved, entry);
+				if (saved && mutation.type !== 'delete') this.#replace(local, saved, original);
 				onSaved?.(mutation.type === 'delete' ? undefined : (saved ?? local));
 				return true;
 			} catch (error) {
@@ -179,7 +197,7 @@ export class EventStore<T extends CalendarEvent = CalendarEvent> {
 	}
 
 	/** Swaps the local copy for the saved one, in the list and in the history. */
-	#replace(local: T, saved: T, entry: Mutation<T>) {
+	#replace(local: T, saved: T, original: Mutation<T>) {
 		if (this.#find(local.id) === local) {
 			this.#events = this.#events.map((event) => (event === local ? saved : event));
 			this.#notify();
@@ -190,17 +208,19 @@ export class EventStore<T extends CalendarEvent = CalendarEvent> {
 		const rewrite = (mutation: Mutation<T>): Mutation<T> =>
 			mutation.type === 'update'
 				? { type: 'update', before: swap(mutation.before), after: swap(mutation.after) }
-				: { type: mutation.type, event: mutation === entry ? saved : swap(mutation.event) };
-		this.#past = this.#past.map(rewrite);
-		this.#future = this.#future.map(rewrite);
+				: { type: mutation.type, event: mutation === original ? saved : swap(mutation.event) };
+		// Rewrite in place so entries keep their identity for undo/redo bookkeeping.
+		for (const entry of [...this.#past, ...this.#future]) {
+			entry.splice(0, entry.length, ...entry.map(rewrite));
+		}
 	}
 
-	#move(mutation: Mutation<T>, from: Mutation<T>[], to: Mutation<T>[]) {
-		if (this.#remove(mutation, from)) to.push(mutation);
+	#move(entry: Entry<T>, from: Entry<T>[], to: Entry<T>[]) {
+		if (this.#removeEntry(entry, from)) to.push(entry);
 	}
 
-	#remove(mutation: Mutation<T>, list: Mutation<T>[]) {
-		const index = list.lastIndexOf(mutation);
+	#removeEntry(entry: Entry<T>, list: Entry<T>[]) {
+		const index = list.lastIndexOf(entry);
 		if (index !== -1) list.splice(index, 1);
 		return index !== -1;
 	}

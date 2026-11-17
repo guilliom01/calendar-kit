@@ -142,6 +142,45 @@ describe('EventStore', () => {
 		expect(titles(store)).toEqual(['v2']);
 	});
 
+	it('applies several changes as one undo step', async () => {
+		const onMutate = vi.fn();
+		const store = new EventStore({ events: [meeting()], onMutate });
+		const other = timed('other', '2026-11-18T11:00', '2026-11-18T12:00');
+
+		await store.batch([
+			{ type: 'update', before: meeting(), after: { ...meeting(), title: 'Renamed' } },
+			{ type: 'create', event: other }
+		]);
+		expect(titles(store)).toEqual(['Renamed', 'other']);
+		expect(onMutate).toHaveBeenCalledTimes(2);
+
+		await store.undo();
+		expect(titles(store)).toEqual(['meeting']);
+		expect(store.canUndo).toBe(false);
+
+		await store.redo();
+		expect(titles(store)).toEqual(['Renamed', 'other']);
+	});
+
+	it('keeps the parts of a batch that saved when another part fails', async () => {
+		const store = new EventStore({
+			events: [meeting()],
+			onMutate: (mutation: Mutation<CalendarEvent>) => {
+				if (mutation.type === 'create') throw new Error('nope');
+			},
+			onError: () => {}
+		});
+
+		await store.batch([
+			{ type: 'update', before: meeting(), after: { ...meeting(), title: 'Renamed' } },
+			{ type: 'create', event: timed('other', '2026-11-18T11:00', '2026-11-18T12:00') }
+		]);
+		expect(titles(store)).toEqual(['Renamed']);
+
+		await store.undo();
+		expect(titles(store)).toEqual(['meeting']);
+	});
+
 	it('ignores updates and removals of unknown events', async () => {
 		const onMutate = vi.fn();
 		const store = new EventStore({ onMutate });

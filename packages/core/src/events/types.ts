@@ -8,6 +8,14 @@ interface EventBase<TData> {
 	color?: string | undefined;
 	/** Your own payload; the library never reads it. */
 	data?: TData | undefined;
+	/** RFC 5545 recurrence rule, e.g. `FREQ=WEEKLY;BYDAY=MO,WE`. Makes the event a series. */
+	rrule?: string | undefined;
+	/** Starts of occurrences removed from the series (EXDATE). */
+	exdates?: readonly (CalendarDate | ZonedDateTime)[] | undefined;
+	/** Set on expanded occurrences: the id of the series they come from. */
+	seriesId?: string | undefined;
+	/** Set on expanded occurrences: their original start in the series (RECURRENCE-ID). */
+	recurrenceId?: CalendarDate | ZonedDateTime | undefined;
 }
 
 /** Date-only event. `end` is exclusive, as in iCalendar: a one-day event ends the next day. */
