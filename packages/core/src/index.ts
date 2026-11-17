@@ -1,4 +1,5 @@
 export * from './events/index.js';
+export * from './ical/index.js';
 export * from './interaction/index.js';
 export * from './layout/index.js';
 export * from './loading/index.js';
