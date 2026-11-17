@@ -2,21 +2,88 @@
 	"$schema": "https://shadcn-svelte.com/schema/registry.json",
 	"name": "calendar-kit",
 	"homepage": "https://github.com/calendar-kit/calendar-kit",
+	"aliases": {
+		"lib": "#lib/registry/lib",
+		"ui": "#lib/registry/ui",
+		"components": "#lib/registry/components",
+		"hooks": "#lib/registry/hooks",
+		"utils": "#lib/utils"
+	},
 	"items": [
 		{
-			"name": "month-grid",
-			"type": "registry:ui",
-			"title": "Month grid",
-			"description": "A month view grid built on @calendar-kit/core. Copy it, edit it, style it with Tailwind.",
+			"name": "calendar-state",
+			"type": "registry:lib",
+			"title": "Calendar state",
+			"description": "Reactive calendar state (Svelte 5 runes) shared by the calendar components through context.",
 			"dependencies": ["@calendar-kit/core", "@internationalized/date"],
-			"registryDependencies": ["utils"],
+			"registryDependencies": [],
 			"files": [
 				{
-					"path": "src/lib/registry/month-grid/month-grid.svelte",
+					"path": "src/lib/registry/lib/calendar-state.svelte.ts",
+					"type": "registry:lib"
+				}
+			]
+		},
+		{
+			"name": "month-view",
+			"type": "registry:ui",
+			"title": "Month view",
+			"description": "Month grid with all-day bars, timed events and a +N overflow per day.",
+			"dependencies": ["@calendar-kit/core", "@internationalized/date"],
+			"registryDependencies": ["utils", "./calendar-state.json"],
+			"files": [
+				{
+					"path": "src/lib/registry/ui/month-view/month-view.svelte",
 					"type": "registry:ui"
 				},
 				{
-					"path": "src/lib/registry/month-grid/index.ts",
+					"path": "src/lib/registry/ui/month-view/index.ts",
+					"type": "registry:ui"
+				}
+			]
+		},
+		{
+			"name": "time-grid",
+			"type": "registry:ui",
+			"title": "Time grid",
+			"description": "Week and day views: hours, all-day row, overlapping events in columns and a now line.",
+			"dependencies": ["@calendar-kit/core", "@internationalized/date"],
+			"registryDependencies": ["utils", "./calendar-state.json"],
+			"files": [
+				{
+					"path": "src/lib/registry/ui/time-grid/time-grid.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/time-grid/index.ts",
+					"type": "registry:ui"
+				}
+			]
+		},
+		{
+			"name": "calendar",
+			"type": "registry:ui",
+			"title": "Calendar",
+			"description": "Full calendar: toolbar with navigation and view switcher, month, week and day views.",
+			"dependencies": ["@calendar-kit/core", "@internationalized/date", "@lucide/svelte"],
+			"registryDependencies": [
+				"button",
+				"utils",
+				"./calendar-state.json",
+				"./month-view.json",
+				"./time-grid.json"
+			],
+			"files": [
+				{
+					"path": "src/lib/registry/ui/calendar/calendar.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/calendar/calendar-toolbar.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/calendar/index.ts",
 					"type": "registry:ui"
 				}
 			]

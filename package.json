@@ -8,7 +8,7 @@
 	],
 	"scripts": {
 		"build": "bun run --filter '@calendar-kit/core' build && bun run --filter '@calendar-kit/docs' build",
-		"test": "bun run --filter '@calendar-kit/core' test",
+		"test": "bun run --filter '*' test",
 		"check": "bun run --filter '*' check",
 		"lint": "prettier --check . && bun run --filter '@calendar-kit/docs' lint",
 		"format": "prettier --write ."

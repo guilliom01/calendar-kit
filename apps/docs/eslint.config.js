@@ -34,8 +34,8 @@ export default defineConfig(
 		}
 	},
 	{
-		// Override or add rule settings here, such as:
-		// 'svelte/button-has-type': 'error'
-		rules: {}
+		// Registry components receive hrefs from the consuming app, which resolves them.
+		files: ['src/lib/registry/**'],
+		rules: { 'svelte/no-navigation-without-resolve': 'off' }
 	}
 );
