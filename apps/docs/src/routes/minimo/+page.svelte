@@ -30,6 +30,8 @@
 	});
 </script>
 
+<svelte:head><title>Solo vista de mes · calendar-kit</title></svelte:head>
+
 <main class="mx-auto flex h-full max-w-5xl flex-col gap-4 p-4">
 	<h1 class="text-2xl font-semibold">Solo vista de mes</h1>
 

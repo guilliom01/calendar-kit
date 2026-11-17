@@ -34,6 +34,8 @@
 	});
 </script>
 
+<svelte:head><title>Ganchos de interacción · calendar-kit</title></svelte:head>
+
 <main class="mx-auto flex h-full max-w-5xl flex-col gap-4 p-4">
 	<h1 class="text-2xl font-semibold">Ganchos de interacción</h1>
 	<p class="rounded-lg border p-3 text-sm" aria-live="polite" data-testid="message">

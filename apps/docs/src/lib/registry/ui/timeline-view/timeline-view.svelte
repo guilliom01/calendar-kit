@@ -94,18 +94,22 @@
 	)}
 >
 	<div class="grid min-w-3xl grid-cols-[minmax(9rem,14rem)_1fr]">
-		<div class="sticky start-0 top-0 z-20 border-e border-b bg-muted"></div>
-		<div class="sticky top-0 z-10 grid border-b bg-muted" style:grid-template-columns={dayColumns}>
+		<div class="sticky start-0 top-0 z-20 border-e border-b bg-background"></div>
+		<div
+			class="sticky top-0 z-10 grid border-b bg-background"
+			style:grid-template-columns={dayColumns}
+		>
 			{#each days as day (day.toString())}
 				<button
 					type="button"
-					class="flex items-center justify-center gap-1.5 py-2 text-sm hover:bg-background/60"
-					aria-label={fullDate.format(toDate(day))}
+					class="flex items-center justify-center gap-1.5 py-2 text-sm hover:bg-muted"
 					onclick={(click) => calendar.clickDate(day, click)}
 				>
-					<span class="text-xs text-muted-foreground capitalize">{weekday.format(toDate(day))}</span
+					<span aria-hidden="true" class="text-xs text-muted-foreground capitalize"
+						>{weekday.format(toDate(day))}</span
 					>
 					<span
+						aria-hidden="true"
 						class={cn(
 							'inline-flex size-7 items-center justify-center rounded-full',
 							isToday(day, calendar.timeZone) && 'bg-primary text-primary-foreground'
@@ -113,6 +117,7 @@
 					>
 						{day.day}
 					</span>
+					<span class="sr-only">{fullDate.format(toDate(day))}</span>
 				</button>
 			{/each}
 		</div>
@@ -189,7 +194,7 @@
 								{@render eventContent(event)}
 							{:else}
 								{#if !isAllDay(event)}
-									<span class="shrink-0 text-muted-foreground"
+									<span class="shrink-0 text-foreground/75"
 										>{time.format(event.start.toDate())}</span
 									>
 								{/if}

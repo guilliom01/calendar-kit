@@ -53,10 +53,10 @@
 				<button
 					type="button"
 					class="flex items-center gap-2 rounded text-start hover:bg-muted"
-					aria-label={fullDate.format(toDate(day))}
 					onclick={(click) => calendar.clickDate(day, click)}
 				>
 					<span
+						aria-hidden="true"
 						class={cn(
 							'inline-flex size-9 items-center justify-center rounded-full text-lg',
 							isToday(day, calendar.timeZone) && 'bg-primary text-primary-foreground'
@@ -64,9 +64,10 @@
 					>
 						{day.day}
 					</span>
-					<span class="text-xs leading-tight text-muted-foreground uppercase">
+					<span aria-hidden="true" class="text-xs leading-tight text-muted-foreground uppercase">
 						{monthDay.format(toDate(day))}<br />{weekday.format(toDate(day))}
 					</span>
+					<span class="sr-only">{fullDate.format(toDate(day))}</span>
 				</button>
 			</h3>
 			<ul class="py-1.5">

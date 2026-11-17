@@ -396,7 +396,10 @@
 
 	<Dialog.Footer class="gap-2 sm:justify-between">
 		{#if !draft.isNew}
-			<Button variant="destructive" onclick={remove}>{labels.delete}</Button>
+			<!-- Outline keeps red text at 4.5:1 contrast; the soft destructive variant does not. -->
+			<Button variant="outline" class="text-destructive hover:text-destructive" onclick={remove}>
+				{labels.delete}
+			</Button>
 		{:else}
 			<span></span>
 		{/if}

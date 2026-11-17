@@ -33,6 +33,8 @@
 	});
 </script>
 
+<svelte:head><title>Carga por rango · calendar-kit</title></svelte:head>
+
 <main class="mx-auto flex h-full max-w-6xl flex-col gap-4 p-4">
 	<h1 class="text-2xl font-semibold">Carga por rango</h1>
 	<p class="text-sm text-muted-foreground" data-testid="requests">

@@ -107,23 +107,25 @@
 			class="grid min-w-max"
 			style:grid-template-columns="minmax(10rem,16rem) minmax({days.length * 2}rem, 1fr)"
 		>
-			<div class="sticky start-0 top-0 z-20 border-e border-b bg-muted"></div>
+			<div class="sticky start-0 top-0 z-20 border-e border-b bg-background"></div>
 			<div
-				class="sticky top-0 z-10 grid border-b bg-muted"
+				class="sticky top-0 z-10 grid border-b bg-background"
 				style:grid-template-columns={dayColumns}
 			>
 				{#each days as day (day.toString())}
 					<button
 						type="button"
 						class={cn(
-							'flex flex-col items-center py-1 text-xs hover:bg-background/60',
+							'flex flex-col items-center py-1 text-xs hover:bg-muted',
 							isToday(day, calendar.timeZone) && 'font-semibold text-primary'
 						)}
-						aria-label={fullDate.format(toDate(day))}
 						onclick={(click) => calendar.clickDate(day, click)}
 					>
-						<span class="text-muted-foreground uppercase">{weekday.format(toDate(day))}</span>
-						{day.day}
+						<span aria-hidden="true" class="text-muted-foreground uppercase"
+							>{weekday.format(toDate(day))}</span
+						>
+						<span aria-hidden="true">{day.day}</span>
+						<span class="sr-only">{fullDate.format(toDate(day))}</span>
 					</button>
 				{/each}
 			</div>

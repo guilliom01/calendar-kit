@@ -265,13 +265,13 @@
 				<button
 					type="button"
 					class="flex flex-col items-center gap-0.5 py-1.5 hover:bg-muted"
-					aria-label={fullDate.format(toDate(day))}
 					onclick={(click) => calendar.clickDate(day, click)}
 				>
-					<span class="text-xs font-medium text-muted-foreground capitalize">
+					<span aria-hidden="true" class="text-xs font-medium text-muted-foreground capitalize">
 						{weekday.format(toDate(day))}
 					</span>
 					<span
+						aria-hidden="true"
 						class={cn(
 							'inline-flex size-8 items-center justify-center rounded-full text-lg',
 							isToday(day, calendar.timeZone) && 'bg-primary text-primary-foreground'
@@ -279,6 +279,7 @@
 					>
 						{day.day}
 					</span>
+					<span class="sr-only">{fullDate.format(toDate(day))}</span>
 				</button>
 			{/if}
 		{/each}
