@@ -10,6 +10,7 @@ const series = {
 const november = { start: new CalendarDate(2026, 11, 1), end: new CalendarDate(2026, 12, 31) };
 const [first, , third] = occurrences(series, november, timeZone) as CalendarEvent[];
 let ids = 0;
+const starts = (events: CalendarEvent[]) => events.map((event) => event.start.toString());
 const createId = () => `new-${++ids}`;
 
 describe('seriesChanges: delete', () => {
@@ -83,6 +84,39 @@ describe('seriesChanges: update', () => {
 		expect(updated?.start.toString()).toBe('2026-11-16T19:00:00-05:00[America/Lima]');
 		expect(updated?.end.toString()).toBe('2026-11-16T21:00:00-05:00[America/Lima]');
 		expect(updated).not.toHaveProperty('seriesId');
+	});
+
+	it('all events: excluded dates move with the series, so they stay excluded', () => {
+		const withGap = { ...series, exdates: [third!.start] };
+		const [, second] = occurrences(withGap, november, timeZone);
+		const [change] = seriesChanges(withGap, second!, later(second!), 'all', createId);
+		const updated = change?.type === 'update' ? change.after : undefined;
+
+		expect(starts(occurrences(updated!, november, timeZone))).toEqual([
+			'2026-11-16T19:00:00-05:00[America/Lima]',
+			'2026-11-18T19:00:00-05:00[America/Lima]',
+			'2026-11-25T19:00:00-05:00[America/Lima]',
+			'2026-11-30T19:00:00-05:00[America/Lima]',
+			'2026-12-02T19:00:00-05:00[America/Lima]'
+		]);
+	});
+
+	it('all events: moving to another day shifts excluded dates by the same days', () => {
+		const days = {
+			...allDay('trip', new CalendarDate(2026, 11, 2), new CalendarDate(2026, 11, 3)),
+			rrule: 'FREQ=WEEKLY;COUNT=3',
+			exdates: [new CalendarDate(2026, 11, 9)]
+		};
+		const [first] = occurrences(days, november, timeZone);
+		const moved = {
+			...first!,
+			start: first!.start.add({ days: 1 }),
+			end: first!.end.add({ days: 1 })
+		} as CalendarEvent;
+
+		const [change] = seriesChanges(days, first!, moved, 'all', createId);
+		const updated = change?.type === 'update' ? change.after : undefined;
+		expect(starts(occurrences(updated!, november, timeZone))).toEqual(['2026-11-03', '2026-11-17']);
 	});
 
 	it('all events: shifts all-day series by days', () => {

@@ -1,4 +1,10 @@
-import { toCalendarDate, toTimeZone, toZoned } from '@internationalized/date';
+import {
+	toCalendarDate,
+	toTimeZone,
+	toZoned,
+	type CalendarDate,
+	type ZonedDateTime
+} from '@internationalized/date';
 import { isAllDay } from '../events/queries.js';
 import type { CalendarEvent } from '../events/types.js';
 import type { Mutation } from '../store/event-store.js';
@@ -18,31 +24,29 @@ function standalone<T extends CalendarEvent>(event: T): T {
 const duration = (event: CalendarEvent) =>
 	event.end.toDate('UTC').getTime() - event.start.toDate('UTC').getTime();
 
-/**
- * New start and end for the whole series when one occurrence moved from `occurrence` to `changed`:
- * the series keeps its first date, shifted by the same number of days, and takes the new time.
- */
-function shiftSeries<T extends CalendarEvent>(series: T, occurrence: T, changed: T) {
-	const days = daysBetween(
-		isAllDay(occurrence) ? occurrence.start : toCalendarDate(occurrence.start),
-		isAllDay(changed) ? changed.start : toCalendarDate(changed.start)
-	);
-	const firstDay = (isAllDay(series) ? series.start : toCalendarDate(series.start)).add({ days });
+type Start = CalendarDate | ZonedDateTime;
 
-	if (isAllDay(changed)) {
-		return {
-			start: firstDay,
-			end: firstDay.add({ days: daysBetween(changed.start, changed.end) })
-		};
-	}
-	const zone = isAllDay(series) ? changed.start.timeZone : series.start.timeZone;
-	const time = toTimeZone(changed.start, zone);
-	const start = toZoned(firstDay, zone).set({
-		hour: time.hour,
-		minute: time.minute,
-		second: time.second
-	});
-	return { start, end: start.add({ milliseconds: duration(changed) }) };
+/**
+ * How every start of a series moves when one occurrence moved from `occurrence` to `changed`:
+ * by the same number of days, taking the new time of day (or becoming all-day).
+ * Applied to the series start and to its excluded dates, so exclusions stay in place.
+ */
+function seriesShift<T extends CalendarEvent>(series: T, occurrence: T, changed: T) {
+	const zone = isAllDay(series)
+		? isAllDay(changed)
+			? 'UTC'
+			: changed.start.timeZone
+		: series.start.timeZone;
+	const dayOf = (start: Start) =>
+		'hour' in start ? toCalendarDate(toTimeZone(start, zone)) : start;
+	const days = daysBetween(dayOf(occurrence.start), dayOf(changed.start));
+	const time = isAllDay(changed) ? undefined : toTimeZone(changed.start, zone);
+
+	return (start: Start): Start => {
+		const day = dayOf(start).add({ days });
+		if (!time) return day;
+		return toZoned(day, zone).set({ hour: time.hour, minute: time.minute, second: time.second });
+	};
 }
 
 /**
@@ -93,8 +97,15 @@ export function seriesChanges<T extends CalendarEvent>(
 		];
 	}
 
-	const timing = shiftSeries(series, occurrence, changed);
-	const after = { ...standalone(changed), ...timing, id: series.id } as T;
-	if (series.exdates) after.exdates = series.exdates;
+	const shift = seriesShift(series, occurrence, changed);
+	const start = shift(series.start);
+	const end =
+		'hour' in start
+			? start.add({ milliseconds: duration(changed) })
+			: start.add({
+					days: daysBetween(changed.start as CalendarDate, changed.end as CalendarDate)
+				});
+	const after = { ...standalone(changed), start, end, id: series.id } as T;
+	if (series.exdates) after.exdates = series.exdates.map(shift);
 	return [{ type: 'update', before: series, after }];
 }
