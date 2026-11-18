@@ -32,6 +32,10 @@ test("the examples index links every example", async ({ page }) => {
     "Hooks",
     "Permissions and styles",
     "Custom rendering",
+    "Import and export",
+    "Validation",
+    "Languages and RTL",
+    "Mobile",
   ]) {
     // Inside the list: the docs menu also has a "Recurring events" page.
     await expect(
@@ -295,4 +299,67 @@ test("custom rendering: our own event pills and day marks", async ({ page }) => 
     /rounded-full/,
   );
   await expect(example(page).getByText("fin de semana").first()).toBeVisible();
+});
+
+test("import and export: an .ics file comes in, an Excel workbook goes out", async ({ page }) => {
+  await open(page, "import-export");
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "BEGIN:VEVENT",
+    "UID:from-google",
+    "SUMMARY:Cumpleaños de Rosa",
+    "DTSTART;VALUE=DATE:20261126",
+    "DTEND;VALUE=DATE:20261127",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+  await example(page)
+    .locator('input[type="file"]')
+    .setInputFiles({ name: "google.ics", mimeType: "text/calendar", buffer: Buffer.from(ics) });
+  await expect(example(page).getByRole("button", { name: "Cumpleaños de Rosa" })).toBeVisible();
+
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    example(page).getByRole("button", { name: "Exportar Excel" }).click(),
+  ]);
+  expect(download.suggestedFilename()).toBe("calendario.xlsx");
+});
+
+test("validation: our rule and the built-in one, next to their fields", async ({ page }) => {
+  await open(page, "validation");
+  await example(page)
+    .getByRole("button", { name: /Daily standup/ })
+    .click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Título").fill("");
+  await dialog.getByRole("button", { name: "Guardar" }).click();
+  await expect(dialog.getByText("El título es obligatorio.")).toBeVisible();
+  await expect(dialog.getByLabel("Título")).toHaveAttribute("aria-invalid", "true");
+});
+
+test("languages: Intl translates the calendar, and Arabic turns it right-to-left", async ({
+  page,
+}) => {
+  await open(page, "languages");
+  await expect(title(page)).toHaveText("noviembre de 2026");
+  const language = example(page).getByRole("combobox", { name: "Idioma" });
+  await language.selectOption("en-US");
+  await expect(title(page)).toHaveText("November 2026");
+  await language.selectOption("ar-EG");
+  await expect(example(page).locator('[dir="rtl"]')).toBeVisible();
+  // Day numbers use the locale's digits too, like the title.
+  await expect(example(page).getByRole("button", { name: /١٧/ }).first()).toHaveText("١٧");
+  await expect(title(page)).not.toHaveText("November 2026");
+});
+
+test("mobile: a select for the views and a compact month in a phone-wide box", async ({ page }) => {
+  await open(page, "mobile");
+  await expect(example(page).getByRole("combobox", { name: "Vistas" })).toBeVisible();
+  await example(page)
+    .getByRole("button", { name: "miércoles, 18 de noviembre de 2026, 1 evento" })
+    .click();
+  await expect(
+    example(page).getByRole("list", { name: "miércoles, 18 de noviembre de 2026" }),
+  ).toContainText("Revisión de diseño");
 });

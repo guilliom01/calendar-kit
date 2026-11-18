@@ -124,6 +124,30 @@ export const examples: Example[] = [
     description:
       "Draw events and day cells your own way with snippets, keeping dragging, clicks and accessibility.",
   },
+  {
+    slug: "import-export",
+    title: "Import and export",
+    description:
+      "Import .ics files, export .ics, CSV and Excel, and print or save as PDF, with optional buttons.",
+  },
+  {
+    slug: "validation",
+    title: "Validation",
+    description:
+      "Rules of your own for the event dialog, shown next to each field; nothing is saved while one fails.",
+  },
+  {
+    slug: "languages",
+    title: "Languages and RTL",
+    description:
+      "Change the locale on the fly: Intl translates dates and calendar words, and right-to-left pages mirror the layout.",
+  },
+  {
+    slug: "mobile",
+    title: "Mobile",
+    description:
+      "In a phone-wide box, the view switcher becomes a select and the month shows dots, with the tapped day's events below.",
+  },
 ];
 
 const components = import.meta.glob<{ default: Component }>("./*.svelte", { eager: true });
