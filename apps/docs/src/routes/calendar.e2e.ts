@@ -1447,3 +1447,15 @@ test.describe('arrow keys in the day grids', () => {
 		await expect(page.locator('[data-grid-date="2026-11-08"]')).toBeFocused();
 	});
 });
+
+test('ending a series after a count reads well for any number', async ({ page }) => {
+	await page.getByRole('button', { name: 'Nuevo evento' }).click();
+	const dialog = page.getByRole('dialog');
+	await dialog.getByRole('combobox', { name: 'Repetir' }).selectOption({ label: 'semana' });
+	await dialog.getByRole('radio', { name: 'Número de repeticiones' }).check();
+	const count = dialog.getByRole('spinbutton', { name: 'Número de repeticiones' });
+	await count.fill('1');
+	await expect(count).toHaveValue('1');
+	// No "1 repeticiones": the count is not followed by a word that depends on it.
+	await expect(dialog.getByText('repeticiones', { exact: true })).toHaveCount(0);
+});

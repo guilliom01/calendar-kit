@@ -411,12 +411,11 @@
 					<Input
 						type="number"
 						min="1"
-						aria-label="{labels.endsAfter} ({labels.occurrences})"
+						aria-label={labels.endsAfter}
 						class="w-20"
 						bind:value={endsAfter}
 						disabled={ends !== 'after'}
 					/>
-					<span>{labels.occurrences}</span>
 				</div>
 			</div>
 		</fieldset>
