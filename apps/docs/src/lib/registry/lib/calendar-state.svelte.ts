@@ -122,6 +122,27 @@ export interface Selection<T extends CalendarEvent> {
 	fields: Partial<T>;
 }
 
+/**
+ * Attributes (handlers, ARIA, data, class and style) that make an element behave as a calendar
+ * part. Spread them on your own element in a render snippet: `<div {...props}>…</div>`.
+ */
+export type PartProps = Record<string, unknown> & { class?: string; style?: string };
+
+/** Arguments of a view's `event` snippet, which replaces the whole event element. */
+export interface EventSnippetArgs<T extends CalendarEvent = CalendarEvent> {
+	event: T;
+	props: PartProps;
+	/** True while this event is being dragged or moved with the keyboard. */
+	dragging: boolean;
+}
+
+/** Arguments of `dayNumber` / `dayHeader` snippets (day buttons that open the day). */
+export interface DaySnippetArgs {
+	day: CalendarDate;
+	isToday: boolean;
+	props: PartProps;
+}
+
 /** An event the user moved or resized by dragging. */
 export interface EventChange<T extends CalendarEvent> {
 	event: T;

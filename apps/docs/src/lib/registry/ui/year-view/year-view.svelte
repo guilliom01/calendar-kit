@@ -1,10 +1,22 @@
 <script lang="ts">
 	import { DateFormatter, isSameMonth, isToday, type CalendarDate } from '@internationalized/date';
 	import { countByDay, monthGrid } from '@calendar-kit/core';
-	import { getCalendar, pluralLabel } from '#lib/registry/lib/calendar-state.svelte.js';
+	import type { Snippet } from 'svelte';
+	import {
+		getCalendar,
+		pluralLabel,
+		type DaySnippetArgs,
+		type PartProps
+	} from '#lib/registry/lib/calendar-state.svelte.js';
 	import { cn } from '#lib/utils.js';
 
-	let { class: className }: { class?: string } = $props();
+	interface Props {
+		class?: string;
+		/** Replaces each day button. `count` is the number of events; spread `props` to keep opening the day. */
+		dayNumber?: Snippet<[DaySnippetArgs & { count: number }]>;
+	}
+
+	let { class: className, dayNumber }: Props = $props();
 
 	const calendar = getCalendar();
 
@@ -39,6 +51,22 @@
 				: count === 1
 					? 'bg-primary/10'
 					: '';
+
+	function dayProps(day: CalendarDate, count: number): PartProps {
+		return {
+			type: 'button',
+			class: cn(
+				'mx-auto inline-flex size-8 items-center justify-center rounded-full hover:ring-1 hover:ring-ring',
+				tint(count),
+				isToday(day, calendar.timeZone) && 'bg-primary font-semibold text-primary-foreground'
+			),
+			'aria-label': count
+				? `${fullDate.format(toDate(day))}, ${eventCount(count)}`
+				: fullDate.format(toDate(day)),
+			title: count ? eventCount(count) : undefined,
+			onclick: (click: MouseEvent) => calendar.clickDate(day, click)
+		};
+	}
 </script>
 
 <div
@@ -67,22 +95,16 @@
 				{#each weeks.flat() as day (day.toString())}
 					{#if isSameMonth(day, month)}
 						{@const count = counts.get(day.toString()) ?? 0}
-						<button
-							type="button"
-							class={cn(
-								'mx-auto inline-flex size-8 items-center justify-center rounded-full hover:ring-1 hover:ring-ring',
-								tint(count),
-								isToday(day, calendar.timeZone) &&
-									'bg-primary font-semibold text-primary-foreground'
-							)}
-							aria-label={count
-								? `${fullDate.format(toDate(day))}, ${eventCount(count)}`
-								: fullDate.format(toDate(day))}
-							title={count ? eventCount(count) : undefined}
-							onclick={(click) => calendar.clickDate(day, click)}
-						>
-							{day.day}
-						</button>
+						{#if dayNumber}
+							{@render dayNumber({
+								day,
+								count,
+								isToday: isToday(day, calendar.timeZone),
+								props: dayProps(day, count)
+							})}
+						{:else}
+							<button {...dayProps(day, count)}>{day.day}</button>
+						{/if}
 					{:else}
 						<span></span>
 					{/if}

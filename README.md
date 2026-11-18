@@ -90,6 +90,22 @@ Each view is shown by a `<Calendar.View name="…">`. Registering a view also li
 
 Resources are props of the views that use them: `<TimeGrid resources={…} />`, `<TimelineView resources={…} />`, `<AgendaView resources={…} />`, `<EventDialog resources={…} />`. A resource is `{ id, title, color?, parentId? }`; assign events with `resourceIds`.
 
+### Customizing what views draw
+
+Views take snippets for their parts. Interactive parts (`event`, `dayNumber`, `dayHeader`, `more`) receive `props` with the handlers, ARIA attributes, class and style of the default element: spread them on your own element and clicks, dragging, keyboard moves and screen reader labels keep working. Display parts (`dayCell`, `resourceLabel`, `hourLabel`, `nowIndicator`, `taskLabel`) receive data only. `eventContent` changes only the inside of an event.
+
+```svelte
+<MonthView>
+	{#snippet event({ event, props, dragging })}
+		<button {...props} class={cn(props.class, 'rounded-full', dragging && 'ring-2')}>
+			{event.title}
+		</button>
+	{/snippet}
+</MonthView>
+```
+
+The demo page `/personalizar` uses them in the month, week and timeline views.
+
 ## Interaction hooks
 
 Every interaction runs your hook first; return `false` to skip the built-in behavior.

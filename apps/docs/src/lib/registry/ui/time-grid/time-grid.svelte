@@ -5,7 +5,8 @@
 		isToday,
 		toCalendarDate,
 		toZoned,
-		type CalendarDate
+		type CalendarDate,
+		type ZonedDateTime
 	} from '@internationalized/date';
 	import {
 		eventsForResource,
@@ -35,7 +36,12 @@
 		keyboardMove,
 		type MoveStepper
 	} from '#lib/registry/lib/calendar-keyboard.js';
-	import { getCalendar } from '#lib/registry/lib/calendar-state.svelte.js';
+	import {
+		getCalendar,
+		type DaySnippetArgs,
+		type EventSnippetArgs,
+		type PartProps
+	} from '#lib/registry/lib/calendar-state.svelte.js';
 	import { cn } from '#lib/utils.js';
 
 	interface Props {
@@ -46,8 +52,21 @@
 		hourHeight?: string;
 		/** Hour the grid scrolls to when it mounts. */
 		scrollToHour?: number;
-		/** Custom content inside each event block. */
+		/** Custom content inside each event block (the block itself stays). */
 		eventContent?: Snippet<[CalendarEvent]>;
+		/**
+		 * Replaces the whole event element, timed or all-day. Spread `props` on your element; for timed
+		 * events put a child with `resizeProps` at its bottom edge to keep resizing.
+		 */
+		event?: Snippet<[EventSnippetArgs & { allDay: boolean; resizeProps?: PartProps }]>;
+		/** Replaces the day header button. Spread `props` to keep opening the day. */
+		dayHeader?: Snippet<[DaySnippetArgs]>;
+		/** Content of a resource column header (with `resources`). */
+		resourceLabel?: Snippet<[{ resource: Resource }]>;
+		/** Text next to each hour line. */
+		hourLabel?: Snippet<[{ hour: number; label: string }]>;
+		/** Replaces the "now" line; it is already placed at the current time. */
+		nowIndicator?: Snippet<[{ time: ZonedDateTime }]>;
 	}
 
 	let {
@@ -55,7 +74,12 @@
 		class: className,
 		hourHeight = '3rem',
 		scrollToHour = 7,
-		eventContent
+		eventContent,
+		event: eventSnippet,
+		dayHeader,
+		resourceLabel,
+		hourLabel,
+		nowIndicator
 	}: Props = $props();
 
 	const calendar = getCalendar();
@@ -124,7 +148,7 @@
 	const nowMinutes = $derived(current.hour * 60 + current.minute);
 
 	const toDate = (day: CalendarDate) => day.toDate(calendar.timeZone);
-	const hourLabel = (h: number) =>
+	const formatHour = (h: number) =>
 		hour.format(toZoned(cols[0]!.day, calendar.timeZone).set({ hour: h }).toDate());
 	const at = (day: CalendarDate, minutes: number) => zonedAt(day, minutes, calendar.timeZone);
 
@@ -310,6 +334,69 @@
 			);
 		}
 	}
+
+	type AllDayItem = (typeof allDayItems)[number];
+	type TimedItem = TimedEventLayout;
+
+	/** Attributes of an all-day bar; used by the default bar and the `event` snippet. */
+	function allDayProps(item: AllDayItem): PartProps {
+		const event = item.event;
+		return {
+			type: 'button',
+			class: cn(
+				'mx-0.5 flex min-w-0 items-center rounded bg-(--event-color)/15 px-1.5 text-start text-xs font-medium [-webkit-touch-callout:none] hover:bg-(--event-color)/25',
+				item.continuesBefore && 'ms-0 rounded-s-none',
+				item.continuesAfter && 'me-0 rounded-e-none',
+				preview?.id === event.id && 'opacity-70 shadow-md'
+			),
+			style: `grid-column: ${item.startIndex + 2} / span ${item.span}; grid-row: ${item.lane + 1}; --event-color: ${event.color ?? 'var(--primary)'}`,
+			title: event.title || calendar.labels.untitled,
+			'data-event-id': event.id,
+			'aria-keyshortcuts': calendar.canEdit(event) ? calendar.moveKey.toUpperCase() : undefined,
+			onpointerdown: (down: PointerEvent) => startAllDayDrag(down, event),
+			onclick: (click: MouseEvent) => openEvent(event, click),
+			onkeydown: (key: KeyboardEvent) => onEventKey(key, event, dayStepper())
+		};
+	}
+
+	/** Attributes of a timed block; used by the default block and the `event` snippet. */
+	function timedProps(item: TimedItem): PartProps {
+		const event = item.event;
+		return {
+			type: 'button',
+			class: cn(
+				'group absolute flex flex-col overflow-hidden rounded-md border-s-4 border-(--event-color) bg-(--event-color)/15 px-1.5 py-0.5 text-start text-xs ring-1 ring-background [-webkit-touch-callout:none] hover:bg-(--event-color)/25',
+				item.continuesBefore && 'rounded-t-none',
+				item.continuesAfter && 'rounded-b-none',
+				preview?.id === event.id && 'z-20 opacity-80 shadow-lg'
+			),
+			style: `top: ${percent(item.start)}; height: ${percent(item.end - item.start)}; inset-inline-start: ${(item.column / item.columns) * 100}%; width: ${100 / item.columns}%; --event-color: ${event.color ?? 'var(--primary)'}`,
+			title: event.title || calendar.labels.untitled,
+			'data-event-id': event.id,
+			'aria-keyshortcuts': calendar.canEdit(event) ? calendar.moveKey.toUpperCase() : undefined,
+			onpointerdown: (down: PointerEvent) => startMove(down, item),
+			onclick: (click: MouseEvent) => openEvent(event, click),
+			onkeydown: (key: KeyboardEvent) => onEventKey(key, event, timedStepper)
+		};
+	}
+
+	/** Attributes of the bottom-edge resize handle, or undefined when the event cannot be resized. */
+	function resizeProps(item: TimedItem): PartProps | undefined {
+		if (!calendar.canEdit(item.event) || item.continuesAfter) return undefined;
+		return {
+			'aria-hidden': 'true',
+			class: 'absolute inset-x-0 bottom-0 h-2 cursor-ns-resize',
+			onpointerdown: (down: PointerEvent) => startResize(down, item)
+		};
+	}
+
+	function dayHeaderProps(day: CalendarDate): PartProps {
+		return {
+			type: 'button',
+			class: 'flex flex-col items-center gap-0.5 py-1.5 hover:bg-muted',
+			onclick: (click: MouseEvent) => calendar.clickDate(day, click)
+		};
+	}
 </script>
 
 <div
@@ -323,32 +410,40 @@
 		{#each cols as { day, resource }, index (index)}
 			{#if resource}
 				<div class="flex min-w-0 items-center justify-center gap-1.5 px-1 py-3 text-sm font-medium">
-					<span
-						class="size-2.5 shrink-0 rounded-full bg-(--resource-color)"
-						style:--resource-color={resource.color ?? 'var(--primary)'}
-					></span>
-					<span class="truncate">{resource.title}</span>
+					{#if resourceLabel}
+						{@render resourceLabel({ resource })}
+					{:else}
+						<span
+							class="size-2.5 shrink-0 rounded-full bg-(--resource-color)"
+							style:--resource-color={resource.color ?? 'var(--primary)'}
+						></span>
+						<span class="truncate">{resource.title}</span>
+					{/if}
 				</div>
 			{:else}
-				<button
-					type="button"
-					class="flex flex-col items-center gap-0.5 py-1.5 hover:bg-muted"
-					onclick={(click) => calendar.clickDate(day, click)}
-				>
-					<span aria-hidden="true" class="text-xs font-medium text-muted-foreground capitalize">
-						{weekday.format(toDate(day))}
-					</span>
-					<span
-						aria-hidden="true"
-						class={cn(
-							'inline-flex size-8 items-center justify-center rounded-full text-lg',
-							isToday(day, calendar.timeZone) && 'bg-primary text-primary-foreground'
-						)}
-					>
-						{day.day}
-					</span>
-					<span class="sr-only">{fullDate.format(toDate(day))}</span>
-				</button>
+				{#if dayHeader}
+					{@render dayHeader({
+						day,
+						isToday: isToday(day, calendar.timeZone),
+						props: dayHeaderProps(day)
+					})}
+				{:else}
+					<button {...dayHeaderProps(day)}>
+						<span aria-hidden="true" class="text-xs font-medium text-muted-foreground capitalize">
+							{weekday.format(toDate(day))}
+						</span>
+						<span
+							aria-hidden="true"
+							class={cn(
+								'inline-flex size-8 items-center justify-center rounded-full text-lg',
+								isToday(day, calendar.timeZone) && 'bg-primary text-primary-foreground'
+							)}
+						>
+							{day.day}
+						</span>
+						<span class="sr-only">{fullDate.format(toDate(day))}</span>
+					</button>
+				{/if}
 			{/if}
 		{/each}
 	</div>
@@ -382,30 +477,22 @@
 		{/each}
 		{#each allDayItems as item (`${item.event.id}:${item.startIndex}`)}
 			{@const event = item.event}
-			<button
-				type="button"
-				class={cn(
-					'mx-0.5 flex min-w-0 items-center rounded bg-(--event-color)/15 px-1.5 text-start text-xs font-medium [-webkit-touch-callout:none] hover:bg-(--event-color)/25',
-					item.continuesBefore && 'ms-0 rounded-s-none',
-					item.continuesAfter && 'me-0 rounded-e-none',
-					preview?.id === event.id && 'opacity-70 shadow-md'
-				)}
-				style:grid-column="{item.startIndex + 2} / span {item.span}"
-				style:grid-row={item.lane + 1}
-				style:--event-color={event.color ?? 'var(--primary)'}
-				title={event.title || calendar.labels.untitled}
-				onpointerdown={(down) => startAllDayDrag(down, event)}
-				onclick={(click) => openEvent(event, click)}
-				onkeydown={(key) => onEventKey(key, event, dayStepper())}
-				data-event-id={event.id}
-				aria-keyshortcuts={calendar.canEdit(event) ? calendar.moveKey.toUpperCase() : undefined}
-			>
-				{#if eventContent}
-					{@render eventContent(event)}
-				{:else}
-					<span class="truncate">{event.title || calendar.labels.untitled}</span>
-				{/if}
-			</button>
+			{#if eventSnippet}
+				{@render eventSnippet({
+					event,
+					props: allDayProps(item),
+					dragging: preview?.id === event.id,
+					allDay: true
+				})}
+			{:else}
+				<button {...allDayProps(item)}>
+					{#if eventContent}
+						{@render eventContent(event)}
+					{:else}
+						<span class="truncate">{event.title || calendar.labels.untitled}</span>
+					{/if}
+				</button>
+			{/if}
 		{/each}
 	</div>
 
@@ -426,7 +513,11 @@
 						class="absolute end-2 -translate-y-1/2 text-xs text-muted-foreground"
 						style:top={percent((index + 1) * 60)}
 					>
-						{hourLabel(index + 1)}
+						{#if hourLabel}
+							{@render hourLabel({ hour: index + 1, label: formatHour(index + 1) })}
+						{:else}
+							{formatHour(index + 1)}
+						{/if}
 					</span>
 				{/each}
 			</div>
@@ -444,54 +535,46 @@
 				>
 					{#each dayItems[dayIndex] ?? [] as item (item.event.id)}
 						{@const event = item.event}
-						<button
-							type="button"
-							class={cn(
-								'group absolute flex flex-col overflow-hidden rounded-md border-s-4 border-(--event-color) bg-(--event-color)/15 px-1.5 py-0.5 text-start text-xs ring-1 ring-background [-webkit-touch-callout:none] hover:bg-(--event-color)/25',
-								item.continuesBefore && 'rounded-t-none',
-								item.continuesAfter && 'rounded-b-none',
-								preview?.id === event.id && 'z-20 opacity-80 shadow-lg'
-							)}
-							style:top={percent(item.start)}
-							style:height={percent(item.end - item.start)}
-							style:inset-inline-start="{(item.column / item.columns) * 100}%"
-							style:width="{100 / item.columns}%"
-							style:--event-color={event.color ?? 'var(--primary)'}
-							title={event.title || calendar.labels.untitled}
-							onpointerdown={(down) => startMove(down, item)}
-							onclick={(click) => openEvent(event, click)}
-							onkeydown={(key) => onEventKey(key, event, timedStepper)}
-							data-event-id={event.id}
-							aria-keyshortcuts={calendar.canEdit(event)
-								? calendar.moveKey.toUpperCase()
-								: undefined}
-						>
-							{#if eventContent}
-								{@render eventContent(event)}
-							{:else}
-								<span class="truncate font-medium">{event.title || calendar.labels.untitled}</span>
-								{#if !isAllDay(event)}
-									<span class="truncate text-muted-foreground">
-										{time.formatRange(event.start.toDate(), event.end.toDate())}
-									</span>
+						{#if eventSnippet}
+							{@render eventSnippet({
+								event,
+								props: timedProps(item),
+								dragging: preview?.id === event.id,
+								allDay: false,
+								resizeProps: resizeProps(item)
+							})}
+						{:else}
+							{@const resize = resizeProps(item)}
+							<button {...timedProps(item)}>
+								{#if eventContent}
+									{@render eventContent(event)}
+								{:else}
+									<span class="truncate font-medium">{event.title || calendar.labels.untitled}</span
+									>
+									{#if !isAllDay(event)}
+										<span class="truncate text-muted-foreground">
+											{time.formatRange(event.start.toDate(), event.end.toDate())}
+										</span>
+									{/if}
 								{/if}
-							{/if}
-							{#if calendar.canEdit(event) && !item.continuesAfter}
-								<span
-									aria-hidden="true"
-									class="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize"
-									onpointerdown={(down) => startResize(down, item)}
-								></span>
-							{/if}
-						</button>
+								{#if resize}<span {...resize}></span>{/if}
+							</button>
+						{/if}
 					{/each}
 
 					{#if toCalendarDate(current).compare(day) === 0}
 						<div
-							class="pointer-events-none absolute inset-x-0 z-10 h-0.5 bg-destructive"
+							class="pointer-events-none absolute inset-x-0 z-10"
 							style:top={percent(nowMinutes)}
 						>
-							<span class="absolute -start-1 -top-1 size-2.5 rounded-full bg-destructive"></span>
+							{#if nowIndicator}
+								{@render nowIndicator({ time: current })}
+							{:else}
+								<div class="relative h-0.5 bg-destructive">
+									<span class="absolute -start-1 -top-1 size-2.5 rounded-full bg-destructive"
+									></span>
+								</div>
+							{/if}
 						</div>
 					{/if}
 				</div>

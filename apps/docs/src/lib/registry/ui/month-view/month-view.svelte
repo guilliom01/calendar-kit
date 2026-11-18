@@ -5,18 +5,44 @@
 	import { dragAcrossDays, touchOf, withPreview } from '#lib/registry/lib/calendar-drag.js';
 	import * as Popover from '#lib/registry/ui/popover/index.js';
 	import { dayStepper, keyboardMove } from '#lib/registry/lib/calendar-keyboard.js';
-	import { getCalendar, pluralLabel } from '#lib/registry/lib/calendar-state.svelte.js';
+	import {
+		getCalendar,
+		pluralLabel,
+		type DaySnippetArgs,
+		type EventSnippetArgs,
+		type PartProps
+	} from '#lib/registry/lib/calendar-state.svelte.js';
 	import { cn } from '#lib/utils.js';
 
 	interface Props {
 		class?: string;
 		/** Event lanes shown per week before collapsing the rest into "+N". */
 		maxLanes?: number;
-		/** Custom content inside each event chip. */
+		/** Custom content inside each event chip (the chip itself stays). */
 		eventContent?: Snippet<[CalendarEvent]>;
+		/** Replaces the whole event chip. Spread `props` on your element to keep dragging, clicks and ARIA. */
+		event?: Snippet<[EventSnippetArgs]>;
+		/** Replaces the day number button. Spread `props` to keep opening the day. */
+		dayNumber?: Snippet<[DaySnippetArgs & { inMonth: boolean }]>;
+		/** Extra content inside each day cell, under the day number (e.g. an icon or a count). */
+		dayCell?: Snippet<
+			[{ day: CalendarDate; isToday: boolean; inMonth: boolean; events: CalendarEvent[] }]
+		>;
+		/** Replaces the "+N" button. Spread `props` to keep opening the day's list. */
+		more?: Snippet<
+			[{ day: CalendarDate; count: number; events: CalendarEvent[]; props: PartProps }]
+		>;
 	}
 
-	let { class: className, maxLanes = 3, eventContent }: Props = $props();
+	let {
+		class: className,
+		maxLanes = 3,
+		eventContent,
+		event: eventSnippet,
+		dayNumber,
+		dayCell,
+		more
+	}: Props = $props();
 
 	const calendar = getCalendar();
 
@@ -102,6 +128,45 @@
 	}
 
 	const toDate = (day: CalendarDate) => day.toDate(calendar.timeZone);
+
+	type Item = (typeof weeks)[number]['items'][number];
+
+	/** Everything an event chip needs to behave as one; used by the default chip and `event`. */
+	function eventProps(item: Item): PartProps {
+		const event = item.event;
+		const bar = isAllDay(event) || item.span > 1;
+		return {
+			type: 'button',
+			class: cn(
+				'pointer-events-auto mx-0.5 flex min-w-0 items-center gap-1 rounded px-1.5 text-start text-xs [-webkit-touch-callout:none]',
+				bar
+					? 'bg-(--event-color)/15 font-medium text-foreground hover:bg-(--event-color)/25'
+					: 'text-foreground hover:bg-muted',
+				item.continuesBefore && 'ms-0 rounded-s-none',
+				item.continuesAfter && 'me-0 rounded-e-none',
+				preview?.id === event.id && 'opacity-70 shadow-md'
+			),
+			style: `grid-column: ${item.startIndex + 1} / span ${item.span}; grid-row: ${item.lane + 1}; --event-color: ${event.color ?? 'var(--primary)'}`,
+			title: event.title || calendar.labels.untitled,
+			'data-event-id': event.id,
+			'aria-keyshortcuts': calendar.canEdit(event) ? calendar.moveKey.toUpperCase() : undefined,
+			onpointerdown: (down: PointerEvent) => startDrag(down, event),
+			onclick: (click: MouseEvent) => calendar.clickEvent(event, click),
+			onkeydown: (key: KeyboardEvent) => onEventKey(key, event)
+		};
+	}
+
+	function dayNumberProps(day: CalendarDate): PartProps {
+		return {
+			type: 'button',
+			class: cn(
+				'inline-flex size-7 items-center justify-center rounded-full text-xs hover:bg-muted',
+				isToday(day, calendar.timeZone) && 'bg-primary text-primary-foreground hover:bg-primary/90'
+			),
+			'aria-label': fullDate.format(toDate(day)),
+			onclick: (click: MouseEvent) => calendar.clickDate(day, click)
+		};
+	}
 </script>
 
 <div
@@ -138,18 +203,22 @@
 							calendar.select({ start: day, end: day.add({ days: 1 }), allDay: true, fields: {} });
 					}}
 				>
-					<button
-						type="button"
-						class={cn(
-							'inline-flex size-7 items-center justify-center rounded-full text-xs hover:bg-muted',
-							isToday(day, calendar.timeZone) &&
-								'bg-primary text-primary-foreground hover:bg-primary/90'
-						)}
-						aria-label={fullDate.format(toDate(day))}
-						onclick={(click) => calendar.clickDate(day, click)}
-					>
-						{day.day}
-					</button>
+					{#if dayNumber}
+						{@render dayNumber({
+							day,
+							isToday: isToday(day, calendar.timeZone),
+							inMonth: isSameMonth(day, calendar.date),
+							props: dayNumberProps(day)
+						})}
+					{:else}
+						<button {...dayNumberProps(day)}>{day.day}</button>
+					{/if}
+					{@render dayCell?.({
+						day,
+						isToday: isToday(day, calendar.timeZone),
+						inMonth: isSameMonth(day, calendar.date),
+						events: eventsOnDay(week.items, week.days.indexOf(day))
+					})}
 				</div>
 			{/each}
 
@@ -158,42 +227,30 @@
 			>
 				{#each week.items.filter((item) => item.lane < maxLanes) as item (item.event.id)}
 					{@const event = item.event}
-					{@const bar = isAllDay(event) || item.span > 1}
-					<button
-						type="button"
-						class={cn(
-							'pointer-events-auto mx-0.5 flex min-w-0 items-center gap-1 rounded px-1.5 text-start text-xs [-webkit-touch-callout:none]',
-							bar
-								? 'bg-(--event-color)/15 font-medium text-foreground hover:bg-(--event-color)/25'
-								: 'text-foreground hover:bg-muted',
-							item.continuesBefore && 'ms-0 rounded-s-none',
-							item.continuesAfter && 'me-0 rounded-e-none',
-							preview?.id === event.id && 'opacity-70 shadow-md'
-						)}
-						style:grid-column="{item.startIndex + 1} / span {item.span}"
-						style:grid-row={item.lane + 1}
-						style:--event-color={event.color ?? 'var(--primary)'}
-						title={event.title || calendar.labels.untitled}
-						onpointerdown={(down) => startDrag(down, event)}
-						onclick={(click) => calendar.clickEvent(event, click)}
-						onkeydown={(key) => onEventKey(key, event)}
-						data-event-id={event.id}
-						aria-keyshortcuts={calendar.canEdit(event) ? calendar.moveKey.toUpperCase() : undefined}
-					>
-						{#if eventContent}
-							{@render eventContent(event)}
-						{:else}
-							{#if !bar}
-								<span class="size-2 shrink-0 rounded-full bg-(--event-color)"></span>
-								{#if !isAllDay(event)}
-									<span class="shrink-0 text-muted-foreground"
-										>{time.format(event.start.toDate())}</span
-									>
+					{#if eventSnippet}
+						{@render eventSnippet({
+							event,
+							props: eventProps(item),
+							dragging: preview?.id === event.id
+						})}
+					{:else}
+						{@const bar = isAllDay(event) || item.span > 1}
+						<button {...eventProps(item)}>
+							{#if eventContent}
+								{@render eventContent(event)}
+							{:else}
+								{#if !bar}
+									<span class="size-2 shrink-0 rounded-full bg-(--event-color)"></span>
+									{#if !isAllDay(event)}
+										<span class="shrink-0 text-muted-foreground"
+											>{time.format(event.start.toDate())}</span
+										>
+									{/if}
 								{/if}
+								<span class="truncate">{event.title || calendar.labels.untitled}</span>
 							{/if}
-							<span class="truncate">{event.title || calendar.labels.untitled}</span>
-						{/if}
-					</button>
+						</button>
+					{/if}
 				{/each}
 
 				{#each week.days as day, dayIndex (day.toString())}
@@ -209,11 +266,19 @@
 								class="pointer-events-auto mx-0.5 rounded px-1.5 text-start text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground data-[state=open]:text-foreground"
 								style="grid-column: {dayIndex + 1}; grid-row: {maxLanes + 1}"
 							>
-								<span aria-hidden="true">+{hidden}</span>
-								<span class="sr-only">
-									{pluralLabel(calendar.labels.moreEvents, hidden, calendar.locale)},
-									{fullDate.format(toDate(day))}
-								</span>
+								{#snippet child({ props })}
+									{#if more}
+										{@render more({ day, count: hidden, events: dayEvents, props })}
+									{:else}
+										<button {...props}>
+											<span aria-hidden="true">+{hidden}</span>
+											<span class="sr-only">
+												{pluralLabel(calendar.labels.moreEvents, hidden, calendar.locale)},
+												{fullDate.format(toDate(day))}
+											</span>
+										</button>
+									{/if}
+								{/snippet}
 							</Popover.Trigger>
 							<Popover.Content
 								class="w-64 gap-2 p-2"

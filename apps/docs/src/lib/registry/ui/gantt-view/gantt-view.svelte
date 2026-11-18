@@ -4,21 +4,35 @@
 	import type { Snippet } from 'svelte';
 	import { dragAcrossDays, touchOf, withPreview } from '#lib/registry/lib/calendar-drag.js';
 	import { dayStepper, keyboardMove } from '#lib/registry/lib/calendar-keyboard.js';
-	import { getCalendar } from '#lib/registry/lib/calendar-state.svelte.js';
+	import {
+		getCalendar,
+		type DaySnippetArgs,
+		type EventSnippetArgs,
+		type PartProps
+	} from '#lib/registry/lib/calendar-state.svelte.js';
 	import { cn } from '#lib/utils.js';
 
 	interface Props {
 		class?: string;
 		/** Which events are tasks. Defaults to events with `progress` or `dependsOn`. */
 		filter?: (event: CalendarEvent) => boolean;
-		/** Custom content inside each bar. */
+		/** Custom content inside each bar (the bar and its progress fill stay). */
 		eventContent?: Snippet<[CalendarEvent]>;
+		/** Replaces the whole task bar. Spread `props` to keep dragging, clicks and ARIA. */
+		event?: Snippet<[EventSnippetArgs]>;
+		/** Replaces the day header button. Spread `props` to keep opening the day. */
+		dayHeader?: Snippet<[DaySnippetArgs]>;
+		/** Content of a task label in the first column. */
+		taskLabel?: Snippet<[{ event: CalendarEvent; progress: string | undefined }]>;
 	}
 
 	let {
 		class: className,
 		filter = (event) => event.progress !== undefined || !!event.dependsOn?.length,
-		eventContent
+		eventContent,
+		event: eventSnippet,
+		dayHeader,
+		taskLabel
 	}: Props = $props();
 
 	const calendar = getCalendar();
@@ -121,6 +135,42 @@
 			touchOf(calendar)
 		);
 	}
+
+	type Item = NonNullable<(typeof rows)[number]['item']>;
+
+	/** Attributes of a task bar; used by the default bar and the `event` snippet. */
+	function eventProps(event: CalendarEvent, item: Item): PartProps {
+		const title = event.title || calendar.labels.untitled;
+		return {
+			type: 'button',
+			class: cn(
+				'absolute inset-y-2 flex items-center overflow-hidden rounded bg-(--event-color)/25 text-start text-xs font-medium [-webkit-touch-callout:none] hover:ring-2 hover:ring-(--event-color)/50',
+				preview?.id === event.id && 'opacity-80 shadow-md'
+			),
+			style: `inset-inline-start: ${(item.startIndex / days.length) * 100}%; width: ${(item.span / days.length) * 100}%; --event-color: ${event.color ?? 'var(--primary)'}`,
+			title,
+			'aria-label':
+				event.progress !== undefined
+					? `${title}, ${calendar.labels.progress} ${percent.format(event.progress)}`
+					: title,
+			'data-event-id': event.id,
+			'aria-keyshortcuts': calendar.canEdit(event) ? calendar.moveKey.toUpperCase() : undefined,
+			onpointerdown: (down: PointerEvent) => startDrag(down, event),
+			onclick: (click: MouseEvent) => calendar.clickEvent(event, click),
+			onkeydown: (key: KeyboardEvent) => onEventKey(key, event)
+		};
+	}
+
+	function dayHeaderProps(day: CalendarDate): PartProps {
+		return {
+			type: 'button',
+			class: cn(
+				'flex flex-col items-center py-1 text-xs hover:bg-muted',
+				isToday(day, calendar.timeZone) && 'font-semibold text-primary'
+			),
+			onclick: (click: MouseEvent) => calendar.clickDate(day, click)
+		};
+	}
 </script>
 
 <div
@@ -142,31 +192,42 @@
 				style:grid-template-columns={dayColumns}
 			>
 				{#each days as day (day.toString())}
-					<button
-						type="button"
-						class={cn(
-							'flex flex-col items-center py-1 text-xs hover:bg-muted',
-							isToday(day, calendar.timeZone) && 'font-semibold text-primary'
-						)}
-						onclick={(click) => calendar.clickDate(day, click)}
-					>
-						<span aria-hidden="true" class="text-muted-foreground uppercase"
-							>{weekday.format(toDate(day))}</span
-						>
-						<span aria-hidden="true">{day.day}</span>
-						<span class="sr-only">{fullDate.format(toDate(day))}</span>
-					</button>
+					{#if dayHeader}
+						{@render dayHeader({
+							day,
+							isToday: isToday(day, calendar.timeZone),
+							props: dayHeaderProps(day)
+						})}
+					{:else}
+						<button {...dayHeaderProps(day)}>
+							<span aria-hidden="true" class="text-muted-foreground uppercase"
+								>{weekday.format(toDate(day))}</span
+							>
+							<span aria-hidden="true">{day.day}</span>
+							<span class="sr-only">{fullDate.format(toDate(day))}</span>
+						</button>
+					{/if}
 				{/each}
 			</div>
 
 			<div class="sticky start-0 z-10 border-e bg-background">
 				{#each rows as { event } (event.id)}
 					<div class="flex h-10 items-center justify-between gap-2 border-b px-3 text-sm">
-						<span class="truncate">{event.title || calendar.labels.untitled}</span>
-						{#if event.progress !== undefined}
-							<span class="shrink-0 text-xs text-muted-foreground" title={calendar.labels.progress}>
-								{percent.format(event.progress)}
-							</span>
+						{#if taskLabel}
+							{@render taskLabel({
+								event,
+								progress: event.progress === undefined ? undefined : percent.format(event.progress)
+							})}
+						{:else}
+							<span class="truncate">{event.title || calendar.labels.untitled}</span>
+							{#if event.progress !== undefined}
+								<span
+									class="shrink-0 text-xs text-muted-foreground"
+									title={calendar.labels.progress}
+								>
+									{percent.format(event.progress)}
+								</span>
+							{/if}
 						{/if}
 					</div>
 				{/each}
@@ -191,36 +252,24 @@
 								)}
 							></div>
 						{/each}
-						<button
-							type="button"
-							class={cn(
-								'absolute inset-y-2 flex items-center overflow-hidden rounded bg-(--event-color)/25 text-start text-xs font-medium [-webkit-touch-callout:none] hover:ring-2 hover:ring-(--event-color)/50',
-								preview?.id === event.id && 'opacity-80 shadow-md'
-							)}
-							style:inset-inline-start="{(item!.startIndex / days.length) * 100}%"
-							style:width="{(item!.span / days.length) * 100}%"
-							style:--event-color={event.color ?? 'var(--primary)'}
-							title={event.title || calendar.labels.untitled}
-							aria-label="{event.title || calendar.labels.untitled}{event.progress !== undefined
-								? `, ${calendar.labels.progress} ${percent.format(event.progress)}`
-								: ''}"
-							onpointerdown={(down) => startDrag(down, event)}
-							onclick={(click) => calendar.clickEvent(event, click)}
-							onkeydown={(key) => onEventKey(key, event)}
-							data-event-id={event.id}
-							aria-keyshortcuts={calendar.canEdit(event)
-								? calendar.moveKey.toUpperCase()
-								: undefined}
-						>
-							<span
-								class="absolute inset-y-0 start-0 bg-(--event-color)/60"
-								style:width="{(event.progress ?? 0) * 100}%"
-							></span>
-							<span class="relative truncate px-2">
-								{#if eventContent}{@render eventContent(event)}{:else}{event.title ||
-										calendar.labels.untitled}{/if}
-							</span>
-						</button>
+						{#if eventSnippet}
+							{@render eventSnippet({
+								event,
+								props: eventProps(event, item!),
+								dragging: preview?.id === event.id
+							})}
+						{:else}
+							<button {...eventProps(event, item!)}>
+								<span
+									class="absolute inset-y-0 start-0 bg-(--event-color)/60"
+									style:width="{(event.progress ?? 0) * 100}%"
+								></span>
+								<span class="relative truncate px-2">
+									{#if eventContent}{@render eventContent(event)}{:else}{event.title ||
+											calendar.labels.untitled}{/if}
+								</span>
+							</button>
+						{/if}
 					</div>
 				{/each}
 

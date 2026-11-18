@@ -27,6 +27,7 @@
 		{ href: resolve('/minimo'), label: 'Solo mes' },
 		{ href: resolve('/ganchos'), label: 'Ganchos' },
 		{ href: resolve('/carga'), label: 'Carga por rango' },
+		{ href: resolve('/personalizar'), label: 'Personalizar' },
 		{ href: resolve('/docs'), label: 'Documentación' }
 	];
 </script>

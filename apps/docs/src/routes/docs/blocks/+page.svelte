@@ -43,6 +43,21 @@
 	{/snippet}
 </MonthView>`;
 
+	const eventSnippet = `<MonthView>
+	<!-- props carries the handlers, ARIA, data-event-id, class and style. Keep a focusable element. -->
+	{#snippet event({ event, props, dragging })}
+		<button {...props} class={cn(props.class, 'rounded-full', dragging && 'ring-2')}>
+			{event.title}
+		</button>
+	{/snippet}
+	{#snippet dayCell({ day, events })}
+		{#if events.some((event) => event.data?.kind === 'holiday')}<HolidayIcon />{/if}
+	{/snippet}
+	{#snippet more({ count, props })}
+		<button {...props}>See {count} more</button>
+	{/snippet}
+</MonthView>`;
+
 	const recurrence = `<EventDialog>
 	{#snippet recurrence({ value, setValue, start })}
 		<RecurrenceEditor {value} onchange={setValue} {start} />
@@ -55,7 +70,18 @@
 	const eventContentRow = {
 		name: 'eventContent',
 		type: 'Snippet<[CalendarEvent]>',
-		description: 'Replaces what is drawn inside each event.'
+		description: 'Replaces what is drawn inside each event; the element itself stays.'
+	};
+	const eventRow = (args: string) => ({
+		name: 'event',
+		type: `Snippet<[{ event, props, dragging${args} }]>`,
+		description:
+			'Replaces the whole event element. Spread props on yours to keep clicks, dragging, keyboard and ARIA.'
+	});
+	const dayHeaderRow = {
+		name: 'dayHeader',
+		type: 'Snippet<[{ day, isToday, props }]>',
+		description: 'Replaces the day header button. Spread props to keep opening the day.'
 	};
 </script>
 
@@ -121,6 +147,29 @@
 <h3>Custom views</h3>
 <Code code={customView} />
 
+<h2>Customizing what views draw</h2>
+<p>
+	Views take snippets for their parts, so you can change markup without editing the copied files.
+	There are two kinds:
+</p>
+<ul>
+	<li>
+		<strong>Interactive parts</strong> (events, day buttons, "+N") receive <code>props</code>: the
+		handlers, ARIA attributes, <code>data-event-id</code>, class and style the default element uses.
+		Spread them on your own element (like bits-ui's <code>child</code>) and it keeps working: click
+		hooks, dragging, keyboard move mode and screen reader labels. Keep it focusable, e.g. a
+		<code>&lt;button&gt;</code>.
+	</li>
+	<li>
+		<strong>Display parts</strong> (day cell, resource label, hour label, now line) receive data only.
+	</li>
+</ul>
+<p>
+	<code>eventContent</code> is the shortcut when only the inside of the event should change. For anything
+	the snippets do not cover, edit the copied component: it is your code.
+</p>
+<Code code={eventSnippet} label="Our own event chip, day mark and '+N' button" />
+
 <h2>month-view</h2>
 <p>
 	A month grid. Multi-day events are bars. When a day is full, the rest collapse into "+N", which
@@ -131,7 +180,23 @@
 	rows={[
 		...classOnly,
 		{ name: 'maxLanes', type: 'number = 3', description: 'Event rows per week before "+N".' },
-		eventContentRow
+		eventContentRow,
+		eventRow(''),
+		{
+			name: 'dayNumber',
+			type: 'Snippet<[{ day, isToday, inMonth, props }]>',
+			description: 'Replaces the day number button.'
+		},
+		{
+			name: 'dayCell',
+			type: 'Snippet<[{ day, isToday, inMonth, events }]>',
+			description: 'Extra content in each day cell, under the day number.'
+		},
+		{
+			name: 'more',
+			type: 'Snippet<[{ day, count, events, props }]>',
+			description: 'Replaces the "+N" button. Spread props to keep opening the list.'
+		}
 	]}
 />
 <Code code={eventContent} label="Custom event content (every view accepts it)" />
@@ -157,7 +222,28 @@
 			type: 'number = 7',
 			description: 'Hour shown at the top when it opens.'
 		},
-		eventContentRow
+		eventContentRow,
+		{
+			...eventRow(', allDay, resizeProps? '),
+			description:
+				'Replaces timed blocks and all-day bars. Put an element with resizeProps inside timed blocks to keep resizing.'
+		},
+		dayHeaderRow,
+		{
+			name: 'resourceLabel',
+			type: 'Snippet<[{ resource }]>',
+			description: 'Content of a resource column header.'
+		},
+		{
+			name: 'hourLabel',
+			type: 'Snippet<[{ hour, label }]>',
+			description: 'Text next to each hour line.'
+		},
+		{
+			name: 'nowIndicator',
+			type: 'Snippet<[{ time }]>',
+			description: 'Replaces the "now" line; it is already placed.'
+		}
 	]}
 />
 
@@ -167,13 +253,29 @@
 	rows={[
 		...classOnly,
 		{ name: 'resources', type: 'Resource[]', description: 'Names shown next to each event.' },
-		eventContentRow
+		eventContentRow,
+		{
+			name: 'event',
+			type: 'Snippet<[{ event, props, when, resources }]>',
+			description: 'Replaces a whole event row; when and resources are the formatted texts.'
+		},
+		dayHeaderRow
 	]}
 />
 
 <h2>year-view</h2>
 <p>Twelve small months. Busier days get a stronger tint; clicking a day calls onDateClick.</p>
-<PropsTable caption="YearView props" rows={classOnly} />
+<PropsTable
+	caption="YearView props"
+	rows={[
+		...classOnly,
+		{
+			name: 'dayNumber',
+			type: 'Snippet<[{ day, count, isToday, props }]>',
+			description: 'Replaces each day button; count is its number of events.'
+		}
+	]}
+/>
 
 <h2>timeline-view</h2>
 <p>
@@ -189,7 +291,14 @@
 			description: 'Required. { id, title, color?, parentId? }'
 		},
 		...classOnly,
-		eventContentRow
+		eventContentRow,
+		eventRow(''),
+		dayHeaderRow,
+		{
+			name: 'resourceLabel',
+			type: 'Snippet<[{ resource, title, depth, hasChildren, collapsed, toggle }]>',
+			description: 'Content of a row label. resource is null for the unassigned row.'
+		}
 	]}
 />
 
@@ -204,7 +313,14 @@
 			type: '(event) => boolean',
 			description: 'Which events are tasks. Default: events with progress or dependsOn.'
 		},
-		eventContentRow
+		eventContentRow,
+		eventRow(''),
+		dayHeaderRow,
+		{
+			name: 'taskLabel',
+			type: 'Snippet<[{ event, progress }]>',
+			description: 'Content of a task label; progress is the formatted percentage.'
+		}
 	]}
 />
 

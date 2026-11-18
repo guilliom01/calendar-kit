@@ -39,6 +39,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
 			'/minimo',
 			'/ganchos',
 			'/carga',
+			'/personalizar',
 			'/docs',
 			'/docs/blocks',
 			'/docs/state',

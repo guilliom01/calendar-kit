@@ -18,18 +18,50 @@
 		keyboardMove,
 		type MoveStepper
 	} from '#lib/registry/lib/calendar-keyboard.js';
-	import { getCalendar } from '#lib/registry/lib/calendar-state.svelte.js';
+	import {
+		getCalendar,
+		type DaySnippetArgs,
+		type EventSnippetArgs,
+		type PartProps
+	} from '#lib/registry/lib/calendar-state.svelte.js';
 	import { cn } from '#lib/utils.js';
 
 	interface Props {
 		/** Rows of the timeline. Use `parentId` to group them. */
 		resources: Resource[];
 		class?: string;
-		/** Custom content inside each event bar. */
+		/** Custom content inside each event bar (the bar itself stays). */
 		eventContent?: Snippet<[CalendarEvent]>;
+		/** Replaces the whole event bar. Spread `props` to keep dragging, clicks and ARIA. */
+		event?: Snippet<[EventSnippetArgs]>;
+		/** Replaces the day header button. Spread `props` to keep opening the day. */
+		dayHeader?: Snippet<[DaySnippetArgs]>;
+		/**
+		 * Content of a row label. `resource` is null for the "unassigned" row; call `toggle` to
+		 * collapse or expand a group.
+		 */
+		resourceLabel?: Snippet<
+			[
+				{
+					resource: Resource | null;
+					title: string;
+					depth: number;
+					hasChildren: boolean;
+					collapsed: boolean;
+					toggle: () => void;
+				}
+			]
+		>;
 	}
 
-	let { resources, class: className, eventContent }: Props = $props();
+	let {
+		resources,
+		class: className,
+		eventContent,
+		event: eventSnippet,
+		dayHeader,
+		resourceLabel
+	}: Props = $props();
 
 	const calendar = getCalendar();
 
@@ -126,6 +158,37 @@
 			);
 		}
 	}
+
+	type Item = (typeof rows)[number]['items'][number];
+
+	/** Attributes of an event bar; used by the default bar and the `event` snippet. */
+	function eventProps(item: Item, rowId: string): PartProps {
+		const event = item.event;
+		return {
+			type: 'button',
+			class: cn(
+				'pointer-events-auto mx-0.5 flex min-w-0 items-center gap-1 rounded bg-(--event-color)/20 px-1.5 text-start text-xs font-medium [-webkit-touch-callout:none] hover:bg-(--event-color)/30',
+				item.continuesBefore && 'ms-0 rounded-s-none',
+				item.continuesAfter && 'me-0 rounded-e-none',
+				preview?.id === event.id && 'opacity-70 shadow-md'
+			),
+			style: `grid-column: ${item.startIndex + 1} / span ${item.span}; grid-row: ${item.lane + 1}; --event-color: ${event.color ?? 'var(--primary)'}`,
+			title: event.title || calendar.labels.untitled,
+			'data-event-id': event.id,
+			'aria-keyshortcuts': calendar.canEdit(event) ? calendar.moveKey.toUpperCase() : undefined,
+			onpointerdown: (down: PointerEvent) => startDrag(down, event),
+			onclick: (click: MouseEvent) => calendar.clickEvent(event, click),
+			onkeydown: (key: KeyboardEvent) => onEventKey(key, event, rowId)
+		};
+	}
+
+	function dayHeaderProps(day: CalendarDate): PartProps {
+		return {
+			type: 'button',
+			class: 'flex items-center justify-center gap-1.5 py-2 text-sm hover:bg-muted',
+			onclick: (click: MouseEvent) => calendar.clickDate(day, click)
+		};
+	}
 </script>
 
 <div
@@ -141,25 +204,29 @@
 			style:grid-template-columns={dayColumns}
 		>
 			{#each days as day (day.toString())}
-				<button
-					type="button"
-					class="flex items-center justify-center gap-1.5 py-2 text-sm hover:bg-muted"
-					onclick={(click) => calendar.clickDate(day, click)}
-				>
-					<span aria-hidden="true" class="text-xs text-muted-foreground capitalize"
-						>{weekday.format(toDate(day))}</span
-					>
-					<span
-						aria-hidden="true"
-						class={cn(
-							'inline-flex size-7 items-center justify-center rounded-full',
-							isToday(day, calendar.timeZone) && 'bg-primary text-primary-foreground'
-						)}
-					>
-						{day.day}
-					</span>
-					<span class="sr-only">{fullDate.format(toDate(day))}</span>
-				</button>
+				{#if dayHeader}
+					{@render dayHeader({
+						day,
+						isToday: isToday(day, calendar.timeZone),
+						props: dayHeaderProps(day)
+					})}
+				{:else}
+					<button {...dayHeaderProps(day)}>
+						<span aria-hidden="true" class="text-xs text-muted-foreground capitalize"
+							>{weekday.format(toDate(day))}</span
+						>
+						<span
+							aria-hidden="true"
+							class={cn(
+								'inline-flex size-7 items-center justify-center rounded-full',
+								isToday(day, calendar.timeZone) && 'bg-primary text-primary-foreground'
+							)}
+						>
+							{day.day}
+						</span>
+						<span class="sr-only">{fullDate.format(toDate(day))}</span>
+					</button>
+				{/if}
 			{/each}
 		</div>
 
@@ -169,20 +236,32 @@
 				class="sticky start-0 z-10 flex items-start border-e border-b bg-background px-2 py-1.5 text-sm"
 				style:padding-inline-start="{0.5 + row.depth * 1.25}rem"
 			>
-				{#if row.hasChildren}
-					<button
-						type="button"
-						class="flex items-center gap-1 rounded font-medium hover:bg-muted"
-						aria-expanded={!collapsed.has(row.id)}
-						onclick={() => toggle(row.id)}
-					>
-						{#if collapsed.has(row.id)}<ChevronRightIcon
-								class="size-4 rtl:rotate-180"
-							/>{:else}<ChevronDownIcon class="size-4" />{/if}
-						{row.title}
-					</button>
-				{:else}
-					<span class={cn('truncate', !row.id && 'text-muted-foreground italic')}>{row.title}</span>
+				{#if resourceLabel}
+					{@render resourceLabel({
+						resource: resources.find((resource) => resource.id === row.id) ?? null,
+						title: row.title,
+						depth: row.depth,
+						hasChildren: row.hasChildren,
+						collapsed: collapsed.has(row.id),
+						toggle: () => toggle(row.id)
+					})}
+				{:else}{#if row.hasChildren}
+						<button
+							type="button"
+							class="flex items-center gap-1 rounded font-medium hover:bg-muted"
+							aria-expanded={!collapsed.has(row.id)}
+							onclick={() => toggle(row.id)}
+						>
+							{#if collapsed.has(row.id)}<ChevronRightIcon
+									class="size-4 rtl:rotate-180"
+								/>{:else}<ChevronDownIcon class="size-4" />{/if}
+							{row.title}
+						</button>
+					{:else}
+						<span class={cn('truncate', !row.id && 'text-muted-foreground italic')}
+							>{row.title}</span
+						>
+					{/if}
 				{/if}
 			</div>
 
@@ -215,37 +294,26 @@
 				>
 					{#each row.items as item (item.event.id)}
 						{@const event = item.event}
-						<button
-							type="button"
-							class={cn(
-								'pointer-events-auto mx-0.5 flex min-w-0 items-center gap-1 rounded bg-(--event-color)/20 px-1.5 text-start text-xs font-medium [-webkit-touch-callout:none] hover:bg-(--event-color)/30',
-								item.continuesBefore && 'ms-0 rounded-s-none',
-								item.continuesAfter && 'me-0 rounded-e-none',
-								preview?.id === event.id && 'opacity-70 shadow-md'
-							)}
-							style:grid-column="{item.startIndex + 1} / span {item.span}"
-							style:grid-row={item.lane + 1}
-							style:--event-color={event.color ?? 'var(--primary)'}
-							title={event.title || calendar.labels.untitled}
-							onpointerdown={(down) => startDrag(down, event)}
-							onclick={(click) => calendar.clickEvent(event, click)}
-							onkeydown={(key) => onEventKey(key, event, row.id)}
-							data-event-id={event.id}
-							aria-keyshortcuts={calendar.canEdit(event)
-								? calendar.moveKey.toUpperCase()
-								: undefined}
-						>
-							{#if eventContent}
-								{@render eventContent(event)}
-							{:else}
-								{#if !isAllDay(event)}
-									<span class="shrink-0 text-foreground/75"
-										>{time.format(event.start.toDate())}</span
-									>
+						{#if eventSnippet}
+							{@render eventSnippet({
+								event,
+								props: eventProps(item, row.id),
+								dragging: preview?.id === event.id
+							})}
+						{:else}
+							<button {...eventProps(item, row.id)}>
+								{#if eventContent}
+									{@render eventContent(event)}
+								{:else}
+									{#if !isAllDay(event)}
+										<span class="shrink-0 text-foreground/75"
+											>{time.format(event.start.toDate())}</span
+										>
+									{/if}
+									<span class="truncate">{event.title || calendar.labels.untitled}</span>
 								{/if}
-								<span class="truncate">{event.title || calendar.labels.untitled}</span>
-							{/if}
-						</button>
+							</button>
+						{/if}
 					{/each}
 				</div>
 			</div>
