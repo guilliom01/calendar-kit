@@ -1279,3 +1279,28 @@ test.describe('dragging items from outside the calendar', () => {
 		await expect(page.getByRole('button', { name: 'Tarea sin fecha' })).toHaveCount(0);
 	});
 });
+
+test.describe('phones', () => {
+	test.beforeEach(async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+	});
+
+	test('the view switcher becomes a select', async ({ page }) => {
+		await expect(page.getByRole('group', { name: 'Vistas' })).toBeHidden();
+		const select = page.getByRole('combobox', { name: 'Vistas' });
+		await expect(select).toHaveValue('month');
+		await select.selectOption({ label: 'Semana' });
+		await expect(title(page)).toContainText('15');
+		await expect(title(page)).toContainText('21');
+	});
+
+	test('the month shows dots, and a tapped day lists its events below', async ({ page }) => {
+		await expect(page.getByRole('button', { name: /Svelte workshop/ })).toHaveCount(0);
+		await dayButton(page, 'miércoles, 18 de noviembre de 2026, 3 eventos').click();
+		const list = page.getByRole('list', { name: 'miércoles, 18 de noviembre de 2026' });
+		await expect(list.getByRole('button', { name: /Svelte workshop/ })).toBeVisible();
+		await expect(list.getByRole('button', { name: /Conferencia en Cusco/ })).toBeVisible();
+		await list.getByRole('button', { name: /Svelte workshop/ }).click();
+		await expect(page.getByRole('dialog')).toBeVisible();
+	});
+});

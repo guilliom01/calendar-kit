@@ -52,3 +52,18 @@ for (const colorScheme of ['light', 'dark'] as const) {
 		}
 	});
 }
+
+for (const colorScheme of ['light', 'dark'] as const) {
+	test(`no WCAG 2.1 AA violations on a phone in ${colorScheme} mode`, async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.emulateMedia({ colorScheme });
+		await page.clock.setFixedTime(new Date('2026-11-17T14:00:00-05:00'));
+		await page.goto('/');
+		// The compact month, with a day's list open, and the view select.
+		await page
+			.getByRole('button', { name: 'miércoles, 18 de noviembre de 2026, 3 eventos' })
+			.and(page.locator(':not([data-mini-date])'))
+			.click();
+		expect(await scan(page), 'compact month').toEqual([]);
+	});
+}

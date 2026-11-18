@@ -41,7 +41,8 @@
 
 <svelte:window onkeydown={onKeydown} />
 
-<div class={cn('flex h-full min-h-0 flex-col gap-3 print:h-auto', className)}>
+<!-- A size container, so parts can adapt to the calendar's width (e.g. the view switcher). -->
+<div class={cn('@container/calendar flex h-full min-h-0 flex-col gap-3 print:h-auto', className)}>
 	{@render children?.()}
 	<!-- Announces keyboard moves and other changes to screen readers. -->
 	<div class="sr-only" aria-live="polite" aria-atomic="true">{state.announcement}</div>

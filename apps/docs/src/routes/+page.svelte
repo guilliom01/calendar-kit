@@ -79,7 +79,7 @@
 		{/if}
 
 		<div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
-			<aside class="flex shrink-0 flex-col gap-6 md:w-56 print:hidden">
+			<aside class="order-last flex shrink-0 flex-col gap-6 md:order-none md:w-56 print:hidden">
 				<MiniCalendar />
 				<CalendarList />
 				<div class="grid gap-2 text-sm">
@@ -100,7 +100,7 @@
 					</ul>
 				</div>
 			</aside>
-			<EventContextMenu class="min-w-0">
+			<EventContextMenu class="min-h-[32rem] min-w-0 md:min-h-0">
 				<EventPreview>
 					<FullCalendar.View name="month"><MonthView class="flex-1" /></FullCalendar.View>
 					<FullCalendar.View name="week"><TimeGrid class="flex-1" /></FullCalendar.View>

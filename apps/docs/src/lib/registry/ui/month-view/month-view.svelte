@@ -23,6 +23,11 @@
 		class?: string;
 		/** Event lanes shown per week before collapsing the rest into "+N". */
 		maxLanes?: number;
+		/**
+		 * Compact layout for phones: colored dots per day, and the tapped day's events listed below.
+		 * `auto` (default) uses it while the view is narrower than 40rem.
+		 */
+		compact?: boolean | 'auto';
 		/** Custom content inside each event chip (the chip itself stays). */
 		eventContent?: Snippet<[CalendarEvent]>;
 		/** Replaces the whole event chip. Spread `props` on your element to keep dragging, clicks and ARIA. */
@@ -42,6 +47,7 @@
 	let {
 		class: className,
 		maxLanes = 3,
+		compact = 'auto',
 		eventContent,
 		event: eventSnippet,
 		dayNumber,
@@ -67,6 +73,23 @@
 	const weekday = $derived(formatter({ weekday: 'short' }));
 	const time = $derived(formatter({ hour: 'numeric', minute: '2-digit' }));
 	const fullDate = $derived(formatter({ dateStyle: 'full' }));
+
+	let width = $state(0);
+	const isCompact = $derived(compact === 'auto' ? width > 0 && width < 640 : compact);
+	/** Day whose events the compact layout lists; by default the calendar's date. */
+	let pickedDay: CalendarDate | null = $state(null);
+	const listedDay = $derived(
+		pickedDay && isSameMonth(pickedDay, calendar.date) ? pickedDay : calendar.date
+	);
+
+	/** Events shown on `day`, in lane order. */
+	function eventsOf(day: CalendarDate) {
+		for (const week of weeks) {
+			const index = week.days.findIndex((candidate) => candidate.compare(day) === 0);
+			if (index !== -1) return eventsOnDay(week.items, index);
+		}
+		return [];
+	}
 
 	/** Day whose "+N" list is open. */
 	let openDay: string | null = $state(null);
@@ -198,6 +221,7 @@
 		'flex flex-col overflow-y-auto rounded-lg border select-none print:overflow-visible',
 		className
 	)}
+	bind:clientWidth={width}
 >
 	<div class="grid grid-cols-7 border-b bg-muted/40">
 		{#each weeks[0]?.days ?? [] as day (day.toString())}
@@ -207,155 +231,245 @@
 		{/each}
 	</div>
 
-	{#each weeks as week (week.days[0]?.toString())}
-		<!-- Tall enough for the day number, `maxLanes` lanes and the "+N" row. -->
-		<div
-			class="relative grid flex-1 grid-cols-7 border-b last:border-b-0"
-			style:min-height="calc(2.5rem + {maxLanes + 1} * 1.5rem)"
-		>
-			{#each week.days as day (day.toString())}
-				<!-- Clicking an empty spot creates an all-day event; keyboard users use the toolbar. -->
-				<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-				<div
+	{#if isCompact}
+		<div class="grid grid-cols-7 border-b">
+			{#each weeks.flatMap((week) => week.days) as day (day.toString())}
+				{@const dayEvents = eventsOf(day)}
+				{@const date = fullDate.format(toDate(day))}
+				<button
+					type="button"
 					data-date={day.toString()}
 					class={cn(
-						'border-e p-1 last:border-e-0',
-						!isSameMonth(day, calendar.date) && 'bg-muted/30 text-muted-foreground'
+						'flex flex-col items-center gap-1 py-1.5 text-xs hover:bg-muted',
+						!isSameMonth(day, calendar.date) && 'text-muted-foreground',
+						day.compare(listedDay) === 0 && 'bg-muted font-semibold'
 					)}
-					onclick={(click) => {
-						if (click.target === click.currentTarget)
-							calendar.select({ start: day, end: day.add({ days: 1 }), allDay: true, fields: {} });
-					}}
+					aria-label={dayEvents.length
+						? `${date}, ${pluralLabel(calendar.labels.eventCount, dayEvents.length, calendar.locale)}`
+						: date}
+					aria-pressed={day.compare(listedDay) === 0}
+					onclick={() => (pickedDay = day)}
 				>
-					{#if dayNumber}
-						{@render dayNumber({
+					<span
+						class={cn(
+							'inline-flex size-6 items-center justify-center rounded-full',
+							isToday(day, calendar.timeZone) && 'bg-primary text-primary-foreground'
+						)}
+					>
+						{day.day}
+					</span>
+					<span class="flex h-1.5 gap-0.5" aria-hidden="true">
+						{#each dayEvents.slice(0, 3) as event (event.id)}
+							<span
+								class="size-1.5 rounded-full bg-(--event-color)"
+								style:--event-color={calendar.colorOf(event)}
+							></span>
+						{/each}
+					</span>
+				</button>
+			{/each}
+		</div>
+
+		<div class="grid gap-1 p-2">
+			<!-- Opening the day goes through onDateClick, like the day numbers. -->
+			<button
+				type="button"
+				class="w-fit rounded px-2 py-1 text-start text-sm font-semibold first-letter:uppercase hover:bg-muted"
+				onclick={(click) => calendar.clickDate(listedDay, click)}
+			>
+				{fullDate.format(toDate(listedDay))}
+			</button>
+			{#if eventsOf(listedDay).length}
+				<ul class="grid gap-0.5" aria-label={fullDate.format(toDate(listedDay))}>
+					{#each eventsOf(listedDay) as event (event.id)}
+						<li>
+							<button
+								type="button"
+								class={cn(
+									'flex w-full min-w-0 items-center gap-2 rounded px-2 py-2 text-start text-sm hover:bg-muted',
+									calendar.eventClass(event)
+								)}
+								style:--event-color={calendar.colorOf(event)}
+								data-event-id={event.id}
+								onclick={(click) => calendar.clickEvent(event, click)}
+								oncontextmenu={(menu) => onEventMenu(event, menu)}
+								onkeydown={(key) => onEventKey(key, event)}
+							>
+								<span class="size-2.5 shrink-0 rounded-full bg-(--event-color)"></span>
+								{#if eventContent}
+									{@render eventContent(event)}
+								{:else}
+									<span class="truncate">{event.title || calendar.labels.untitled}</span>
+									{#if !isAllDay(event)}
+										<span class="ms-auto shrink-0 text-muted-foreground">
+											{time.format(event.start.toDate())}
+										</span>
+									{/if}
+								{/if}
+							</button>
+						</li>
+					{/each}
+				</ul>
+			{:else}
+				<p class="px-2 py-1 text-sm text-muted-foreground">{calendar.labels.noEvents}</p>
+			{/if}
+		</div>
+	{:else}
+		{#each weeks as week (week.days[0]?.toString())}
+			<!-- Tall enough for the day number, `maxLanes` lanes and the "+N" row. -->
+			<div
+				class="relative grid flex-1 grid-cols-7 border-b last:border-b-0"
+				style:min-height="calc(2.5rem + {maxLanes + 1} * 1.5rem)"
+			>
+				{#each week.days as day (day.toString())}
+					<!-- Clicking an empty spot creates an all-day event; keyboard users use the toolbar. -->
+					<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+					<div
+						data-date={day.toString()}
+						class={cn(
+							'border-e p-1 last:border-e-0',
+							!isSameMonth(day, calendar.date) && 'bg-muted/30 text-muted-foreground'
+						)}
+						onclick={(click) => {
+							if (click.target === click.currentTarget)
+								calendar.select({
+									start: day,
+									end: day.add({ days: 1 }),
+									allDay: true,
+									fields: {}
+								});
+						}}
+					>
+						{#if dayNumber}
+							{@render dayNumber({
+								day,
+								isToday: isToday(day, calendar.timeZone),
+								inMonth: isSameMonth(day, calendar.date),
+								props: dayNumberProps(day)
+							})}
+						{:else}
+							<button {...dayNumberProps(day)}>{day.day}</button>
+						{/if}
+						{@render dayCell?.({
 							day,
 							isToday: isToday(day, calendar.timeZone),
 							inMonth: isSameMonth(day, calendar.date),
-							props: dayNumberProps(day)
+							events: eventsOnDay(week.items, week.days.indexOf(day))
 						})}
-					{:else}
-						<button {...dayNumberProps(day)}>{day.day}</button>
-					{/if}
-					{@render dayCell?.({
-						day,
-						isToday: isToday(day, calendar.timeZone),
-						inMonth: isSameMonth(day, calendar.date),
-						events: eventsOnDay(week.items, week.days.indexOf(day))
-					})}
-				</div>
-			{/each}
-
-			<div
-				class="pointer-events-none absolute inset-x-0 top-9 grid auto-rows-[1.375rem] grid-cols-7 gap-y-0.5 px-0.5"
-			>
-				{#each week.items.filter((item) => item.lane < maxLanes) as item (item.event.id)}
-					{@const event = item.event}
-					{#if eventSnippet}
-						{@render eventSnippet({
-							event,
-							resizeProps: resizeHandles(item),
-							props: eventProps(item),
-							dragging: preview?.id === event.id
-						})}
-					{:else}
-						{@const bar = isAllDay(event) || item.span > 1}
-						{@const resize = resizeHandles(item)}
-						<button {...eventProps(item)}>
-							{#if eventContent}
-								{@render eventContent(event)}
-							{:else}
-								{#if !bar}
-									<span class="size-2 shrink-0 rounded-full bg-(--event-color)"></span>
-									{#if !isAllDay(event)}
-										<span class="shrink-0 text-muted-foreground"
-											>{time.format(event.start.toDate())}</span
-										>
-									{/if}
-								{/if}
-								<span class="truncate">{event.title || calendar.labels.untitled}</span>
-							{/if}
-							{#if resize.start}<span {...resize.start}></span>{/if}
-							{#if resize.end}<span {...resize.end}></span>{/if}
-						</button>
-					{/if}
+					</div>
 				{/each}
 
-				{#each week.days as day, dayIndex (day.toString())}
-					{@const hidden = hiddenCount(week.items, dayIndex)}
-					{#if hidden > 0}
-						{@const key = day.toString()}
-						{@const dayEvents = eventsOnDay(week.items, dayIndex)}
-						<!-- Opening goes through onMoreClick, which may keep it closed and do something else. -->
-						<Popover.Root
-							bind:open={() => openDay === key, (open) => setOpen(key, open, day, dayEvents)}
-						>
-							<Popover.Trigger
-								class="pointer-events-auto mx-0.5 rounded px-1.5 text-start text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground data-[state=open]:text-foreground"
-								style="grid-column: {dayIndex + 1}; grid-row: {maxLanes + 1}"
-							>
-								{#snippet child({ props })}
-									{#if more}
-										{@render more({ day, count: hidden, events: dayEvents, props })}
-									{:else}
-										<button {...props}>
-											<span aria-hidden="true">+{hidden}</span>
-											<span class="sr-only">
-												{pluralLabel(calendar.labels.moreEvents, hidden, calendar.locale)},
-												{fullDate.format(toDate(day))}
-											</span>
-										</button>
-									{/if}
-								{/snippet}
-							</Popover.Trigger>
-							<Popover.Content
-								class="w-64 gap-2 p-2"
-								align="start"
-								role="dialog"
-								aria-label={fullDate.format(toDate(day))}
-							>
-								<button
-									type="button"
-									class="rounded px-2 py-1 text-start text-sm font-semibold first-letter:uppercase hover:bg-muted"
-									onclick={(click) => {
-										openDay = null;
-										calendar.clickDate(day, click);
-									}}
-								>
-									{fullDate.format(toDate(day))}
-								</button>
-								<ul class="grid gap-0.5">
-									{#each dayEvents as event (event.id)}
-										<li>
-											<button
-												type="button"
-												class="flex w-full min-w-0 items-center gap-1.5 rounded px-2 py-1 text-start text-xs hover:bg-muted"
-												style:--event-color={calendar.colorOf(event)}
-												onclick={(click) => {
-													openDay = null;
-													calendar.clickEvent(event, click);
-												}}
+				<div
+					class="pointer-events-none absolute inset-x-0 top-9 grid auto-rows-[1.375rem] grid-cols-7 gap-y-0.5 px-0.5"
+				>
+					{#each week.items.filter((item) => item.lane < maxLanes) as item (item.event.id)}
+						{@const event = item.event}
+						{#if eventSnippet}
+							{@render eventSnippet({
+								event,
+								resizeProps: resizeHandles(item),
+								props: eventProps(item),
+								dragging: preview?.id === event.id
+							})}
+						{:else}
+							{@const bar = isAllDay(event) || item.span > 1}
+							{@const resize = resizeHandles(item)}
+							<button {...eventProps(item)}>
+								{#if eventContent}
+									{@render eventContent(event)}
+								{:else}
+									{#if !bar}
+										<span class="size-2 shrink-0 rounded-full bg-(--event-color)"></span>
+										{#if !isAllDay(event)}
+											<span class="shrink-0 text-muted-foreground"
+												>{time.format(event.start.toDate())}</span
 											>
-												{#if eventContent}
-													{@render eventContent(event)}
-												{:else}
-													<span class="size-2 shrink-0 rounded-full bg-(--event-color)"></span>
-													{#if !isAllDay(event)}
-														<span class="shrink-0 text-muted-foreground"
-															>{time.format(event.start.toDate())}</span
-														>
-													{/if}
-													<span class="truncate">{event.title || calendar.labels.untitled}</span>
-												{/if}
+										{/if}
+									{/if}
+									<span class="truncate">{event.title || calendar.labels.untitled}</span>
+								{/if}
+								{#if resize.start}<span {...resize.start}></span>{/if}
+								{#if resize.end}<span {...resize.end}></span>{/if}
+							</button>
+						{/if}
+					{/each}
+
+					{#each week.days as day, dayIndex (day.toString())}
+						{@const hidden = hiddenCount(week.items, dayIndex)}
+						{#if hidden > 0}
+							{@const key = day.toString()}
+							{@const dayEvents = eventsOnDay(week.items, dayIndex)}
+							<!-- Opening goes through onMoreClick, which may keep it closed and do something else. -->
+							<Popover.Root
+								bind:open={() => openDay === key, (open) => setOpen(key, open, day, dayEvents)}
+							>
+								<Popover.Trigger
+									class="pointer-events-auto mx-0.5 rounded px-1.5 text-start text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground data-[state=open]:text-foreground"
+									style="grid-column: {dayIndex + 1}; grid-row: {maxLanes + 1}"
+								>
+									{#snippet child({ props })}
+										{#if more}
+											{@render more({ day, count: hidden, events: dayEvents, props })}
+										{:else}
+											<button {...props}>
+												<span aria-hidden="true">+{hidden}</span>
+												<span class="sr-only">
+													{pluralLabel(calendar.labels.moreEvents, hidden, calendar.locale)},
+													{fullDate.format(toDate(day))}
+												</span>
 											</button>
-										</li>
-									{/each}
-								</ul>
-							</Popover.Content>
-						</Popover.Root>
-					{/if}
-				{/each}
+										{/if}
+									{/snippet}
+								</Popover.Trigger>
+								<Popover.Content
+									class="w-64 gap-2 p-2"
+									align="start"
+									role="dialog"
+									aria-label={fullDate.format(toDate(day))}
+								>
+									<button
+										type="button"
+										class="rounded px-2 py-1 text-start text-sm font-semibold first-letter:uppercase hover:bg-muted"
+										onclick={(click) => {
+											openDay = null;
+											calendar.clickDate(day, click);
+										}}
+									>
+										{fullDate.format(toDate(day))}
+									</button>
+									<ul class="grid gap-0.5">
+										{#each dayEvents as event (event.id)}
+											<li>
+												<button
+													type="button"
+													class="flex w-full min-w-0 items-center gap-1.5 rounded px-2 py-1 text-start text-xs hover:bg-muted"
+													style:--event-color={calendar.colorOf(event)}
+													onclick={(click) => {
+														openDay = null;
+														calendar.clickEvent(event, click);
+													}}
+												>
+													{#if eventContent}
+														{@render eventContent(event)}
+													{:else}
+														<span class="size-2 shrink-0 rounded-full bg-(--event-color)"></span>
+														{#if !isAllDay(event)}
+															<span class="shrink-0 text-muted-foreground"
+																>{time.format(event.start.toDate())}</span
+															>
+														{/if}
+														<span class="truncate">{event.title || calendar.labels.untitled}</span>
+													{/if}
+												</button>
+											</li>
+										{/each}
+									</ul>
+								</Popover.Content>
+							</Popover.Root>
+						{/if}
+					{/each}
+				</div>
 			</div>
-		</div>
-	{/each}
+		{/each}
+	{/if}
 </div>

@@ -93,6 +93,8 @@ Each view is shown by a `<FullCalendar.View name="…">`. Registering a view als
 </FullCalendar.View>
 ```
 
+On narrow screens (by the calendar's own width, not the window's), `ViewSwitcher` becomes a select and `MonthView` shows dots per day with the tapped day's events below it; `variant` and `compact` force either layout. For the week, a day view reads better on phones.
+
 Resources are props of the views that use them: `<TimeGrid resources={…} />`, `<TimelineView resources={…} />`, `<AgendaView resources={…} />`, `<EventDialog resources={…} />`. A resource is `{ id, title, color?, parentId? }`; assign events with `resourceIds`.
 
 ### Customizing what views draw

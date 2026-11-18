@@ -146,8 +146,9 @@ ${'</' + 'script>'}
 		{ name: 'Title', type: 'class', description: 'The visible period, e.g. "noviembre de 2026".' },
 		{
 			name: 'ViewSwitcher',
-			type: 'class',
-			description: 'One button per registered view. Hidden when there is only one.'
+			type: "class, variant = 'auto'",
+			description:
+				"One button per registered view, or a select ('select'); 'auto' uses a select while the calendar is narrower than 42rem. Hidden when there is only one view."
 		},
 		{
 			name: 'NewEvent',
@@ -200,6 +201,12 @@ ${'</' + 'script>'}
 	rows={[
 		...classOnly,
 		{ name: 'maxLanes', type: 'number = 3', description: 'Event rows per week before "+N".' },
+		{
+			name: 'compact',
+			type: "boolean | 'auto' = 'auto'",
+			description:
+				"Phone layout: dots per day and the tapped day's events below. 'auto' uses it while the view is narrower than 40rem."
+		},
 		eventContentRow,
 		eventRow(''),
 		{
