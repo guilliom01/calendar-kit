@@ -25,3 +25,6 @@ vite.config.ts.timestamp-*
 test-results
 dist/
 apps/docs/static/r/
+
+# Internal ODD logbook (kept local)
+odd/
