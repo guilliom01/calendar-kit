@@ -199,3 +199,54 @@ describe('series editing', () => {
 		expect(ended.rrule).toBe('FREQ=WEEKLY;UNTIL=20261123T225959Z;BYDAY=MO,WE');
 	});
 });
+
+describe('RDATE', () => {
+	const lima = (value: string) => parseZonedDateTime(`${value}[America/Lima]`);
+	const series: CalendarEvent = {
+		...timed('class', '2026-11-16T18:00', '2026-11-16T20:00'),
+		rrule: 'FREQ=WEEKLY;COUNT=3',
+		// Out of order, one repeats an rrule start and one is excluded.
+		rdates: [lima('2026-11-25T18:00'), lima('2026-11-18T18:00'), lima('2026-11-23T18:00')],
+		exdates: [lima('2026-11-25T18:00')]
+	};
+
+	it('adds the extra starts in order, without duplicates or excluded dates', () => {
+		const result = occurrences(series, wide, timeZone);
+
+		expect(starts(result)).toEqual([
+			'2026-11-16T18:00:00-05:00[America/Lima]',
+			'2026-11-18T18:00:00-05:00[America/Lima]',
+			'2026-11-23T18:00:00-05:00[America/Lima]',
+			'2026-11-30T18:00:00-05:00[America/Lima]'
+		]);
+		expect(result[1]).toMatchObject({
+			id: 'class::2026-11-18T18:00:00-05:00[America/Lima]',
+			seriesId: 'class',
+			recurrenceId: lima('2026-11-18T18:00')
+		});
+		expect(result[1]!.end.toString()).toBe('2026-11-18T20:00:00-05:00[America/Lima]');
+	});
+
+	it('only returns the extra starts inside the range', () => {
+		const week = { start: new CalendarDate(2026, 11, 17), end: new CalendarDate(2026, 11, 20) };
+		expect(starts(expandEvents([series], week, timeZone))).toEqual([
+			'2026-11-18T18:00:00-05:00[America/Lima]'
+		]);
+	});
+
+	it('makes a series without rrule: the start plus each date', () => {
+		const dates: CalendarEvent = {
+			...allDay('fair', new CalendarDate(2026, 11, 20), new CalendarDate(2026, 11, 21)),
+			rdates: [new CalendarDate(2026, 12, 4), new CalendarDate(2026, 11, 27)]
+		};
+		const result = occurrences(dates, wide, timeZone);
+
+		expect(starts(result)).toEqual(['2026-11-20', '2026-11-27', '2026-12-04']);
+		expect(result.map((event) => event.end.toString())).toEqual([
+			'2026-11-21',
+			'2026-11-28',
+			'2026-12-05'
+		]);
+		expect(result.every((event) => event.seriesId === 'fair')).toBe(true);
+	});
+});

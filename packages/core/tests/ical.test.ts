@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CalendarDate, parseZonedDateTime } from '@internationalized/date';
-import { parseICS, toICS, type CalendarEvent } from '../src/index.js';
+import { expandEvents, parseICS, toICS, type CalendarEvent } from '../src/index.js';
 import { allDay, timeZone, timed } from './fixtures.js';
 
 const stamp = new Date('2026-11-17T19:00:00Z');
@@ -251,5 +251,94 @@ describe('description and location', () => {
 		const [back] = parseICS(ics, { timeZone }).events;
 		expect(back!.location).toBe(event.location);
 		expect(back!.description).toBe(event.description);
+	});
+});
+
+describe('RDATE and modified occurrences', () => {
+	const wide = { start: new CalendarDate(2026, 1, 1), end: new CalendarDate(2027, 12, 31) };
+	const visible = (events: CalendarEvent[]) =>
+		expandEvents(events, wide, timeZone).map((event) => `${event.start} ${event.title}`);
+
+	it('reads RDATE lists and writes them back', () => {
+		const text = [
+			'BEGIN:VCALENDAR',
+			'BEGIN:VEVENT',
+			'UID:talks',
+			'SUMMARY:Charla',
+			'DTSTART;TZID=America/Lima:20261116T180000',
+			'DTEND;TZID=America/Lima:20261116T190000',
+			'RDATE;TZID=America/Lima:20261120T180000,20261127T180000',
+			'RDATE;TZID=America/Lima:20261204T180000',
+			'END:VEVENT',
+			'END:VCALENDAR'
+		].join('\r\n');
+
+		const { events } = parseICS(text);
+		expect(events[0]?.rdates?.map(String)).toEqual([
+			'2026-11-20T18:00:00-05:00[America/Lima]',
+			'2026-11-27T18:00:00-05:00[America/Lima]',
+			'2026-12-04T18:00:00-05:00[America/Lima]'
+		]);
+		expect(visible(events)).toHaveLength(4);
+
+		const ics = toICS(events, { now: stamp });
+		expect(lines(ics)).toContain('RDATE;TZID=America/Lima:20261127T180000');
+		expect(visible(parseICS(ics).events)).toEqual(visible(events));
+	});
+
+	const google = [
+		'BEGIN:VCALENDAR',
+		'PRODID:-//Google Inc//Google Calendar 70.9054//EN',
+		'BEGIN:VEVENT',
+		'UID:abc123@google.com',
+		'SUMMARY:Clase',
+		'DTSTART;TZID=America/Lima:20261116T180000',
+		'DTEND;TZID=America/Lima:20261116T190000',
+		'RRULE:FREQ=WEEKLY;COUNT=4',
+		'END:VEVENT',
+		'BEGIN:VEVENT',
+		'UID:abc123@google.com',
+		'RECURRENCE-ID;TZID=America/Lima:20261123T180000',
+		'SUMMARY:Clase (cambiada de hora)',
+		'LOCATION:Aula 2',
+		'DTSTART;TZID=America/Lima:20261123T200000',
+		'DTEND;TZID=America/Lima:20261123T210000',
+		'END:VEVENT',
+		'END:VCALENDAR'
+	].join('\r\n');
+
+	it('keeps a modified occurrence linked to its series', () => {
+		const [, exception] = parseICS(google).events;
+		expect(exception).toMatchObject({
+			exceptionOf: 'abc123@google.com',
+			recurrenceId: parseZonedDateTime('2026-11-23T18:00[America/Lima]')
+		});
+		expect(exception).not.toHaveProperty('seriesId');
+	});
+
+	it('writes it back with the series UID and RECURRENCE-ID, without an EXDATE for it', () => {
+		const { events } = parseICS(google);
+		const ics = toICS(events, { now: stamp });
+		const blocks = ics.split('BEGIN:VEVENT').slice(1);
+
+		expect(blocks).toHaveLength(2);
+		expect(ics).not.toContain('EXDATE');
+		expect(blocks[1]).toContain('UID:abc123@google.com\r\n');
+		expect(blocks[1]).toContain('RECURRENCE-ID;TZID=America/Lima:20261123T180000\r\n');
+
+		const back = parseICS(ics).events;
+		expect(visible(back)).toEqual(visible(events));
+		expect(back[1]).toEqual(events[1]);
+	});
+
+	it('writes an exception whose series is not exported as a plain event', () => {
+		const orphan: CalendarEvent = {
+			...timed('x', '2026-11-23T20:00', '2026-11-23T21:00'),
+			exceptionOf: 'missing',
+			recurrenceId: parseZonedDateTime('2026-11-23T18:00[America/Lima]')
+		};
+		const ics = toICS([orphan], { now: stamp });
+		expect(ics).toContain('UID:x\r\n');
+		expect(ics).not.toContain('RECURRENCE-ID');
 	});
 });

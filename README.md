@@ -150,7 +150,7 @@ Users can drag events across days, hours and resources, resize them from either 
 
 ### Recurring events
 
-Give an event an RFC 5545 `rrule` (for example `FREQ=WEEKLY;INTERVAL=2;BYDAY=TU,TH` or `FREQ=MONTHLY;BYDAY=-1FR;COUNT=6`) and optional `exdates`. Supported parts: `FREQ` (daily to yearly), `INTERVAL`, `COUNT`, `UNTIL`, `BYMONTH`, `BYMONTHDAY`, `BYDAY` (with ordinals), `BYSETPOS` and `WKST`; others throw a `RangeError` instead of being ignored. Occurrences are expanded only for the visible range and keep their wall-clock time across DST changes (checked against `rrule-temporal` in the tests). Changing an occurrence applies to this event, the following ones or all of them, as one undo step; `seriesChanges()` in `@calendar-kit/core` gives you the same changes for your own UI.
+Give an event an RFC 5545 `rrule` (for example `FREQ=WEEKLY;INTERVAL=2;BYDAY=TU,TH` or `FREQ=MONTHLY;BYDAY=-1FR;COUNT=6`) and optional `exdates` and `rdates` (RDATE; an event with only `rdates` is a series too). Supported parts: `FREQ` (daily to yearly), `INTERVAL`, `COUNT`, `UNTIL`, `BYMONTH`, `BYMONTHDAY`, `BYDAY` (with ordinals), `BYSETPOS` and `WKST`; others throw a `RangeError` instead of being ignored. Occurrences are expanded only for the visible range and keep their wall-clock time across DST changes (checked against `rrule-temporal` in the tests). Changing an occurrence applies to this event, the following ones or all of them, as one undo step. An edited single occurrence stays linked to its series (`exceptionOf`, `recurrenceId`) and round-trips through .ics as a `RECURRENCE-ID` override; editing "all events" does not change these exceptions. `seriesChanges()` in `@calendar-kit/core` gives you the same changes for your own UI.
 
 ### Loading events on demand
 

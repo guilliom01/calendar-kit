@@ -630,6 +630,8 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 		const copy = { ...event, id: this.#createId() };
 		delete copy.rrule;
 		delete copy.exdates;
+		delete copy.rdates;
+		delete copy.exceptionOf;
 		delete copy.seriesId;
 		delete copy.recurrenceId;
 		return this.create(copy);

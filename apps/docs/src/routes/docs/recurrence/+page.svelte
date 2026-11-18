@@ -24,8 +24,10 @@ await store.batch(changes); // one undo step`;
 
 <h1>Recurring events</h1>
 <p>
-	Give an event an RFC 5545 <code>rrule</code> and, optionally, <code>exdates</code> (starts of occurrences
-	removed from the series). The views show its occurrences for the visible range only.
+	Give an event an RFC 5545 <code>rrule</code> and, optionally, <code>exdates</code> (starts of
+	occurrences removed from the series) and <code>rdates</code> (extra starts, RDATE). An event with
+	only
+	<code>rdates</code> is a series too. The views show its occurrences for the visible range only.
 </p>
 <Code code={series} />
 
@@ -54,7 +56,9 @@ await store.batch(changes); // one undo step`;
 </p>
 <ul>
 	<li>
-		<strong>This event</strong>: the occurrence is excluded and, for edits, becomes a single event.
+		<strong>This event</strong>: the occurrence is excluded and, for edits, becomes a single event
+		(an exception) that keeps <code>exceptionOf</code> (the series id) and
+		<code>recurrenceId</code> (its original start), so it exports with <code>RECURRENCE-ID</code>.
 	</li>
 	<li>
 		<strong>This and following</strong>: the series ends before it and a new series starts there
@@ -62,7 +66,7 @@ await store.batch(changes); // one undo step`;
 	</li>
 	<li>
 		<strong>All events</strong>: the series changes; moving one occurrence moves every one, and
-		excluded dates move with them.
+		excluded dates move with them. Exceptions are not changed.
 	</li>
 </ul>
 <p>Each choice is one undo step.</p>

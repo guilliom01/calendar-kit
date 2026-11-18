@@ -217,7 +217,8 @@
 			progress:
 				original.progress === undefined ? undefined : Math.min(100, Math.max(0, progress)) / 100
 		};
-		if (!base.rrule) delete base.exdates;
+		// A series of extra dates only (RDATE) still needs its exclusions.
+		if (!base.rrule && !base.rdates?.length) delete base.exdates;
 		if (allDay) {
 			const start = parseDate(startDate);
 			const lastDay = parseDate(endDate);

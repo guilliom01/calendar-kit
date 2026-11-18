@@ -170,13 +170,37 @@ export function* seriesStarts(
 	}
 }
 
+/** The RDATE starts of `event` as the series' own kind: dates for all-day, times for timed. */
+export function rdateStarts(event: CalendarEvent): Start[] {
+	return (event.rdates ?? []).map((date) => {
+		if (isAllDay(event)) return 'hour' in date ? toCalendarDate(date) : date;
+		return 'hour' in date
+			? date
+			: event.start.set({ year: date.year, month: date.month, day: date.day });
+	});
+}
+
+/** Whether `start` is one of the starts of the series `event`, excluded ones included. */
+export function isSeriesStart(event: CalendarEvent, start: Start): boolean {
+	const zone = isAllDay(event) ? 'UTC' : event.start.timeZone;
+	const at = instant(start, zone);
+	const same = (other: Start) => instant(other, zone) === at;
+	if (rdateStarts(event).some(same)) return true;
+	if (!event.rrule) return same(event.start);
+	for (const series of seriesStarts(event, parseRRule(event.rrule), dateIn(start, zone))) {
+		if (same(series.start)) return true;
+	}
+	return false;
+}
+
 /** Separator between the series id and the occurrence start in occurrence ids. */
 export const OCCURRENCE_SEPARATOR = '::';
 
 /**
  * The occurrences of `event` that overlap `range` (end exclusive) seen from `timeZone`.
  * Each occurrence is a copy with its own `id`, `start` and `end`, plus `seriesId` and
- * `recurrenceId` (its original start). Events without `rrule` are returned as is if they overlap.
+ * `recurrenceId` (its original start). RDATE starts join the rule's ones, in order and without
+ * duplicates. Events without `rrule` or `rdates` are returned as is if they overlap.
  */
 export function occurrences<T extends CalendarEvent>(
 	event: T,
@@ -190,15 +214,30 @@ export function occurrences<T extends CalendarEvent>(
 		return from < rangeEnd && Math.max(instant(end, timeZone), from + 1) > rangeStart;
 	};
 
-	if (!event.rrule) return overlaps(event.start, event.end) ? [event] : [];
+	if (!event.rrule && !event.rdates?.length) {
+		return overlaps(event.start, event.end) ? [event] : [];
+	}
 
-	const rule = parseRRule(event.rrule);
 	// One extra day covers series stored in another time zone.
 	const stopAfter = range.end.add({ days: 1 });
+	const zone = isAllDay(event) ? 'UTC' : event.start.timeZone;
+	const excluded = new Set(event.exdates?.map((date) => instant(date, zone)));
+	// Keyed by instant, so an RDATE equal to a rule start appears once.
+	const starts = new Map<number, Start>();
+	if (event.rrule) {
+		for (const { start } of seriesStarts(event, parseRRule(event.rrule), stopAfter)) {
+			if (instant(start, timeZone) >= rangeEnd) break;
+			starts.set(instant(start, zone), start);
+		}
+	} else starts.set(instant(event.start, zone), event.start);
+	for (const start of rdateStarts(event)) starts.set(instant(start, zone), start);
+	const ordered = [...starts]
+		.filter(([at]) => !excluded.has(at))
+		.sort(([a], [b]) => a - b)
+		.map(([, start]) => start);
 	const result: T[] = [];
 
-	for (const { start, excluded } of seriesStarts(event, rule, stopAfter)) {
-		if (excluded) continue;
+	for (const start of ordered) {
 		const end = isAllDay(event)
 			? (start as CalendarDate).add({ days: daysBetween(event.start, event.end) })
 			: (start as ZonedDateTime).add({

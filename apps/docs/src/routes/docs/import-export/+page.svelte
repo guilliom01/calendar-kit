@@ -41,9 +41,11 @@ const workbook = toXLSX(visibleEvents, { timeZone: 'America/Lima', sheetName: 'T
 	</li>
 	<li>
 		<strong>Import</strong> adds the file's events as one undo step (events with a known id are
-		replaced). It reads folded lines, UTC and floating times, <code>DURATION</code>, modified
-		occurrences (<code>RECURRENCE-ID</code>) and cancelled events. Rules or time zones it cannot use
-		become <code>warnings</code> instead of failing the whole file.
+		replaced). It reads folded lines, UTC and floating times, <code>DURATION</code>,
+		<code>RDATE</code>, modified occurrences (<code>RECURRENCE-ID</code>) and cancelled events. A
+		modified occurrence stays linked to its series, and export writes it back with the series
+		<code>UID</code> and its <code>RECURRENCE-ID</code>, so it round-trips. Rules or time zones it
+		cannot use become <code>warnings</code> instead of failing the whole file.
 	</li>
 </ul>
 

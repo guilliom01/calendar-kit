@@ -1,5 +1,6 @@
 import type { CalendarDate, ZonedDateTime } from '@internationalized/date';
 import type { CalendarEvent } from '../events/types.js';
+import { isSeriesStart } from '../recurrence/expand.js';
 
 export interface IcsExportOptions {
 	/** Calendar name for apps that show one (X-WR-CALNAME). */
@@ -49,10 +50,23 @@ export function foldLine(line: string): string {
 	return pieces.join('\r\n ');
 }
 
-function eventLines(event: CalendarEvent, stamp: string): string[] {
+const dateKey = (date: CalendarDate | ZonedDateTime) =>
+	'hour' in date ? String(date.toDate().getTime()) : date.toString();
+
+/**
+ * `series` is set for an exception written as an override of it (its UID and RECURRENCE-ID);
+ * `overridden` holds the keys of the series' dates that have one, so no EXDATE hides them.
+ */
+function eventLines(
+	event: CalendarEvent,
+	stamp: string,
+	series: CalendarEvent | undefined,
+	overridden: ReadonlySet<string> | undefined
+): string[] {
 	const lines = [
 		'BEGIN:VEVENT',
-		`UID:${escapeText(event.id)}`,
+		`UID:${escapeText(series?.id ?? event.id)}`,
+		...(series ? [dateProperty('RECURRENCE-ID', event.recurrenceId!)] : []),
 		`DTSTAMP:${stamp}`,
 		`SUMMARY:${escapeText(event.title)}`,
 		dateProperty('DTSTART', event.start),
@@ -61,7 +75,10 @@ function eventLines(event: CalendarEvent, stamp: string): string[] {
 	if (event.location) lines.push(`LOCATION:${escapeText(event.location)}`);
 	if (event.description) lines.push(`DESCRIPTION:${escapeText(event.description)}`);
 	if (event.rrule) lines.push(`RRULE:${event.rrule}`);
-	for (const date of event.exdates ?? []) lines.push(dateProperty('EXDATE', date));
+	for (const date of event.rdates ?? []) lines.push(dateProperty('RDATE', date));
+	for (const date of event.exdates ?? []) {
+		if (!overridden?.has(dateKey(date))) lines.push(dateProperty('EXDATE', date));
+	}
 	// calendar-kit fields other apps ignore but a round trip keeps.
 	if (event.color) lines.push(`X-CALENDAR-KIT-COLOR:${escapeText(event.color)}`);
 	if (event.resourceIds?.length) {
@@ -77,9 +94,26 @@ function eventLines(event: CalendarEvent, stamp: string): string[] {
 
 /**
  * Serializes events as an iCalendar file (RFC 5545) that Google Calendar, Outlook and Apple
- * Calendar import. Pass the stored events (series, not expanded occurrences). Lines end in CRLF.
+ * Calendar import. Pass the stored events (series, not expanded occurrences). An exception
+ * (`exceptionOf`) whose series is among them is written as an override of it, with RECURRENCE-ID.
+ * Lines end in CRLF.
  */
 export function toICS(events: readonly CalendarEvent[], options: IcsExportOptions = {}): string {
+	const byId = new Map(events.map((event) => [event.id, event]));
+	// A RECURRENCE-ID outside the series would point at nothing, so it is written as a plain event.
+	const seriesOf = (event: CalendarEvent) => {
+		const series = event.exceptionOf === undefined ? undefined : byId.get(event.exceptionOf);
+		return series && event.recurrenceId && isSeriesStart(series, event.recurrenceId)
+			? series
+			: undefined;
+	};
+	const overridden = new Map<string, Set<string>>();
+	for (const event of events) {
+		const series = seriesOf(event);
+		if (!series) continue;
+		const keys = overridden.get(series.id) ?? new Set<string>();
+		overridden.set(series.id, keys.add(dateKey(event.recurrenceId!)));
+	}
 	const now = utcParts(options.now ?? new Date());
 	const stamp = `${dateText(now)}T${timeText(now)}Z`;
 	const lines = [
@@ -88,7 +122,9 @@ export function toICS(events: readonly CalendarEvent[], options: IcsExportOption
 		`PRODID:${options.productId ?? '-//calendar-kit//EN'}`,
 		'CALSCALE:GREGORIAN',
 		...(options.name ? [`X-WR-CALNAME:${escapeText(options.name)}`] : []),
-		...events.flatMap((event) => eventLines(event, stamp)),
+		...events.flatMap((event) =>
+			eventLines(event, stamp, seriesOf(event), overridden.get(event.id))
+		),
 		'END:VCALENDAR'
 	];
 	return lines.map(foldLine).join('\r\n') + '\r\n';

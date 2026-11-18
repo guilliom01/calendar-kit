@@ -17,9 +17,16 @@ interface EventBase<TData> {
 	rrule?: string | undefined;
 	/** Starts of occurrences removed from the series (EXDATE). */
 	exdates?: readonly (CalendarDate | ZonedDateTime)[] | undefined;
+	/** Extra occurrence starts (RDATE). Makes the event a series even without `rrule`. */
+	rdates?: readonly (CalendarDate | ZonedDateTime)[] | undefined;
 	/** Set on expanded occurrences: the id of the series they come from. */
 	seriesId?: string | undefined;
-	/** Set on expanded occurrences: their original start in the series (RECURRENCE-ID). */
+	/**
+	 * Set on stored single events that replace one occurrence of a series (an exception):
+	 * the series id. Unlike `seriesId`, the event is edited on its own, not through the series.
+	 */
+	exceptionOf?: string | undefined;
+	/** Original start in the series (RECURRENCE-ID) of an expanded occurrence or an exception. */
 	recurrenceId?: CalendarDate | ZonedDateTime | undefined;
 	/** Resources (people, rooms...) the event is assigned to, for the timeline and resource views. */
 	resourceIds?: readonly string[] | undefined;

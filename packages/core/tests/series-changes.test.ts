@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CalendarDate } from '@internationalized/date';
+import { CalendarDate, parseZonedDateTime } from '@internationalized/date';
 import { occurrences, seriesChanges, type CalendarEvent } from '../src/index.js';
 import { allDay, timeZone, timed } from './fixtures.js';
 
@@ -60,7 +60,19 @@ describe('seriesChanges: update', () => {
 		expect(created?.id).toMatch(/^new-/);
 		expect(created).not.toHaveProperty('rrule');
 		expect(created).not.toHaveProperty('seriesId');
-		expect(created).not.toHaveProperty('recurrenceId');
+	});
+
+	it('this event: the new single event stays linked to its series and original start', () => {
+		const changes = seriesChanges(
+			series,
+			third!,
+			{ ...third!, title: 'Make-up' },
+			'this',
+			createId
+		);
+		const created = changes[1]?.type === 'create' ? changes[1].event : undefined;
+
+		expect(created).toMatchObject({ exceptionOf: 'class', recurrenceId: third!.recurrenceId });
 	});
 
 	it('this and following: ends the series and starts a new one with the remaining count', () => {
@@ -137,5 +149,63 @@ describe('seriesChanges: update', () => {
 			'2026-11-03',
 			'2026-11-05'
 		]);
+	});
+});
+
+describe('seriesChanges: series with RDATE', () => {
+	const lima = (value: string) => parseZonedDateTime(`${value}[America/Lima]`);
+	const dates: CalendarEvent = {
+		...timed('talks', '2026-11-16T18:00', '2026-11-16T19:00'),
+		rdates: [lima('2026-11-20T18:00'), lima('2026-11-27T18:00')]
+	};
+	const [, second] = occurrences(dates, november, timeZone);
+
+	it('this event: the single event has no rdates', () => {
+		const changes = seriesChanges(dates, second!, { ...second!, title: 'x' }, 'this', createId);
+		const created = changes[1]?.type === 'create' ? changes[1].event : undefined;
+		expect(created).not.toHaveProperty('rdates');
+		expect(created).toMatchObject({ exceptionOf: 'talks' });
+	});
+
+	it('this and following: splits the dates between both series', () => {
+		const changes = seriesChanges(
+			dates,
+			second!,
+			{ ...second!, title: 'New' },
+			'following',
+			createId
+		);
+		const ended = changes[0]?.type === 'update' ? changes[0].after : undefined;
+		const next = changes[1]?.type === 'create' ? changes[1].event : undefined;
+
+		expect(starts(occurrences(ended!, november, timeZone))).toEqual([
+			'2026-11-16T18:00:00-05:00[America/Lima]'
+		]);
+		expect(starts(occurrences(next!, november, timeZone))).toEqual([
+			'2026-11-20T18:00:00-05:00[America/Lima]',
+			'2026-11-27T18:00:00-05:00[America/Lima]'
+		]);
+	});
+
+	it('all events: moving one occurrence moves every date', () => {
+		const moved = {
+			...second!,
+			start: second!.start.add({ hours: 1 }),
+			end: second!.end.add({ hours: 1 })
+		} as CalendarEvent;
+		const [change] = seriesChanges(dates, second!, moved, 'all', createId);
+		const updated = change?.type === 'update' ? change.after : undefined;
+
+		expect(starts(occurrences(updated!, november, timeZone))).toEqual([
+			'2026-11-16T19:00:00-05:00[America/Lima]',
+			'2026-11-20T19:00:00-05:00[America/Lima]',
+			'2026-11-27T19:00:00-05:00[America/Lima]'
+		]);
+	});
+
+	it('all events: only changes the series, never its exceptions', () => {
+		const changes = seriesChanges(dates, second!, { ...second!, title: 'All' }, 'all', createId);
+		expect(changes).toHaveLength(1);
+		expect(changes[0]).toMatchObject({ type: 'update', after: { id: 'talks', title: 'All' } });
 	});
 });

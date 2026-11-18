@@ -188,12 +188,16 @@ export function parseICS(text: string, options: IcsImportOptions = {}): IcsImpor
 				);
 			}
 		}
-		const exdates = block
-			.filter((property) => property.name === 'EXDATE')
-			.flatMap((property) =>
-				property.value.split(',').map((value) => readDate({ ...property, value }))
-			);
+		const dates = (name: string) =>
+			block
+				.filter((property) => property.name === name)
+				.flatMap((property) =>
+					property.value.split(',').map((value) => readDate({ ...property, value }))
+				);
+		const exdates = dates('EXDATE');
 		if (exdates.length) event.exdates = exdates;
+		const rdates = dates('RDATE');
+		if (rdates.length) event.rdates = rdates;
 
 		const extra = (name: string) => get(`X-CALENDAR-KIT-${name}`)?.value;
 		const list = (value: string | undefined) =>
@@ -219,7 +223,7 @@ export function parseICS(text: string, options: IcsImportOptions = {}): IcsImpor
 		}
 	}
 
-	// A modified occurrence becomes an exclusion in its series plus a single event.
+	// A modified occurrence becomes an exclusion in its series plus a single event linked to it.
 	const exclude = (uid: string, date: CalendarDate | ZonedDateTime) => {
 		const master = masters.get(uid);
 		if (master) master.exdates = [...(master.exdates ?? []), date];
@@ -227,10 +231,12 @@ export function parseICS(text: string, options: IcsImportOptions = {}): IcsImpor
 	for (const { uid, recurrenceId } of cancelledOverrides) exclude(uid, recurrenceId);
 	const singles = overrides.map(({ event, uid, recurrenceId }) => {
 		exclude(uid, recurrenceId);
-		const { rrule: _rrule, exdates: _exdates, ...single } = event;
+		const { rrule: _rrule, exdates: _exdates, rdates: _rdates, ...single } = event;
 		return {
 			...single,
-			id: `${uid}${OCCURRENCE_SEPARATOR}${recurrenceId.toString()}`
+			id: `${uid}${OCCURRENCE_SEPARATOR}${recurrenceId.toString()}`,
+			exceptionOf: uid,
+			recurrenceId
 		} as CalendarEvent;
 	});
 

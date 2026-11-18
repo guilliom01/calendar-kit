@@ -10,6 +10,7 @@ import type { CalendarEvent } from '../events/types.js';
 import type { Mutation } from '../store/event-store.js';
 import { daysBetween } from '../time/week.js';
 import { endSeriesBefore, excludeOccurrence } from './edit.js';
+import { rdateStarts } from './expand.js';
 import { formatRRule, parseRRule } from './rule.js';
 
 /** Which occurrences a change to a recurring event applies to. */
@@ -54,9 +55,11 @@ function seriesShift<T extends CalendarEvent>(series: T, occurrence: T, changed:
  * `occurrence` of `series` to the chosen `scope`. Pass them to `EventStore.batch` so the whole
  * change is one undo step.
  *
- * - `this`: excludes the occurrence; an edit becomes a new single event.
+ * - `this`: excludes the occurrence; an edit becomes a new single event linked to the series
+ *   (`exceptionOf` and `recurrenceId`).
  * - `following`: ends the series before the occurrence; an edit starts a new series there.
  * - `all`: changes or deletes the series; moving an occurrence moves every occurrence.
+ *   Exceptions (`exceptionOf`) are left as they are.
  */
 export function seriesChanges<T extends CalendarEvent>(
 	series: T,
@@ -76,9 +79,15 @@ export function seriesChanges<T extends CalendarEvent>(
 	}
 
 	if (scope === 'this') {
-		const single = { ...standalone(changed), id: createId() };
+		const single = {
+			...standalone(changed),
+			id: createId(),
+			exceptionOf: series.id,
+			recurrenceId: originalStart
+		};
 		delete single.rrule;
 		delete single.exdates;
+		delete single.rdates;
 		return [
 			{ type: 'update', before: series, after: excludeOccurrence(series, originalStart) },
 			{ type: 'create', event: single }
@@ -86,10 +95,23 @@ export function seriesChanges<T extends CalendarEvent>(
 	}
 
 	if (scope === 'following') {
-		const rule = parseRRule(changed.rrule ?? series.rrule!);
-		// Same rule as before: the new series takes over the occurrences that are left.
-		if (changed.rrule === series.rrule && rule.count !== undefined) rule.count -= countBefore;
-		const next = { ...standalone(changed), id: createId(), rrule: formatRRule(rule) };
+		const next = { ...standalone(changed), id: createId() };
+		const source = changed.rrule ?? series.rrule;
+		if (source) {
+			const rule = parseRRule(source);
+			// Same rule as before: the new series takes over the occurrences that are left.
+			if (changed.rrule === series.rrule && rule.count !== undefined) rule.count -= countBefore;
+			next.rrule = formatRRule(rule);
+		}
+		// The new series takes the RDATE starts after this one (it starts at `changed`).
+		const at = (value: Start) => ('hour' in value ? value.toDate().getTime() : value.toString());
+		const skipped = new Set(series.exdates?.map(at));
+		const shift = seriesShift(series, occurrence, changed);
+		const rdates = rdateStarts(series)
+			.filter((date) => at(date) > at(originalStart) && !skipped.has(at(date)))
+			.map(shift);
+		if (rdates.length) next.rdates = rdates;
+		else delete next.rdates;
 		delete next.exdates;
 		return [
 			{ type: 'update', before: series, after: ended },
@@ -107,5 +129,6 @@ export function seriesChanges<T extends CalendarEvent>(
 				});
 	const after = { ...standalone(changed), start, end, id: series.id } as T;
 	if (series.exdates) after.exdates = series.exdates.map(shift);
+	if (series.rdates) after.rdates = series.rdates.map(shift);
 	return [{ type: 'update', before: series, after }];
 }
