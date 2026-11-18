@@ -204,7 +204,9 @@
 <h2>time-grid</h2>
 <p>
 	Week and day views with hours, an all-day row, overlapping events side by side and a "now" line.
-	Drag to move, drag the bottom edge to resize, drag over empty time to create.
+	Drag to move, drag the bottom edge to resize, drag over empty time to create. Dragging an event
+	between the all-day row and the hours converts it (all-day events get <code>defaultDuration</code
+	>).
 </p>
 <PropsTable
 	caption="TimeGrid props"

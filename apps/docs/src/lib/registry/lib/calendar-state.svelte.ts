@@ -173,6 +173,8 @@ export interface CalendarStateOptions<T extends CalendarEvent> extends EventStor
 	firstDayOfWeek?: DayOfWeek;
 	/** Minutes that drag, resize and create snap to. */
 	snapStep?: number;
+	/** Minutes an all-day event lasts after it is dragged onto the hours of the time grid. */
+	defaultDuration?: number;
 	/** Set to false to show events without letting users change them. */
 	editable?: boolean;
 	/**
@@ -267,6 +269,7 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 	timeZone: string = $state(getLocalTimeZone());
 	firstDayOfWeek: DayOfWeek | undefined = $state();
 	snapStep = $state(15);
+	defaultDuration = $state(60);
 	editable = $state(true);
 	labels: CalendarLabels = $state(defaultLabels);
 	draft: EventDraft<T> | null = $state.raw(null);
@@ -299,6 +302,7 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 		this.date = date ?? today(this.timeZone);
 		this.firstDayOfWeek = firstDayOfWeek;
 		if (snapStep) this.snapStep = snapStep;
+		if (options.defaultDuration) this.defaultDuration = options.defaultDuration;
 		if (editable !== undefined) this.editable = editable;
 		if (options.touchDrag !== undefined) this.touchDrag = options.touchDrag;
 		if (options.moveKey) this.moveKey = options.moveKey;

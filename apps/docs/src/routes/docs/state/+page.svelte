@@ -75,6 +75,11 @@
 			type: 'number',
 			description: 'Minutes drag, resize and create snap to. Default 15.'
 		},
+		{
+			name: 'defaultDuration',
+			type: 'number',
+			description: 'Minutes an all-day event lasts when dragged onto the hours. Default 60.'
+		},
 		{ name: 'editable', type: 'boolean', description: 'Set to false for a read-only calendar.' },
 		{
 			name: 'confirmChanges',

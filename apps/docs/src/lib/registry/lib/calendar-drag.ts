@@ -15,6 +15,8 @@ export interface PointerTracking {
 	onCancel?: () => void;
 	/** A touch rested long enough: the item is lifted and can be dragged. */
 	onLift?: () => void;
+	/** Whether resting near an edge here may auto-scroll (e.g. not over a drop zone outside it). */
+	canScroll?: (event: PointerEvent) => boolean;
 }
 
 /** Long-press delay for touch, or false when touch should never drag. */
@@ -72,17 +74,23 @@ function edgeSpeed(position: number, start: number, end: number) {
  * innermost one that can still move and calls `onScroll`, so the drag preview follows the content.
  * Returns the function that stops it.
  */
-function autoScroll(element: Element | null, pointer: () => PointerEvent, onScroll: () => void) {
+function autoScroll(
+	element: Element | null,
+	pointer: () => PointerEvent,
+	onScroll: () => void,
+	canScroll: (event: PointerEvent) => boolean = () => true
+) {
 	const parents = scrollParents(element);
 	// When the pointer entered an edge zone; undefined while it is away from every edge.
 	let since: number | undefined;
 	let frame = requestAnimationFrame(function step(now) {
 		const { clientX, clientY } = pointer();
+		const allowed = canScroll(pointer());
 		const steps = parents.map((parent) => {
 			const rect = parent.getBoundingClientRect();
 			return [edgeSpeed(clientX, rect.left, rect.right), edgeSpeed(clientY, rect.top, rect.bottom)];
 		});
-		if (!steps.some(([left, top]) => left || top)) since = undefined;
+		if (!allowed || !steps.some(([left, top]) => left || top)) since = undefined;
 		else if (since === undefined) since = now;
 		else if (now - since >= SCROLL_DELAY) {
 			for (const [index, parent] of parents.entries()) {
@@ -142,7 +150,8 @@ export function trackPointer(
 			stopScrolling = autoScroll(
 				down.target as Element,
 				() => last,
-				() => handlers.onMove(last)
+				() => handlers.onMove(last),
+				handlers.canScroll
 			);
 		}
 		handlers.onMove(event);

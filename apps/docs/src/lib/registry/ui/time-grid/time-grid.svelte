@@ -4,11 +4,13 @@
 		fromAbsolute,
 		isToday,
 		toCalendarDate,
+		toTimeZone,
 		toZoned,
 		type CalendarDate,
 		type ZonedDateTime
 	} from '@internationalized/date';
 	import {
+		daysBetween,
 		eventsForResource,
 		flattenResources,
 		isAllDay,
@@ -25,12 +27,7 @@
 		type TimedEventLayout
 	} from '@calendar-kit/core';
 	import type { Snippet } from 'svelte';
-	import {
-		dragAcrossDays,
-		touchOf,
-		trackPointer,
-		withPreview
-	} from '#lib/registry/lib/calendar-drag.js';
+	import { touchOf, trackPointer, withPreview } from '#lib/registry/lib/calendar-drag.js';
 	import {
 		dayStepper,
 		keyboardMove,
@@ -90,6 +87,7 @@
 	// Event being dragged, resized or drawn, at its preview position.
 	let preview: CalendarEvent | null = $state.raw(null);
 	let columnElements: HTMLElement[] = $state([]);
+	let allDayElement: HTMLElement | undefined = $state();
 
 	/** A column of the grid: a day, or a resource on the shown day. */
 	interface Column {
@@ -173,6 +171,31 @@
 		return { column: cols[index]!, day: cols[index]!.day, minutes };
 	}
 
+	/** Whether the pointer is over the all-day row (or the headers above it). */
+	const overAllDay = (pointer: PointerEvent) =>
+		!!allDayElement && pointer.clientY < allDayElement.getBoundingClientRect().bottom;
+
+	/** A timed event as an all-day event starting on `day`, covering as many days as it touched. */
+	function toAllDay(event: TimedEvent, day: CalendarDate): CalendarEvent {
+		const first = toCalendarDate(toTimeZone(event.start, calendar.timeZone));
+		const last = toCalendarDate(
+			toTimeZone(event.end.subtract({ milliseconds: 1 }), calendar.timeZone)
+		);
+		return {
+			...event,
+			start: day,
+			end: day.add({ days: Math.max(1, daysBetween(first, last) + 1) })
+		};
+	}
+
+	/** `moved` with its resource changed when the pointer went from one resource column to another. */
+	function withColumn(moved: CalendarEvent, original: CalendarEvent, from: Column, to: Column) {
+		const [fromId, toId] = [from.resource?.id, to.resource?.id];
+		return fromId && toId
+			? { ...moved, resourceIds: reassign(original.resourceIds, fromId, toId) }
+			: moved;
+	}
+
 	/** Resource ids after moving an event from one resource column to another. */
 	const reassign = (ids: readonly string[] | undefined, from: string, to: string) => [
 		...new Set((ids ?? []).map((id) => (id === from ? to : id)))
@@ -199,15 +222,16 @@
 			{
 				onMove: (move) => {
 					const { column, day, minutes } = pointAt(move);
-					const moved = moveEvent(event, at(day, snapMinutes(minutes - grab, step)));
-					const from = source.column.resource?.id;
-					const to = column.resource?.id;
-					preview =
-						from && to ? { ...moved, resourceIds: reassign(event.resourceIds, from, to) } : moved;
+					// Dropped on the all-day row, it becomes an all-day event.
+					const moved = overAllDay(move)
+						? toAllDay(event, day)
+						: moveEvent(event, at(day, snapMinutes(minutes - grab, step)));
+					preview = withColumn(moved, event, source.column, column);
 				},
 				onDrop: () => finishDrag(event, 'move'),
 				onCancel: () => (preview = null),
-				onLift: () => (preview = event)
+				onLift: () => (preview = event),
+				canScroll: (move) => !overAllDay(move)
 			},
 			touchOf(calendar)
 		);
@@ -272,14 +296,28 @@
 
 	function startAllDayDrag(down: PointerEvent, event: CalendarEvent) {
 		if (!calendar.canEdit(event, 'move')) return;
-		dragAcrossDays(
+		const source = pointAt(down);
+		trackPointer(
 			down,
-			event,
 			{
-				onPreview: (moved) => (preview = moved),
-				onDrop: (moved) => {
-					if (moved) void calendar.changeEvent({ event: moved, previous: event, kind: 'move' });
-				}
+				onMove: (move) => {
+					const { column, day, minutes } = pointAt(move);
+					let moved: CalendarEvent;
+					if (isAllDay(event) && !overAllDay(move)) {
+						// Dropped on the hours, an all-day event gets a time and `defaultDuration`.
+						const start = snapMinutes(minutes, step);
+						moved = {
+							...event,
+							start: at(day, start),
+							end: at(day, start + calendar.defaultDuration)
+						} as CalendarEvent;
+					} else moved = moveEvent(event, event.start.add({ days: daysBetween(source.day, day) }));
+					preview = withColumn(moved, event, source.column, column);
+				},
+				onDrop: () => finishDrag(event, 'move'),
+				onCancel: () => (preview = null),
+				onLift: () => (preview = event),
+				canScroll: (move) => !overAllDay(move)
 			},
 			touchOf(calendar)
 		);
@@ -455,6 +493,7 @@
 	</div>
 
 	<div
+		bind:this={allDayElement}
 		class="grid auto-rows-[1.5rem] gap-y-0.5 border-b py-1"
 		style:grid-template-columns={template}
 	>

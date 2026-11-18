@@ -919,3 +919,52 @@ test('dragging near the edge of the time grid scrolls it, and the preview follow
 	await page.mouse.up();
 	await expect(workshop).toContainText('3:00 – 6:00 p. m.');
 });
+
+test.describe('converting between all-day and timed by dragging', () => {
+	async function dragTo(page: Page, from: { x: number; y: number }, to: { x: number; y: number }) {
+		await page.mouse.move(from.x, from.y);
+		await page.mouse.down();
+		await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 5 });
+		await page.mouse.move(to.x, to.y, { steps: 5 });
+		await page.mouse.up();
+	}
+
+	test('a timed event dropped on the all-day row becomes all-day', async ({ page }) => {
+		await viewButton(page, 'semana').click();
+		const conference = (await page
+			.getByRole('button', { name: 'Conferencia en Cusco' })
+			.boundingBox())!;
+		const workshop = page.getByRole('button', { name: /Svelte workshop/ });
+		await workshop.scrollIntoViewIfNeeded();
+		const box = (await workshop.boundingBox())!;
+
+		await dragTo(
+			page,
+			{ x: box.x + box.width / 2, y: box.y + 10 },
+			{ x: box.x + box.width / 2, y: conference.y + conference.height / 2 }
+		);
+		await confirm(page, 'Mover');
+		await expect(workshop).not.toContainText(/\d:\d\d/);
+		await page.getByRole('button', { name: 'miércoles, 18 de noviembre de 2026' }).click();
+		await expect(page.getByRole('button', { name: /Svelte workshop/ })).not.toContainText(
+			/\d:\d\d/
+		);
+	});
+
+	test('an all-day event dropped on the hours becomes a one-hour event', async ({ page }) => {
+		await viewButton(page, 'semana').click();
+		const conference = page.getByRole('button', { name: /Conferencia en Cusco/ });
+		const bar = (await conference.boundingBox())!;
+		const workshop = (await page.getByRole('button', { name: /Svelte workshop/ }).boundingBox())!;
+
+		await dragTo(
+			page,
+			{ x: bar.x + 20, y: bar.y + bar.height / 2 },
+			{ x: bar.x + 20, y: workshop.y }
+		);
+		await confirm(page, 'Mover');
+		const text = (await conference.textContent()) ?? '';
+		const [from, to] = [...text.matchAll(/(\d{1,2}):\d{2}/g)].map((match) => Number(match[1]));
+		expect((to! - from! + 12) % 12).toBe(1);
+	});
+});
