@@ -251,6 +251,24 @@
 			]
 		},
 		{
+			"name": "calendar-search",
+			"type": "registry:ui",
+			"title": "Calendar search",
+			"description": "Optional search box: every view shows only the events whose title has every word typed, ignoring accents and case.",
+			"dependencies": ["@lucide/svelte"],
+			"registryDependencies": ["input", "utils", "./calendar-state.json"],
+			"files": [
+				{
+					"path": "src/lib/registry/ui/calendar-search/calendar-search.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/calendar-search/index.ts",
+					"type": "registry:ui"
+				}
+			]
+		},
+		{
 			"name": "calendar-list",
 			"type": "registry:ui",
 			"title": "Calendar list",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CalendarDate, parseZonedDateTime } from '@internationalized/date';
-import { eventsInRange, isAllDay, spansDays } from '../src/index.js';
+import { eventsInRange, isAllDay, matchesQuery, spansDays } from '../src/index.js';
 import { allDay, timeZone, timed } from './fixtures.js';
 
 const range = { start: new CalendarDate(2026, 11, 18), end: new CalendarDate(2026, 11, 19) };
@@ -51,5 +51,27 @@ describe('isAllDay / spansDays', () => {
 	it('flags timed events of 24 hours or more as day-spanning', () => {
 		expect(spansDays(timed('long', '2026-11-18T09:00', '2026-11-19T09:00'))).toBe(true);
 		expect(spansDays(timed('overnight', '2026-11-18T22:00', '2026-11-19T02:00'))).toBe(false);
+	});
+});
+
+describe('matchesQuery', () => {
+	const english = {
+		...timed('english', '2026-11-18T19:00', '2026-11-18T20:30'),
+		title: 'Clase de Inglés'
+	};
+
+	it('ignores accents and case', () => {
+		expect(matchesQuery(english, 'ingles', 'es-PE')).toBe(true);
+		expect(matchesQuery(english, 'CLASE', 'es-PE')).toBe(true);
+		expect(matchesQuery(english, 'francés', 'es-PE')).toBe(false);
+	});
+
+	it('needs every word, in any order', () => {
+		expect(matchesQuery(english, 'inglés clase', 'es-PE')).toBe(true);
+		expect(matchesQuery(english, 'clase francés', 'es-PE')).toBe(false);
+	});
+
+	it('matches everything when the query is blank', () => {
+		expect(matchesQuery(english, '   ', 'es-PE')).toBe(true);
 	});
 });

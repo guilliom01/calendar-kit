@@ -82,6 +82,12 @@
 		},
 		{ name: 'editable', type: 'boolean', description: 'Set to false for a read-only calendar.' },
 		{
+			name: 'filter',
+			type: '(event) => boolean',
+			description:
+				'Shows only matching events in every view. Change it later through state.filter (null shows all).'
+		},
+		{
 			name: 'calendars',
 			type: 'CalendarSource[]',
 			description:
@@ -226,6 +232,10 @@
 	<li>
 		<code>hiddenCalendars</code> (a reactive set), <code>setCalendarVisible(id, visible)</code>,
 		<code>colorOf(event)</code>: calendars shown and the color an event is drawn with.
+	</li>
+	<li>
+		<code>query</code> and <code>filter</code>: set them to search or filter every view;
+		<code>matchesQuery(event, query, locale)</code> from the core does the accent-insensitive match.
 	</li>
 	<li>
 		<code>store</code>: the underlying <code>EventStore</code> from <code>@calendar-kit/core</code>,

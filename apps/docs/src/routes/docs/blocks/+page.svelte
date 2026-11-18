@@ -326,6 +326,20 @@
 	]}
 />
 
+<h2>calendar-search</h2>
+<p>
+	A search box bound to the state's <code>query</code>: every view shows only the events whose title
+	has every word typed, ignoring accents and case ("ingles" finds "Clase de inglés"). It searches
+	what is loaded in the visible range.
+</p>
+<PropsTable
+	caption="CalendarSearch props"
+	rows={[
+		...classOnly,
+		{ name: 'placeholder', type: 'string', description: 'Default: labels.search.' }
+	]}
+/>
+
 <h2>calendar-list</h2>
 <p>
 	One checkbox per calendar in the state's <code>calendars</code>, in its color, to show or hide its

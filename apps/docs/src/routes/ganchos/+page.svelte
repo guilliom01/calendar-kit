@@ -47,6 +47,17 @@
 
 <main class="mx-auto flex h-full max-w-5xl flex-col gap-4 p-4">
 	<h1 class="text-2xl font-semibold">Ganchos de interacción</h1>
+	<!-- A filter of our own: `calendar.filter` applies to every view. -->
+	<label class="flex items-center gap-2 text-sm">
+		<input
+			type="checkbox"
+			onchange={(change) =>
+				(calendar.filter = change.currentTarget.checked
+					? (event) => !!event.resourceIds?.includes('ana')
+					: null)}
+		/>
+		Solo eventos de Ana
+	</label>
 	<p class="rounded-lg border p-3 text-sm" aria-live="polite" data-testid="message">
 		{message || 'Arrastra un evento o haz clic en un día vacío.'}
 	</p>

@@ -11,6 +11,7 @@ import {
 	EventStore,
 	expandEvents,
 	isAllDay,
+	matchesQuery,
 	RangeLoader,
 	seriesChanges,
 	shiftDate,
@@ -72,6 +73,7 @@ export const defaultLabels = {
 	resources: 'Resources',
 	calendar: 'Calendar',
 	calendars: 'Calendars',
+	search: 'Search events',
 	gantt: 'Gantt',
 	noEvents: 'No events',
 	loading: 'Loading…',
@@ -198,6 +200,8 @@ export interface CalendarStateOptions<T extends CalendarEvent> extends EventStor
 	/** Extra classes for an event's element in every view, e.g. dashed when tentative. */
 	eventClass?(event: T): string | undefined;
 	labels?: Partial<CalendarLabels>;
+	/** Shows only the events it returns true for, in every view. Change it later with `filter`. */
+	filter?(event: T): boolean;
 	/** Calendars events belong to (`calendarId`): their colors, and which ones can be hidden. */
 	calendars?: CalendarSource[];
 	/** Builds ids for events created in the UI. Your backend can replace them in `onMutate`. */
@@ -303,6 +307,11 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 	calendars: CalendarSource[] = $state.raw([]);
 	/** Ids of calendars whose events are not shown. */
 	readonly hiddenCalendars = new SvelteSet<string>();
+	/** Search text: only events whose title has every word are shown (accents and case ignored). */
+	query = $state('');
+	/** Only events it returns true for are shown; null shows every event. */
+	// Method-style type keeps it bivariant, so a CalendarState of a narrower event type still fits.
+	filter: { test(event: T): boolean }['test'] | null = $state.raw(null);
 
 	#options: CalendarStateOptions<T>;
 	#createId: () => string;
@@ -321,6 +330,7 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 		this.firstDayOfWeek = firstDayOfWeek;
 		if (snapStep) this.snapStep = snapStep;
 		if (options.calendars) this.calendars = options.calendars;
+		if (options.filter) this.filter = (event) => options.filter!(event);
 		if (options.defaultDuration) this.defaultDuration = options.defaultDuration;
 		if (editable !== undefined) this.editable = editable;
 		if (options.touchDrag !== undefined) this.touchDrag = options.touchDrag;
@@ -361,7 +371,10 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 			? [this.date]
 			: weekDays(this.date, this.weekOptions)
 	);
-	/** Events and occurrences of recurring events that overlap the visible range. */
+	/**
+	 * Events and occurrences of recurring events that overlap the visible range, without hidden
+	 * calendars and only those that pass `filter` and `query`.
+	 */
 	readonly visibleEvents = $derived(
 		expandEvents(
 			this.events.filter(
@@ -369,6 +382,9 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 			),
 			this.range,
 			this.timeZone
+		).filter(
+			(event) =>
+				(!this.filter || this.filter(event)) && matchesQuery(event, this.query, this.locale)
 		)
 	);
 	readonly title = $derived(formatTitle(this));

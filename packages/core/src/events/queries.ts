@@ -48,3 +48,21 @@ export function eventsInRange<T extends CalendarEvent>(
 		return start < rangeEnd && end > rangeStart;
 	});
 }
+
+/** Lowercase text without accents, so "Inglés" and "ingles" compare equal. */
+const fold = (text: string, locale: string) =>
+	text
+		.normalize('NFD')
+		.replace(/\p{Diacritic}/gu, '')
+		.toLocaleLowerCase(locale);
+
+/**
+ * Whether `event`'s title contains every word of `query`, ignoring accents and case. A blank query
+ * matches every event.
+ */
+export function matchesQuery(event: CalendarEvent, query: string, locale: string): boolean {
+	const title = fold(event.title, locale);
+	return fold(query, locale)
+		.split(/\s+/)
+		.every((word) => title.includes(word));
+}

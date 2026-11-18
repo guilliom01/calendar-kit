@@ -4,6 +4,7 @@
 	import { CalendarState } from '#lib/registry/ui/calendar/index.js';
 	import { AgendaView } from '#lib/registry/ui/agenda-view/index.js';
 	import { CalendarList } from '#lib/registry/ui/calendar-list/index.js';
+	import { CalendarSearch } from '#lib/registry/ui/calendar-search/index.js';
 	import {
 		ChangeConfirmDialog,
 		EventDialog,
@@ -47,6 +48,7 @@
 			<Calendar.Nav />
 			<Calendar.Title />
 			<Calendar.Loading />
+			<CalendarSearch class="w-48" />
 			<div class="ms-auto flex flex-wrap items-center gap-2">
 				<Exchange.ImportIcs onImport={({ warnings }) => (importWarnings = warnings)} />
 				<Exchange.ExportIcs filename="calendario.ics" name="calendar-kit" />

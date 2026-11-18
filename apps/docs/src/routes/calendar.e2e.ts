@@ -1070,3 +1070,22 @@ test.describe('calendars', () => {
 		await expect.poll(() => eventColor(page, 'standup')).toBe('oklch(0.65 0.15 150)');
 	});
 });
+
+test.describe('search and filters', () => {
+	test('searching ignores accents and case, and shows only matching events', async ({ page }) => {
+		const search = page.getByRole('searchbox', { name: 'Buscar eventos' });
+		await search.fill('INGLES');
+		await expect(page.getByRole('button', { name: /Clase de inglés/ }).first()).toBeVisible();
+		await expect(page.getByRole('button', { name: /Svelte workshop/ })).toHaveCount(0);
+
+		await search.fill('');
+		await expect(page.getByRole('button', { name: /Svelte workshop/ })).toBeVisible();
+	});
+
+	test('a filter set by the developer applies to every view', async ({ page }) => {
+		await page.goto('/ganchos');
+		await page.getByRole('checkbox', { name: 'Solo eventos de Ana' }).check();
+		await expect(page.getByRole('button', { name: /Almuerzo con el equipo/ })).toHaveCount(0);
+		await expect(page.getByRole('button', { name: /Daily standup/ })).toBeVisible();
+	});
+});
