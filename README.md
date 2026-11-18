@@ -110,15 +110,17 @@ The demo page `/personalizar` uses them in the month, week and timeline views.
 
 Every interaction runs your hook first; return `false` to skip the built-in behavior.
 
-| Option          | When                                  | Built-in behavior                              |
-| --------------- | ------------------------------------- | ---------------------------------------------- |
-| `onEventClick`  | An event is clicked or activated      | Open the event dialog (if you added one)       |
-| `onMoreClick`   | "+N" is clicked in the month view     | A popover listing every event of that day      |
-| `onDateClick`   | A day number or day header is clicked | Show the day view (if you registered one)      |
-| `onSelect`      | An empty day or time range is picked  | Open the dialog for a new event                |
-| `onEventChange` | An event is dragged or resized        | Save it. Return an event to save that instead  |
-| `resolveScope`  | A recurring event is changed          | Ask "this / following / all" in the dialog     |
-| `isEditable`    | Per event, before any change          | Everything is editable when `editable` is true |
+| Option          | When                                                      | Built-in behavior                              |
+| --------------- | --------------------------------------------------------- | ---------------------------------------------- |
+| `onEventClick`  | An event is clicked or activated                          | Open the event dialog (if you added one)       |
+| `onMoreClick`   | "+N" is clicked in the month view                         | A popover listing every event of that day      |
+| `onDateClick`   | A day number or day header is clicked                     | Show the day view (if you registered one)      |
+| `onSelect`      | An empty day or time range is picked                      | Open the dialog for a new event                |
+| `onEventChange` | An event is dragged or resized                            | Save it. Return an event to save that instead  |
+| `resolveScope`  | A recurring event is changed                              | Ask "this / following / all" in the dialog     |
+| `isEditable`    | Per event and action (`move`, `resize`, `delete`, `edit`) | Everything is editable when `editable` is true |
+
+`eventClass(event)` returns extra classes for an event in every view, for example `border-dashed` for tentative events.
 
 Without `event-dialog`, nothing opens: react to `onEventClick` and `onSelect` with your own UI. Everything else is yours to edit too, since the components live in your project.
 

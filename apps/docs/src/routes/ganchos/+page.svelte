@@ -16,8 +16,11 @@
 		events: demoEvents(today(timeZone), 'es-PE', timeZone).filter(
 			(event) => event.progress === undefined
 		),
-		// Holidays are fixed.
-		isEditable: (event) => event.id !== 'holiday',
+		// Holidays are fixed; the conference can be moved but not resized or deleted.
+		isEditable: (event, action) =>
+			event.id !== 'holiday' && (event.id !== 'conference' || action === 'move'),
+		// Fixed events are drawn dashed.
+		eventClass: (event) => (event.id === 'holiday' ? 'border border-dashed' : undefined),
 		// Nothing can be moved to a Sunday.
 		onEventChange: ({ event }) => {
 			const day = 'hour' in event.start ? event.start : event.start;

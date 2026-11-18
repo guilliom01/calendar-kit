@@ -395,7 +395,7 @@
 	</fieldset>
 
 	<Dialog.Footer class="gap-2 sm:justify-between">
-		{#if !draft.isNew}
+		{#if !draft.isNew && calendar.canEdit(original, 'delete')}
 			<!-- Outline keeps red text at 4.5:1 contrast; the soft destructive variant does not. -->
 			<Button variant="outline" class="text-destructive hover:text-destructive" onclick={remove}>
 				{labels.delete}

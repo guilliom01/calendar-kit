@@ -842,3 +842,42 @@ test.describe('keyboard move mode', () => {
 		await expect(page.getByTestId('message')).toHaveText('No se permiten eventos en domingo');
 	});
 });
+
+test.describe('per-action permissions and event classes', () => {
+	// /ganchos: the conference may only be moved; the holiday is fixed and drawn dashed.
+	test('an event allowed only to move ignores Delete and Shift+arrows but moves', async ({
+		page
+	}) => {
+		await page.goto('/ganchos');
+		const conference = page.getByRole('button', { name: 'Conferencia en Cusco' });
+		await conference.focus();
+		await page.keyboard.press('Delete');
+		await expect(conference).toBeVisible();
+
+		await page.keyboard.press('m');
+		await page.keyboard.press('Shift+ArrowRight');
+		await page.keyboard.press('Enter');
+		await expect(page.getByTestId('message')).toHaveText(
+			'Arrastra un evento o haz clic en un día vacío.'
+		);
+
+		await conference.focus();
+		await page.keyboard.press('m');
+		await page.keyboard.press('ArrowRight');
+		await page.keyboard.press('Enter');
+		await expect(page.getByTestId('message')).toHaveText('Movido: Conferencia en Cusco');
+	});
+
+	test('a fully editable event can still be deleted with the keyboard', async ({ page }) => {
+		await page.goto('/ganchos');
+		const workshop = page.getByRole('button', { name: /Svelte workshop/ });
+		await workshop.focus();
+		await page.keyboard.press('Delete');
+		await expect(workshop).toHaveCount(0);
+	});
+
+	test('eventClass adds classes to an event', async ({ page }) => {
+		await page.goto('/ganchos');
+		await expect(page.getByRole('button', { name: 'Feriado' })).toHaveClass(/border-dashed/);
+	});
+});

@@ -16,8 +16,11 @@
 
 	const hooks = `const calendar = new CalendarState({
 	events,
-	// Holidays cannot be changed.
-	isEditable: (event) => event.data?.kind !== 'holiday',
+	// Holidays cannot be changed; bookings can move but keep their length.
+	isEditable: (event, action) =>
+		event.data?.kind !== 'holiday' && (event.data?.kind !== 'booking' || action !== 'resize'),
+	// Tentative events are drawn dashed in every view.
+	eventClass: (event) => (event.data?.tentative ? 'border border-dashed' : undefined),
 	// Show our own panel instead of the event dialog.
 	onEventClick: (event) => {
 		selected = event;
@@ -165,9 +168,15 @@
 			description: 'Decides the scope of a change to a recurring event instead of asking.'
 		},
 		{
-			name: 'isEditable(event)',
+			name: 'isEditable(event, action)',
 			type: 'boolean',
-			description: 'Per-event permission to change it.'
+			description:
+				"Per-event permission for an action: 'move' (drag, keyboard move), 'resize' (edge drag, Shift+arrows), 'delete' (Delete key, dialog button) or 'edit' (open the dialog)."
+		},
+		{
+			name: 'eventClass(event)',
+			type: 'string | undefined',
+			description: "Extra classes for the event's element in every view."
 		}
 	]}
 />

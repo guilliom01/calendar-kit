@@ -66,6 +66,7 @@ export function keyboardMove<T extends CalendarEvent>(
 		if (!arrow) return;
 		key.preventDefault();
 		key.stopPropagation();
+		if (key.shiftKey && !calendar.canEdit(event, 'resize')) return;
 		const next = stepper(current, {
 			horizontal: arrow[0],
 			vertical: arrow[1],

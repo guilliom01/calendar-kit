@@ -97,11 +97,11 @@
 	const percent = $derived(new Intl.NumberFormat(calendar.locale, { style: 'percent' }));
 	/** Delete removes the event; `moveKey` (without modifiers) starts keyboard move mode. */
 	function onEventKey(key: KeyboardEvent, event: CalendarEvent) {
-		if (!calendar.canEdit(event)) return;
-		if (key.key === 'Delete' || key.key === 'Backspace') {
+		if ((key.key === 'Delete' || key.key === 'Backspace') && calendar.canEdit(event, 'delete')) {
 			key.preventDefault();
 			void calendar.remove(event.id);
 		} else if (
+			calendar.canEdit(event, 'move') &&
 			key.key.toLowerCase() === calendar.moveKey &&
 			!key.ctrlKey &&
 			!key.metaKey &&
@@ -122,7 +122,7 @@
 	const dayColumns = $derived(`repeat(${days.length}, minmax(0, 1fr))`);
 
 	function startDrag(down: PointerEvent, event: CalendarEvent) {
-		if (!calendar.canEdit(event)) return;
+		if (!calendar.canEdit(event, 'move')) return;
 		dragAcrossDays(
 			down,
 			event,
@@ -145,7 +145,8 @@
 			type: 'button',
 			class: cn(
 				'absolute inset-y-2 flex items-center overflow-hidden rounded bg-(--event-color)/25 text-start text-xs font-medium [-webkit-touch-callout:none] hover:ring-2 hover:ring-(--event-color)/50',
-				preview?.id === event.id && 'opacity-80 shadow-md'
+				preview?.id === event.id && 'opacity-80 shadow-md',
+				calendar.eventClass(event)
 			),
 			style: `inset-inline-start: ${(item.startIndex / days.length) * 100}%; width: ${(item.span / days.length) * 100}%; --event-color: ${event.color ?? 'var(--primary)'}`,
 			title,
@@ -154,7 +155,9 @@
 					? `${title}, ${calendar.labels.progress} ${percent.format(event.progress)}`
 					: title,
 			'data-event-id': event.id,
-			'aria-keyshortcuts': calendar.canEdit(event) ? calendar.moveKey.toUpperCase() : undefined,
+			'aria-keyshortcuts': calendar.canEdit(event, 'move')
+				? calendar.moveKey.toUpperCase()
+				: undefined,
 			onpointerdown: (down: PointerEvent) => startDrag(down, event),
 			onclick: (click: MouseEvent) => calendar.clickEvent(event, click),
 			onkeydown: (key: KeyboardEvent) => onEventKey(key, event)

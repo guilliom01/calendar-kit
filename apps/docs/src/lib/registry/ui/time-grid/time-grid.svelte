@@ -189,7 +189,7 @@
 	}
 
 	function startMove(down: PointerEvent, item: TimedEventLayout) {
-		if (!calendar.canEdit(item.event)) return;
+		if (!calendar.canEdit(item.event, 'move')) return;
 		const event = item.event as TimedEvent;
 		const source = pointAt(down);
 		const grab = source.minutes - item.start;
@@ -215,7 +215,7 @@
 
 	function startResize(down: PointerEvent, item: TimedEventLayout) {
 		down.stopPropagation();
-		if (!calendar.canEdit(item.event)) return;
+		if (!calendar.canEdit(item.event, 'resize')) return;
 		const event = item.event as TimedEvent;
 
 		trackPointer(
@@ -271,7 +271,7 @@
 	}
 
 	function startAllDayDrag(down: PointerEvent, event: CalendarEvent) {
-		if (!calendar.canEdit(event)) return;
+		if (!calendar.canEdit(event, 'move')) return;
 		dragAcrossDays(
 			down,
 			event,
@@ -314,11 +314,11 @@
 		event: CalendarEvent,
 		stepper: MoveStepper<CalendarEvent>
 	) {
-		if (!calendar.canEdit(event)) return;
-		if (key.key === 'Delete' || key.key === 'Backspace') {
+		if ((key.key === 'Delete' || key.key === 'Backspace') && calendar.canEdit(event, 'delete')) {
 			key.preventDefault();
 			void calendar.remove(event.id);
 		} else if (
+			calendar.canEdit(event, 'move') &&
 			key.key.toLowerCase() === calendar.moveKey &&
 			!key.ctrlKey &&
 			!key.metaKey &&
@@ -347,12 +347,15 @@
 				'mx-0.5 flex min-w-0 items-center rounded bg-(--event-color)/15 px-1.5 text-start text-xs font-medium [-webkit-touch-callout:none] hover:bg-(--event-color)/25',
 				item.continuesBefore && 'ms-0 rounded-s-none',
 				item.continuesAfter && 'me-0 rounded-e-none',
-				preview?.id === event.id && 'opacity-70 shadow-md'
+				preview?.id === event.id && 'opacity-70 shadow-md',
+				calendar.eventClass(event)
 			),
 			style: `grid-column: ${item.startIndex + 2} / span ${item.span}; grid-row: ${item.lane + 1}; --event-color: ${event.color ?? 'var(--primary)'}`,
 			title: event.title || calendar.labels.untitled,
 			'data-event-id': event.id,
-			'aria-keyshortcuts': calendar.canEdit(event) ? calendar.moveKey.toUpperCase() : undefined,
+			'aria-keyshortcuts': calendar.canEdit(event, 'move')
+				? calendar.moveKey.toUpperCase()
+				: undefined,
 			onpointerdown: (down: PointerEvent) => startAllDayDrag(down, event),
 			onclick: (click: MouseEvent) => openEvent(event, click),
 			onkeydown: (key: KeyboardEvent) => onEventKey(key, event, dayStepper())
@@ -368,12 +371,15 @@
 				'group absolute flex flex-col overflow-hidden rounded-md border-s-4 border-(--event-color) bg-(--event-color)/15 px-1.5 py-0.5 text-start text-xs ring-1 ring-background [-webkit-touch-callout:none] hover:bg-(--event-color)/25',
 				item.continuesBefore && 'rounded-t-none',
 				item.continuesAfter && 'rounded-b-none',
-				preview?.id === event.id && 'z-20 opacity-80 shadow-lg'
+				preview?.id === event.id && 'z-20 opacity-80 shadow-lg',
+				calendar.eventClass(event)
 			),
 			style: `top: ${percent(item.start)}; height: ${percent(item.end - item.start)}; inset-inline-start: ${(item.column / item.columns) * 100}%; width: ${100 / item.columns}%; --event-color: ${event.color ?? 'var(--primary)'}`,
 			title: event.title || calendar.labels.untitled,
 			'data-event-id': event.id,
-			'aria-keyshortcuts': calendar.canEdit(event) ? calendar.moveKey.toUpperCase() : undefined,
+			'aria-keyshortcuts': calendar.canEdit(event, 'move')
+				? calendar.moveKey.toUpperCase()
+				: undefined,
 			onpointerdown: (down: PointerEvent) => startMove(down, item),
 			onclick: (click: MouseEvent) => openEvent(event, click),
 			onkeydown: (key: KeyboardEvent) => onEventKey(key, event, timedStepper)
@@ -382,7 +388,7 @@
 
 	/** Attributes of the bottom-edge resize handle, or undefined when the event cannot be resized. */
 	function resizeProps(item: TimedItem): PartProps | undefined {
-		if (!calendar.canEdit(item.event) || item.continuesAfter) return undefined;
+		if (!calendar.canEdit(item.event, 'resize') || item.continuesAfter) return undefined;
 		return {
 			'aria-hidden': 'true',
 			class: 'absolute inset-x-0 bottom-0 h-2 cursor-ns-resize',

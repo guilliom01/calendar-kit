@@ -143,6 +143,9 @@ export interface DaySnippetArgs {
 	props: PartProps;
 }
 
+/** What the user is about to do to an event; `edit` is the event dialog. */
+export type EditAction = 'move' | 'resize' | 'delete' | 'edit';
+
 /** An event the user moved or resized by dragging. */
 export interface EventChange<T extends CalendarEvent> {
 	event: T;
@@ -172,8 +175,13 @@ export interface CalendarStateOptions<T extends CalendarEvent> extends EventStor
 	snapStep?: number;
 	/** Set to false to show events without letting users change them. */
 	editable?: boolean;
-	/** Per-event editability, e.g. `(event) => event.data.owner === me`. */
-	isEditable?(event: T): boolean;
+	/**
+	 * Per-event, per-action permission, e.g. `(event) => event.data.owner === me` or
+	 * `(event, action) => action !== 'resize'`. Runs only when `editable` is true.
+	 */
+	isEditable?(event: T, action: EditAction): boolean;
+	/** Extra classes for an event's element in every view, e.g. dashed when tentative. */
+	eventClass?(event: T): string | undefined;
 	labels?: Partial<CalendarLabels>;
 	/** Builds ids for events created in the UI. Your backend can replace them in `onMutate`. */
 	createId?: () => string;
@@ -365,9 +373,14 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 		this.view = 'day';
 	}
 
-	/** Whether the user may change `event` (global `editable` plus `isEditable`). */
-	canEdit(event?: T) {
-		return this.editable && (!event || (this.#options.isEditable?.(event) ?? true));
+	/** Whether the user may do `action` to `event` (global `editable` plus `isEditable`). */
+	canEdit(event?: T, action: EditAction = 'edit') {
+		return this.editable && (!event || (this.#options.isEditable?.(event, action) ?? true));
+	}
+
+	/** Classes from the `eventClass` option, for views to add to an event's element. */
+	eventClass(event: T) {
+		return this.#options.eventClass?.(event);
 	}
 
 	// Interactions, called by the views. Each runs its hook, then the built-in behavior.

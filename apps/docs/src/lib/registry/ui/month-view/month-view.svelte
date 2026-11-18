@@ -90,7 +90,7 @@
 	}
 
 	function startDrag(down: PointerEvent, event: CalendarEvent) {
-		if (!calendar.canEdit(event)) return;
+		if (!calendar.canEdit(event, 'move')) return;
 		dragAcrossDays(
 			down,
 			event,
@@ -106,11 +106,11 @@
 
 	/** Delete removes the event; `moveKey` (without modifiers) starts keyboard move mode. */
 	function onEventKey(key: KeyboardEvent, event: CalendarEvent) {
-		if (!calendar.canEdit(event)) return;
-		if (key.key === 'Delete' || key.key === 'Backspace') {
+		if ((key.key === 'Delete' || key.key === 'Backspace') && calendar.canEdit(event, 'delete')) {
 			key.preventDefault();
 			void calendar.remove(event.id);
 		} else if (
+			calendar.canEdit(event, 'move') &&
 			key.key.toLowerCase() === calendar.moveKey &&
 			!key.ctrlKey &&
 			!key.metaKey &&
@@ -144,12 +144,15 @@
 					: 'text-foreground hover:bg-muted',
 				item.continuesBefore && 'ms-0 rounded-s-none',
 				item.continuesAfter && 'me-0 rounded-e-none',
-				preview?.id === event.id && 'opacity-70 shadow-md'
+				preview?.id === event.id && 'opacity-70 shadow-md',
+				calendar.eventClass(event)
 			),
 			style: `grid-column: ${item.startIndex + 1} / span ${item.span}; grid-row: ${item.lane + 1}; --event-color: ${event.color ?? 'var(--primary)'}`,
 			title: event.title || calendar.labels.untitled,
 			'data-event-id': event.id,
-			'aria-keyshortcuts': calendar.canEdit(event) ? calendar.moveKey.toUpperCase() : undefined,
+			'aria-keyshortcuts': calendar.canEdit(event, 'move')
+				? calendar.moveKey.toUpperCase()
+				: undefined,
 			onpointerdown: (down: PointerEvent) => startDrag(down, event),
 			onclick: (click: MouseEvent) => calendar.clickEvent(event, click),
 			onkeydown: (key: KeyboardEvent) => onEventKey(key, event)
