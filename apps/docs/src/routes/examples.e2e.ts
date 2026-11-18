@@ -24,6 +24,10 @@ test("the examples index links every example", async ({ page }) => {
     "Search and filters",
     "Context menu",
     "Event preview",
+    "Mini calendar",
+    "External drag",
+    "Scheduling assistant",
+    "Loading on demand",
   ]) {
     // Inside the list: the docs menu also has a "Recurring events" page.
     await expect(
@@ -163,4 +167,67 @@ test("event preview: hovering shows the place and notes", async ({ page }) => {
     .hover();
   await expect(page.getByRole("tooltip")).toContainText("Sala Miraflores");
   await expect(page.getByRole("tooltip")).toContainText("Traer laptop.");
+});
+
+test("mini calendar: a click jumps the calendar to that date", async ({ page }) => {
+  await open(page, "mini-calendar");
+  await example(page).getByRole("button", { name: "diciembre de 2026", exact: true }).click();
+  await example(page)
+    .getByRole("grid", { name: "diciembre de 2026" })
+    .getByRole("button", { name: /^jueves, 10 de diciembre de 2026/ })
+    .click();
+  await expect(title(page)).toContainText("dic.");
+});
+
+test("external drag: a task dropped on the hours becomes an event and leaves the list", async ({
+  page,
+}) => {
+  await open(page, "external-drag");
+  const task = example(page)
+    .getByRole("list", { name: "Pendientes" })
+    .getByText("Llamar al proveedor");
+  const from = (await task.boundingBox())!;
+  const column = (await example(page).locator('[data-time-column="2026-11-18"]').boundingBox())!;
+  const [x, y] = [column.x + column.width / 2, column.y + (column.height * 10) / 24 + 2];
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(x - 20, y - 20, { steps: 5 });
+  await page.mouse.move(x, y, { steps: 5 });
+  await page.mouse.up();
+
+  await expect(example(page).getByRole("button", { name: /Llamar al proveedor/ })).toContainText(
+    "10:00 – 10:30 a. m.",
+  );
+  await expect(
+    example(page).getByRole("list", { name: "Pendientes" }).getByText("Llamar al proveedor"),
+  ).toHaveCount(0);
+});
+
+test("scheduling assistant: a free time for two people opens as a new event", async ({ page }) => {
+  await open(page, "scheduling-assistant");
+  const people = example(page).getByRole("group", { name: "Participantes" });
+  await people.getByRole("checkbox", { name: "Ana" }).check();
+  await people.getByRole("checkbox", { name: "Luis" }).check();
+  const first = example(page)
+    .getByRole("list", { name: "Horarios sugeridos" })
+    .getByRole("button")
+    .first();
+  // Now is Tuesday 14:00 and both are free for the rest of the day.
+  await expect(first).toContainText("martes, 17 de noviembre");
+  await expect(first).toContainText("2:00");
+  await first.click();
+  await expect(page.getByRole("dialog").getByRole("checkbox", { name: "Luis" })).toBeChecked();
+});
+
+test("loading: months are requested once, with their neighbours", async ({ page }) => {
+  await open(page, "loading");
+  await expect(example(page).locator("[data-event-id]").first()).toBeVisible();
+  const requests = example(page).getByText(/^Meses pedidos:/);
+  await expect(requests).toContainText("2026-11");
+  await expect(requests).toContainText("2026-12");
+  await expect(requests).toContainText("2026-10");
+  await example(page).getByRole("button", { name: "el próximo mes" }).click();
+  await expect(requests).toContainText("2027-01");
+  // December was already preloaded, so it is not asked for again.
+  await expect(requests).not.toContainText(/2026-12.*2026-12/);
 });

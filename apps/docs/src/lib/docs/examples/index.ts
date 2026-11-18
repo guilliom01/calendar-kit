@@ -78,6 +78,28 @@ export const examples: Example[] = [
     title: "Event preview",
     description: "A card with an event's details on hover or keyboard focus.",
   },
+  {
+    slug: "mini-calendar",
+    title: "Mini calendar",
+    description: "A small month next to the views to jump to any date, with dots on busy days.",
+  },
+  {
+    slug: "external-drag",
+    title: "External drag",
+    description:
+      "Make any element of yours draggable onto the calendar, like a list of unscheduled tasks, and decide what a drop creates.",
+  },
+  {
+    slug: "scheduling-assistant",
+    title: "Scheduling assistant",
+    description: "Pick participants and a length to get the next times when all of them are free.",
+  },
+  {
+    slug: "loading",
+    title: "Loading on demand",
+    description:
+      "Load events month by month from your backend as the user navigates, with a loading indicator.",
+  },
 ];
 
 const components = import.meta.glob<{ default: Component }>("./*.svelte", { eager: true });
