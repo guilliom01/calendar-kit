@@ -44,6 +44,10 @@
 <h2>Accessibility</h2>
 <ul>
 	<li>
+		In the month and year views the days are one tab stop: arrows move between days and weeks, Page
+		Up and Page Down between months, Home and End to the ends of the week, and Enter opens the day.
+	</li>
+	<li>
 		Press <kbd>M</kbd> on a focused event to move it without a mouse: arrow keys move it (minutes and
 		days in the time grid, days and weeks in the month view, resources in the timeline), Shift with arrows
 		moves its end and Shift+Alt with arrows its start, Enter saves and Escape cancels. Shift+F10 or the
@@ -69,3 +73,27 @@
 		> creates events.
 	</li>
 </ul>
+
+<h2>Testing with a screen reader</h2>
+<p>
+	Automated checks (axe, in light and dark mode, desktop and phone) cannot tell whether the calendar
+	sounds right. Before a release, go through it with VoiceOver (macOS: Cmd+F5) or NVDA:
+</p>
+<ol>
+	<li>
+		Tab to the month: one stop for the days; arrows read each day with its date and event count;
+		Page Down announces the new month in the title.
+	</li>
+	<li>
+		Tab to an event: its title and time are read; with the preview mounted, its details follow.
+	</li>
+	<li>
+		Press M, then arrows: every step is announced; Enter saves, Escape announces the cancel and
+		focus returns to the event.
+	</li>
+	<li>Open an event: the dialog title is read, Tab stays inside, Escape closes it.</li>
+	<li>Save with the end before the start: the message is read with the end field.</li>
+	<li>
+		Shift+F10 on an event: the menu opens and its items are read; Escape returns to the event.
+	</li>
+</ol>

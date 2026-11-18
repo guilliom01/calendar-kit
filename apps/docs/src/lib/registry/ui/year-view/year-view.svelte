@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { DateFormatter, isSameMonth, isToday, type CalendarDate } from '@internationalized/date';
 	import { countByDay, monthGrid } from '@calendar-kit/core';
-	import type { Snippet } from 'svelte';
+	import { tick, type Snippet } from 'svelte';
+	import { dayGridKey } from '#lib/registry/lib/calendar-keyboard.js';
 	import {
 		getCalendar,
 		pluralLabel,
@@ -52,9 +53,29 @@
 					? 'bg-primary/10'
 					: '';
 
+	let root: HTMLElement | undefined = $state();
+	// Day buttons are one tab stop (roving tabindex): arrows move between them.
+	// Follows the calendar's date; the arrow keys reassign it.
+	let focusedDay = $derived(calendar.date);
+	const tabbable = $derived(focusedDay.year === calendar.date.year ? focusedDay : calendar.date);
+
+	/** Moves the focus to another day; beyond this year, the calendar shows that day's year. */
+	async function onDayKey(key: KeyboardEvent, day: CalendarDate) {
+		const next = dayGridKey(key, day, calendar.weekOptions);
+		if (!next) return;
+		key.preventDefault();
+		if (next.year !== calendar.date.year) calendar.date = next;
+		focusedDay = next;
+		await tick();
+		root?.querySelector<HTMLElement>(`[data-grid-date="${next.toString()}"]`)?.focus();
+	}
+
 	function dayProps(day: CalendarDate, count: number): PartProps {
 		return {
 			type: 'button',
+			tabindex: day.compare(tabbable) === 0 ? 0 : -1,
+			'data-grid-date': day.toString(),
+			onkeydown: (key: KeyboardEvent) => onDayKey(key, day),
 			class: cn(
 				'mx-auto inline-flex size-8 items-center justify-center rounded-full hover:ring-1 hover:ring-ring',
 				tint(count),
@@ -70,6 +91,7 @@
 </script>
 
 <div
+	bind:this={root}
 	class={cn(
 		'grid min-h-0 grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] content-start gap-6 overflow-y-auto rounded-lg border p-4 print:overflow-visible',
 		className

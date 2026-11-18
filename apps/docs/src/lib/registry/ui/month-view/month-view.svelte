@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { DateFormatter, isSameMonth, isToday, type CalendarDate } from '@internationalized/date';
 	import { isAllDay, layoutWeekRow, monthGrid, type CalendarEvent } from '@calendar-kit/core';
-	import type { Snippet } from 'svelte';
+	import { tick, type Snippet } from 'svelte';
 	import {
 		dragAcrossDays,
 		touchOf,
@@ -9,7 +9,12 @@
 		barResizeHandles
 	} from '#lib/registry/lib/calendar-drag.js';
 	import * as Popover from '#lib/registry/ui/popover/index.js';
-	import { dayStepper, contextMenuKey, keyboardMove } from '#lib/registry/lib/calendar-keyboard.js';
+	import {
+		dayGridKey,
+		dayStepper,
+		contextMenuKey,
+		keyboardMove
+	} from '#lib/registry/lib/calendar-keyboard.js';
 	import {
 		getCalendar,
 		pluralLabel,
@@ -190,9 +195,31 @@
 		};
 	}
 
+	let root: HTMLElement | undefined = $state();
+	// Day buttons are one tab stop (roving tabindex): arrows move between them.
+	// Follows the calendar's date; the arrow keys reassign it.
+	let focusedDay = $derived(calendar.date);
+	const gridDays = $derived(weeks.flatMap((week) => week.days));
+	const inGrid = (day: CalendarDate) => gridDays.some((candidate) => candidate.compare(day) === 0);
+	const tabbable = $derived(inGrid(focusedDay) ? focusedDay : calendar.date);
+
+	/** Moves the focus to another day; beyond this grid, the calendar shows that day's month. */
+	async function onDayKey(key: KeyboardEvent, day: CalendarDate) {
+		const next = dayGridKey(key, day, calendar.weekOptions);
+		if (!next) return;
+		key.preventDefault();
+		if (!inGrid(next)) calendar.date = next;
+		focusedDay = next;
+		await tick();
+		root?.querySelector<HTMLElement>(`[data-grid-date="${next.toString()}"]`)?.focus();
+	}
+
 	function dayNumberProps(day: CalendarDate): PartProps {
 		return {
 			type: 'button',
+			tabindex: day.compare(tabbable) === 0 ? 0 : -1,
+			'data-grid-date': day.toString(),
+			onkeydown: (key: KeyboardEvent) => onDayKey(key, day),
 			class: cn(
 				'inline-flex size-7 items-center justify-center rounded-full text-xs hover:bg-muted',
 				isToday(day, calendar.timeZone) && 'bg-primary text-primary-foreground hover:bg-primary/90'
@@ -222,6 +249,7 @@
 		className
 	)}
 	bind:clientWidth={width}
+	bind:this={root}
 >
 	<div class="grid grid-cols-7 border-b bg-muted/40">
 		{#each weeks[0]?.days ?? [] as day (day.toString())}

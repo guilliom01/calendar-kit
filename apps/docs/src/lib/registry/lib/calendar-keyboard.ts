@@ -1,4 +1,11 @@
-import { moveEvent, resizeEvent, resizeEventStart, type CalendarEvent } from '@calendar-kit/core';
+import { endOfWeek, startOfWeek, type CalendarDate } from '@internationalized/date';
+import {
+	moveEvent,
+	resizeEvent,
+	resizeEventStart,
+	type CalendarEvent,
+	type WeekOptions
+} from '@calendar-kit/core';
 import { fillLabel, type CalendarState } from './calendar-state.svelte.js';
 
 /** Arrow pressed in move mode, already mirrored for right-to-left pages. */
@@ -123,4 +130,36 @@ export function contextMenuKey(key: KeyboardEvent) {
 		})
 	);
 	return true;
+}
+
+/**
+ * Arrow keys in a grid of day buttons (the month and year views): the day to focus after `key`, or
+ * undefined for other keys. Left and right are mirrored right-to-left; up and down move a week,
+ * Page Up and Page Down a month, Home and End to the start and end of the week.
+ */
+export function dayGridKey(
+	key: KeyboardEvent,
+	day: CalendarDate,
+	{ locale, firstDayOfWeek }: WeekOptions
+): CalendarDate | undefined {
+	const rtl = getComputedStyle(key.currentTarget as Element).direction === 'rtl';
+	switch (key.key) {
+		case 'ArrowLeft':
+			return day.add({ days: rtl ? 1 : -1 });
+		case 'ArrowRight':
+			return day.add({ days: rtl ? -1 : 1 });
+		case 'ArrowUp':
+			return day.subtract({ weeks: 1 });
+		case 'ArrowDown':
+			return day.add({ weeks: 1 });
+		case 'PageUp':
+			return day.subtract({ months: 1 });
+		case 'PageDown':
+			return day.add({ months: 1 });
+		case 'Home':
+			return startOfWeek(day, locale, firstDayOfWeek);
+		case 'End':
+			return endOfWeek(day, locale, firstDayOfWeek);
+	}
+	return undefined;
 }

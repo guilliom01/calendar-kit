@@ -1412,3 +1412,38 @@ test('a conflict shows the server version and the developer tells the user', asy
 	).toBeVisible();
 	await expect(page.getByRole('button', { name: /Prueba de conflicto/ })).toHaveCount(0);
 });
+
+test.describe('arrow keys in the day grids', () => {
+	const tabStops = (page: Page) => page.locator('[data-grid-date][tabindex="0"]');
+
+	test('the month is one tab stop; arrows move, Page Down changes month, Enter opens', async ({
+		page
+	}) => {
+		const today = dayButton(page, 'martes, 17 de noviembre de 2026');
+		await expect(tabStops(page)).toHaveCount(1);
+		await today.focus();
+		await page.keyboard.press('ArrowRight');
+		await expect(dayButton(page, 'miércoles, 18 de noviembre de 2026')).toBeFocused();
+		await page.keyboard.press('ArrowDown');
+		await page.keyboard.press('ArrowDown');
+		// Still in the November grid, which ends on Saturday 5 December.
+		await expect(dayButton(page, 'miércoles, 2 de diciembre de 2026')).toBeFocused();
+		await expect(title(page)).toHaveText('noviembre de 2026');
+
+		await page.keyboard.press('PageDown');
+		await expect(title(page)).toHaveText('enero de 2027');
+		await expect(dayButton(page, 'sábado, 2 de enero de 2027')).toBeFocused();
+		await page.keyboard.press('Enter');
+		await expect(title(page)).toHaveText('sábado, 2 de enero de 2027');
+	});
+
+	test('the year is one tab stop; Home goes to the start of the week', async ({ page }) => {
+		await viewButton(page, 'año').click();
+		await expect(tabStops(page)).toHaveCount(1);
+		await tabStops(page).focus();
+		await page.keyboard.press('Home');
+		await expect(page.locator('[data-grid-date="2026-11-15"]')).toBeFocused();
+		await page.keyboard.press('ArrowUp');
+		await expect(page.locator('[data-grid-date="2026-11-08"]')).toBeFocused();
+	});
+});
