@@ -1,6 +1,6 @@
 <script lang="ts">
   import { toZoned, type CalendarDate } from "@internationalized/date";
-  import type { CalendarEvent, DateRange } from "@calendar-kit/core";
+  import type { CalendarEvent, DateRange } from "@guilli/calendar-core";
   import * as FullCalendar from "#lib/registry/ui/full-calendar/index.js";
   import { CalendarState } from "#lib/registry/ui/full-calendar/index.js";
   import { MonthView } from "#lib/registry/ui/month-view/index.js";

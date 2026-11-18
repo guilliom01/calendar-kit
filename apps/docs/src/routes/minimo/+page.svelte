@@ -3,7 +3,7 @@
   import * as FullCalendar from "#lib/registry/ui/full-calendar/index.js";
   import { CalendarState } from "#lib/registry/ui/full-calendar/index.js";
   import { MonthView } from "#lib/registry/ui/month-view/index.js";
-  import type { CalendarEvent } from "@calendar-kit/core";
+  import type { CalendarEvent } from "@guilli/calendar-core";
   import { demoEvents } from "../demo-events.js";
 
   const timeZone = "America/Lima";

@@ -1,7 +1,27 @@
 {
-  "name": "@calendar-kit/core",
-  "version": "0.0.1",
+  "name": "@guilli/calendar-core",
+  "version": "0.1.0",
   "description": "Framework-agnostic calendar logic: dates, recurrence, layout, interaction and state.",
+  "keywords": [
+    "calendar",
+    "scheduler",
+    "recurrence",
+    "rrule",
+    "icalendar",
+    "events",
+    "svelte",
+    "shadcn"
+  ],
+  "homepage": "https://github.com/guilliom01/calendar-kit#readme",
+  "bugs": {
+    "url": "https://github.com/guilliom01/calendar-kit/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/guilliom01/calendar-kit.git",
+    "directory": "packages/core"
+  },
+  "author": "Willington Ortiz",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
@@ -12,10 +32,11 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && publint",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && publint",
     "check": "tsc --noEmit",
     "test": "vitest run"
   },
@@ -27,5 +48,8 @@
     "rrule-temporal": "^2.2.9",
     "typescript": "^6.0.3",
     "vitest": "^5.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

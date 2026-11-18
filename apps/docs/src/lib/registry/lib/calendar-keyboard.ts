@@ -5,7 +5,7 @@ import {
   resizeEventStart,
   type CalendarEvent,
   type WeekOptions,
-} from "@calendar-kit/core";
+} from "@guilli/calendar-core";
 import { fillLabel, type CalendarState } from "./calendar-state.svelte.js";
 
 /** Arrow pressed in move mode, already mirrored for right-to-left pages. */

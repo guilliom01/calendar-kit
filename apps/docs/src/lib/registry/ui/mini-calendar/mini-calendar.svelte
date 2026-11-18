@@ -7,7 +7,7 @@
     startOfMonth,
     type CalendarDate,
   } from "@internationalized/date";
-  import { countByDay, monthGrid } from "@calendar-kit/core";
+  import { countByDay, monthGrid } from "@guilli/calendar-core";
   import ChevronLeftIcon from "@lucide/svelte/icons/chevron-left";
   import ChevronRightIcon from "@lucide/svelte/icons/chevron-right";
   import { tick } from "svelte";

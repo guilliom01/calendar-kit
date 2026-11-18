@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { CalendarDate } from "@internationalized/date";
-  import type { Resource } from "@calendar-kit/core";
+  import type { Resource } from "@guilli/calendar-core";
   import type { Snippet } from "svelte";
   import * as Dialog from "#lib/registry/ui/dialog/index.js";
   import { getCalendar } from "#lib/registry/lib/calendar-state.svelte.js";

@@ -7,7 +7,7 @@
     "apps/*"
   ],
   "scripts": {
-    "build": "bun run --filter '@calendar-kit/core' build && bun run --filter '@calendar-kit/docs' build",
+    "build": "bun run --filter '@guilli/calendar-core' build && bun run --filter '@calendar-kit/docs' build",
     "test": "bun run --filter '*' test",
     "check": "bun run --filter '*' check",
     "lint": "oxfmt --check && bun run --filter '@calendar-kit/docs' lint",

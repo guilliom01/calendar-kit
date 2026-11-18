@@ -42,7 +42,7 @@
     "vite": "^8.3.8"
   },
   "dependencies": {
-    "@calendar-kit/core": "workspace:*",
+    "@guilli/calendar-core": "workspace:*",
     "@internationalized/date": "^3.12.4",
     "@lucide/svelte": "^1.74.0",
     "cn": "^0.5.2",

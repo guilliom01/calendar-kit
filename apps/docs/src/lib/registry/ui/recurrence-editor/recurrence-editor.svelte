@@ -12,7 +12,7 @@
     type Frequency,
     type RecurrenceRule,
     type Weekday,
-  } from "@calendar-kit/core";
+  } from "@guilli/calendar-core";
   import { Input } from "#lib/registry/ui/input/index.js";
   import { fillLabel, getCalendar } from "#lib/registry/lib/calendar-state.svelte.js";
   import { cn } from "#lib/utils.js";

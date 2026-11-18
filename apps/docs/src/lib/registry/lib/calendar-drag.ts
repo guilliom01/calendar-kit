@@ -7,7 +7,7 @@ import {
   snapMinutes,
   zonedAt,
   type CalendarEvent,
-} from "@calendar-kit/core";
+} from "@guilli/calendar-core";
 import type { Attachment } from "svelte/attachments";
 import type { CalendarState, ExternalItem, ResizeHandles } from "./calendar-state.svelte.js";
 

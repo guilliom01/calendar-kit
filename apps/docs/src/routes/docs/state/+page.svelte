@@ -143,7 +143,8 @@
   in order. If <code>onMutate</code> throws, the change is rolled back (unless a later change
   replaced it) and <code>onError</code> is called. Undo and redo reach <code>onMutate</code> as
   inverse changes, so your backend stays in sync. When the server has a newer version, throw
-  <code>new ConflictError(current)</code> (from <code>@calendar-kit/core</code>; <code>null</code>
+  <code>new ConflictError(current)</code> (from <code>@guilli/calendar-core</code>;
+  <code>null</code>
   when it was deleted): the calendar shows that version instead of rolling back, forgets the undo steps
   that would overwrite it, and calls <code>onConflict</code>. Reloaded months never replace an event
   while a save of it is on its way.
@@ -292,7 +293,7 @@
     <code>matchesQuery(event, query, locale)</code> from the core does the accent-insensitive match.
   </li>
   <li>
-    <code>store</code>: the underlying <code>EventStore</code> from <code>@calendar-kit/core</code>,
-    for use outside Svelte.
+    <code>store</code>: the underlying <code>EventStore</code> from
+    <code>@guilli/calendar-core</code>, for use outside Svelte.
   </li>
 </ul>

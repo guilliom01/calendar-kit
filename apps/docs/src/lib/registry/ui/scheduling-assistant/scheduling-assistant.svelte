@@ -5,7 +5,7 @@
     flattenResources,
     type Resource,
     type WorkingHours,
-  } from "@calendar-kit/core";
+  } from "@guilli/calendar-core";
   import type { Snippet } from "svelte";
   import { getCalendar } from "#lib/registry/lib/calendar-state.svelte.js";
   import { cn } from "#lib/utils.js";

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { SeriesScope } from "@calendar-kit/core";
+  import type { SeriesScope } from "@guilli/calendar-core";
   import { Button } from "#lib/registry/ui/button/index.js";
   import * as Dialog from "#lib/registry/ui/dialog/index.js";
   import { getCalendar } from "#lib/registry/lib/calendar-state.svelte.js";

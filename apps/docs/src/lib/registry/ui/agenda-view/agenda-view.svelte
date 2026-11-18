@@ -1,6 +1,6 @@
 <script lang="ts">
   import { DateFormatter, isToday, type CalendarDate } from "@internationalized/date";
-  import { groupByDay, isAllDay, type CalendarEvent, type Resource } from "@calendar-kit/core";
+  import { groupByDay, isAllDay, type CalendarEvent, type Resource } from "@guilli/calendar-core";
   import type { Snippet } from "svelte";
   import {
     getCalendar,

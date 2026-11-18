@@ -17,7 +17,7 @@ ${closeScript}
 	<Exchange.Print />
 </FullCalendar.Toolbar>`;
 
-  const core = `import { parseICS, toICS, toCSV, toXLSX } from '@calendar-kit/core';
+  const core = `import { parseICS, toICS, toCSV, toXLSX } from '@guilli/calendar-core';
 
 const file = toICS(events, { name: 'Team' });
 const { events: imported, warnings } = parseICS(text, { timeZone: 'America/Lima' });

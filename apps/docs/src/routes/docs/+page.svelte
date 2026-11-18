@@ -47,7 +47,8 @@ ${closeScript}
   A free, MIT-licensed full calendar for Svelte 5, built the shadcn way. You copy the components
   into your project, own their code and style them with Tailwind CSS. The logic that is hard to get
   right (dates, time zones, recurrence, layout, saving, undo) lives in
-  <code>@calendar-kit/core</code>, an npm package, so fixes reach you without touching your markup.
+  <code>@guilli/calendar-core</code>, an npm package, so fixes reach you without touching your
+  markup.
 </p>
 
 <h2>Philosophy</h2>

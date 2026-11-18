@@ -9,7 +9,7 @@
     layoutWeekRow,
     type CalendarEvent,
     type Resource,
-  } from "@calendar-kit/core";
+  } from "@guilli/calendar-core";
   import type { Snippet } from "svelte";
   import { SvelteSet } from "svelte/reactivity";
   import {

@@ -10,7 +10,7 @@
 	exdates: [parseZonedDateTime('2026-12-28T19:00[America/Lima]')]
 }`;
 
-  const core = `import { occurrences, seriesChanges, parseRRule } from '@calendar-kit/core';
+  const core = `import { occurrences, seriesChanges, parseRRule } from '@guilli/calendar-core';
 
 // Occurrences of a series in a range, seen from a time zone.
 const list = occurrences(series, { start, end }, 'America/Lima');

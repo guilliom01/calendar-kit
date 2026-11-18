@@ -26,7 +26,7 @@
     type Resource,
     type TimedEvent,
     type TimedEventLayout,
-  } from "@calendar-kit/core";
+  } from "@guilli/calendar-core";
   import type { Snippet } from "svelte";
   import {
     barResizeHandles,

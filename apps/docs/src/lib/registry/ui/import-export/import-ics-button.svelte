@@ -1,6 +1,6 @@
 <script lang="ts">
   import UploadIcon from "@lucide/svelte/icons/upload";
-  import { parseICS, type IcsImportResult } from "@calendar-kit/core";
+  import { parseICS, type IcsImportResult } from "@guilli/calendar-core";
   import { Button, type ButtonProps } from "#lib/registry/ui/button/index.js";
   import { getCalendar } from "#lib/registry/lib/calendar-state.svelte.js";
   import { cn } from "#lib/utils.js";

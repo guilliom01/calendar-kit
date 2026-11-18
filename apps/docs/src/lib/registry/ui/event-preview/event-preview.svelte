@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { CalendarEvent } from "@calendar-kit/core";
+  import type { CalendarEvent } from "@guilli/calendar-core";
   import type { Snippet } from "svelte";
   import { getCalendar } from "#lib/registry/lib/calendar-state.svelte.js";
   import { cn } from "#lib/utils.js";

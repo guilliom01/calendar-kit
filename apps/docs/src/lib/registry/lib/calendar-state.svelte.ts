@@ -25,7 +25,7 @@ import {
   type EventStoreOptions,
   type SeriesScope,
   type WeekOptions,
-} from "@calendar-kit/core";
+} from "@guilli/calendar-core";
 
 /**
  * Texts that Intl cannot provide. Override them through `labels` for your language.

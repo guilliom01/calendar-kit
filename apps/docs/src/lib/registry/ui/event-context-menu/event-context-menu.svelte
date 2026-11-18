@@ -1,5 +1,5 @@
 <script lang="ts" module>
-  import type { CalendarEvent } from "@calendar-kit/core";
+  import type { CalendarEvent } from "@guilli/calendar-core";
 
   /** What the menu can do with its event. Actions the user may not do are missing. */
   export interface EventMenuActions {

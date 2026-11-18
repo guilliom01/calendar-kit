@@ -1,5 +1,5 @@
 import { startOfWeek, toZoned, type CalendarDate } from "@internationalized/date";
-import type { CalendarSource, CalendarEvent, Resource } from "@calendar-kit/core";
+import type { CalendarSource, CalendarEvent, Resource } from "@guilli/calendar-core";
 
 /** Rooms and people, grouped, for the timeline and resource views. */
 export const demoResources: Resource[] = [

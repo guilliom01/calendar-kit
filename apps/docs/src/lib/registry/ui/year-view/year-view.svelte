@@ -1,6 +1,6 @@
 <script lang="ts">
   import { DateFormatter, isSameMonth, isToday, type CalendarDate } from "@internationalized/date";
-  import { countByDay, monthGrid } from "@calendar-kit/core";
+  import { countByDay, monthGrid } from "@guilli/calendar-core";
   import { tick, type Snippet } from "svelte";
   import { dayGridKey } from "#lib/registry/lib/calendar-keyboard.js";
   import {

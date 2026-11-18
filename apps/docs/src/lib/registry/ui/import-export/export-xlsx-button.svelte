@@ -1,6 +1,6 @@
 <script lang="ts">
   import FileSpreadsheetIcon from "@lucide/svelte/icons/file-spreadsheet";
-  import { toXLSX, type CalendarEvent } from "@calendar-kit/core";
+  import { toXLSX, type CalendarEvent } from "@guilli/calendar-core";
   import { Button, type ButtonProps } from "#lib/registry/ui/button/index.js";
   import { getCalendar } from "#lib/registry/lib/calendar-state.svelte.js";
   import { cn } from "#lib/utils.js";

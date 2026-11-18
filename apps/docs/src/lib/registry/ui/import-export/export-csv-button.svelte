@@ -1,6 +1,6 @@
 <script lang="ts">
   import SheetIcon from "@lucide/svelte/icons/sheet";
-  import { toCSV, type CalendarEvent } from "@calendar-kit/core";
+  import { toCSV, type CalendarEvent } from "@guilli/calendar-core";
   import { Button, type ButtonProps } from "#lib/registry/ui/button/index.js";
   import { getCalendar } from "#lib/registry/lib/calendar-state.svelte.js";
   import { cn } from "#lib/utils.js";

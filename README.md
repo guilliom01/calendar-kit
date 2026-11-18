@@ -2,7 +2,7 @@
 
 A free, open-source (MIT) full calendar for Svelte, built the shadcn way: you copy the components into your project, own the code, and style it with Tailwind CSS.
 
-- **`@calendar-kit/core`**: framework-agnostic logic (dates, recurrence, layout, interaction, state), installed from npm so fixes reach you.
+- **`@guilli/calendar-core`**: framework-agnostic logic (dates, recurrence, layout, interaction, state), installed from npm so fixes reach you.
 - **Registry items**: Svelte 5 components you copy and edit freely.
 
 > Status: early development (phase 0). Not published yet.
@@ -10,7 +10,7 @@ A free, open-source (MIT) full calendar for Svelte, built the shadcn way: you co
 ## Layout
 
 ```
-packages/core   # @calendar-kit/core, pure TypeScript
+packages/core   # @guilli/calendar-core, pure TypeScript
 apps/docs       # SvelteKit docs site; also builds and serves the registry (static/r)
 ```
 
@@ -158,7 +158,7 @@ With 5,000 events, expanding the visible month takes about 20 ms and laying out 
 
 ### Recurring events
 
-Give an event an RFC 5545 `rrule` (for example `FREQ=WEEKLY;INTERVAL=2;BYDAY=TU,TH` or `FREQ=MONTHLY;BYDAY=-1FR;COUNT=6`) and optional `exdates` and `rdates` (RDATE; an event with only `rdates` is a series too). Supported parts: `FREQ` (daily to yearly), `INTERVAL`, `COUNT`, `UNTIL`, `BYMONTH`, `BYMONTHDAY`, `BYDAY` (with ordinals), `BYSETPOS` and `WKST`; others throw a `RangeError` instead of being ignored. Occurrences are expanded only for the visible range and keep their wall-clock time across DST changes (checked against `rrule-temporal` in the tests). Changing an occurrence applies to this event, the following ones or all of them, as one undo step. An edited single occurrence stays linked to its series (`exceptionOf`, `recurrenceId`) and round-trips through .ics as a `RECURRENCE-ID` override; editing "all events" does not change these exceptions. `seriesChanges()` in `@calendar-kit/core` gives you the same changes for your own UI.
+Give an event an RFC 5545 `rrule` (for example `FREQ=WEEKLY;INTERVAL=2;BYDAY=TU,TH` or `FREQ=MONTHLY;BYDAY=-1FR;COUNT=6`) and optional `exdates` and `rdates` (RDATE; an event with only `rdates` is a series too). Supported parts: `FREQ` (daily to yearly), `INTERVAL`, `COUNT`, `UNTIL`, `BYMONTH`, `BYMONTHDAY`, `BYDAY` (with ordinals), `BYSETPOS` and `WKST`; others throw a `RangeError` instead of being ignored. Occurrences are expanded only for the visible range and keep their wall-clock time across DST changes (checked against `rrule-temporal` in the tests). Changing an occurrence applies to this event, the following ones or all of them, as one undo step. An edited single occurrence stays linked to its series (`exceptionOf`, `recurrenceId`) and round-trips through .ics as a `RECURRENCE-ID` override; editing "all events" does not change these exceptions. `seriesChanges()` in `@guilli/calendar-core` gives you the same changes for your own UI.
 
 ### Loading events on demand
 

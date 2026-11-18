@@ -1,6 +1,6 @@
 <script lang="ts">
   import { DateFormatter, isToday, type CalendarDate } from "@internationalized/date";
-  import { eventBounds, layoutWeekRow, type CalendarEvent } from "@calendar-kit/core";
+  import { eventBounds, layoutWeekRow, type CalendarEvent } from "@guilli/calendar-core";
   import type { Snippet } from "svelte";
   import {
     barResizeHandles,

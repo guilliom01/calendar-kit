@@ -1,6 +1,6 @@
 <script lang="ts">
   import { today } from "@internationalized/date";
-  import { ConflictError } from "@calendar-kit/core";
+  import { ConflictError } from "@guilli/calendar-core";
   import * as FullCalendar from "#lib/registry/ui/full-calendar/index.js";
   import { CalendarState } from "#lib/registry/ui/full-calendar/index.js";
   import { AgendaView } from "#lib/registry/ui/agenda-view/index.js";

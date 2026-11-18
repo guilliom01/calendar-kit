@@ -21,7 +21,7 @@
     type CalendarEvent,
     type RecurrenceRule,
     type Resource,
-  } from "@calendar-kit/core";
+  } from "@guilli/calendar-core";
   import { Button } from "#lib/registry/ui/button/index.js";
   import { Checkbox } from "#lib/registry/ui/checkbox/index.js";
   import * as Dialog from "#lib/registry/ui/dialog/index.js";

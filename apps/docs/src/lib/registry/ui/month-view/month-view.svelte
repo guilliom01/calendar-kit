@@ -1,6 +1,6 @@
 <script lang="ts">
   import { DateFormatter, isSameMonth, isToday, type CalendarDate } from "@internationalized/date";
-  import { isAllDay, layoutWeekRow, monthGrid, type CalendarEvent } from "@calendar-kit/core";
+  import { isAllDay, layoutWeekRow, monthGrid, type CalendarEvent } from "@guilli/calendar-core";
   import { tick, type Snippet } from "svelte";
   import {
     dragAcrossDays,
