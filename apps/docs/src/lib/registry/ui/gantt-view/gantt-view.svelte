@@ -124,6 +124,10 @@
     }
   }
 
+  // Day numbers in the locale's digits (e.g. Arabic-Indic), like every other date.
+
+  const dayDigits = $derived(formatter({ day: "numeric" }));
+
   const toDate = (day: CalendarDate) => day.toDate(calendar.timeZone);
   const dayColumns = $derived(`repeat(${days.length}, minmax(0, 1fr))`);
 
@@ -228,7 +232,7 @@
               <span aria-hidden="true" class="text-muted-foreground uppercase"
                 >{weekday.format(toDate(day))}</span
               >
-              <span aria-hidden="true">{day.day}</span>
+              <span aria-hidden="true">{dayDigits.format(toDate(day))}</span>
               <span class="sr-only">{fullDate.format(toDate(day))}</span>
             </button>
           {/if}

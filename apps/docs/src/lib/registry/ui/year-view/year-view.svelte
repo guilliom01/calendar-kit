@@ -34,6 +34,8 @@
   const monthName = $derived(formatter({ month: "long" }));
   const weekday = $derived(formatter({ weekday: "narrow" }));
   const fullDate = $derived(formatter({ dateStyle: "full" }));
+  // Day numbers in the locale's digits (e.g. Arabic-Indic), like every other date.
+  const dayDigits = $derived(formatter({ day: "numeric" }));
   const toDate = (day: CalendarDate) => day.toDate(calendar.timeZone);
   const eventCount = (count: number) =>
     pluralLabel(calendar.labels.eventCount, count, calendar.locale);
@@ -125,7 +127,7 @@
                 props: dayProps(day, count),
               })}
             {:else}
-              <button {...dayProps(day, count)}>{day.day}</button>
+              <button {...dayProps(day, count)}>{dayDigits.format(toDate(day))}</button>
             {/if}
           {:else}
             <span></span>

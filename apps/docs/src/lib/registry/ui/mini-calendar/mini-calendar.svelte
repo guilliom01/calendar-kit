@@ -44,6 +44,8 @@
   const weekday = $derived(formatter({ weekday: "narrow" }));
   const weekdayLong = $derived(formatter({ weekday: "long" }));
   const fullDate = $derived(formatter({ dateStyle: "full" }));
+  // Day numbers in the locale's digits (e.g. Arabic-Indic), like every other date.
+  const dayDigits = $derived(formatter({ day: "numeric" }));
   const toDate = (day: CalendarDate) => day.toDate(calendar.timeZone);
 
   const inRange = (day: CalendarDate) =>
@@ -145,7 +147,7 @@
                 aria-current={isToday(day, calendar.timeZone) ? "date" : undefined}
                 onclick={() => (calendar.date = day)}
               >
-                {day.day}
+                {dayDigits.format(toDate(day))}
                 {#if count}
                   <span
                     aria-hidden="true"

@@ -47,6 +47,8 @@
   const fullDate = $derived(formatter({ dateStyle: "full" }));
   const time = $derived(formatter({ hour: "numeric", minute: "2-digit" }));
   const list = $derived(new Intl.ListFormat(calendar.locale, { type: "conjunction" }));
+  // Day numbers in the locale's digits (e.g. Arabic-Indic), like every other date.
+  const dayDigits = $derived(formatter({ day: "numeric" }));
   const toDate = (day: CalendarDate) => day.toDate(calendar.timeZone);
 
   function when(event: CalendarEvent) {
@@ -110,7 +112,7 @@
                 isToday(day, calendar.timeZone) && "bg-primary text-primary-foreground",
               )}
             >
-              {day.day}
+              {dayDigits.format(toDate(day))}
             </span>
             <span aria-hidden="true" class="text-xs leading-tight text-muted-foreground uppercase">
               {monthDay.format(toDate(day))}<br />{weekday.format(toDate(day))}

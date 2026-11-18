@@ -101,6 +101,8 @@
   const weekday = $derived(formatter({ weekday: "short" }));
   const fullDate = $derived(formatter({ dateStyle: "full" }));
   const time = $derived(formatter({ hour: "numeric", minute: "2-digit" }));
+  // Day numbers in the locale's digits (e.g. Arabic-Indic), like every other date.
+  const dayDigits = $derived(formatter({ day: "numeric" }));
   const toDate = (day: CalendarDate) => day.toDate(calendar.timeZone);
   const dayColumns = $derived(`repeat(${days.length}, minmax(0, 1fr))`);
 
@@ -243,7 +245,7 @@
                 isToday(day, calendar.timeZone) && "bg-primary text-primary-foreground",
               )}
             >
-              {day.day}
+              {dayDigits.format(toDate(day))}
             </span>
             <span class="sr-only">{fullDate.format(toDate(day))}</span>
           </button>

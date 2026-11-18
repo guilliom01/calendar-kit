@@ -155,6 +155,10 @@
   const current = $derived(fromAbsolute(tick, calendar.timeZone));
   const nowMinutes = $derived(current.hour * 60 + current.minute);
 
+  // Day numbers in the locale's digits (e.g. Arabic-Indic), like every other date.
+
+  const dayDigits = $derived(formatter({ day: "numeric" }));
+
   const toDate = (day: CalendarDate) => day.toDate(calendar.timeZone);
   const formatHour = (h: number) =>
     hour.format(toZoned(cols[0]!.day, calendar.timeZone).set({ hour: h }).toDate());
@@ -523,7 +527,7 @@
                 isToday(day, calendar.timeZone) && "bg-primary text-primary-foreground",
               )}
             >
-              {day.day}
+              {dayDigits.format(toDate(day))}
             </span>
             <span class="sr-only">{fullDate.format(toDate(day))}</span>
           </button>

@@ -161,6 +161,10 @@
     }
   }
 
+  // Day numbers in the locale's digits (e.g. Arabic-Indic), like every other date.
+
+  const dayDigits = $derived(formatter({ day: "numeric" }));
+
   const toDate = (day: CalendarDate) => day.toDate(calendar.timeZone);
 
   type Item = (typeof weeks)[number]["items"][number];
@@ -284,7 +288,7 @@
               isToday(day, calendar.timeZone) && "bg-primary text-primary-foreground",
             )}
           >
-            {day.day}
+            {dayDigits.format(toDate(day))}
           </span>
           <span class="flex h-1.5 gap-0.5" aria-hidden="true">
             {#each dayEvents.slice(0, 3) as event (event.id)}
@@ -376,7 +380,7 @@
                 props: dayNumberProps(day),
               })}
             {:else}
-              <button {...dayNumberProps(day)}>{day.day}</button>
+              <button {...dayNumberProps(day)}>{dayDigits.format(toDate(day))}</button>
             {/if}
             {@render dayCell?.({
               day,
