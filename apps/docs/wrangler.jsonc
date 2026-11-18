@@ -1,0 +1,11 @@
+// Cloudflare Workers static assets: serves the built docs, demos and shadcn registry.
+// Deploy: bun run build && bunx wrangler deploy
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "calendar-kit",
+  "compatibility_date": "2026-11-18",
+  "assets": {
+    "directory": "./build",
+    "not_found_handling": "404-page",
+  },
+}
