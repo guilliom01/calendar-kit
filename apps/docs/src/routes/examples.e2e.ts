@@ -20,6 +20,10 @@ test("the examples index links every example", async ({ page }) => {
     "Time zones",
     "Resources",
     "Gantt",
+    "Calendars",
+    "Search and filters",
+    "Context menu",
+    "Event preview",
   ]) {
     // Inside the list: the docs menu also has a "Recurring events" page.
     await expect(
@@ -117,4 +121,46 @@ test("gantt: tasks with progress and dependency arrows", async ({ page }) => {
   await open(page, "gantt");
   await expect(example(page).locator("[data-event-id]")).toHaveCount(4);
   await expect(example(page).locator("svg path[marker-end]")).toHaveCount(3);
+});
+
+test("calendars: hiding a calendar hides its events", async ({ page }) => {
+  await open(page, "calendars");
+  await expect(example(page).getByRole("button", { name: "Feriado" })).toBeVisible();
+  await example(page).getByRole("checkbox", { name: "Feriados" }).click();
+  await expect(example(page).getByRole("button", { name: "Feriado" })).toHaveCount(0);
+});
+
+test("search: typed words and a custom filter narrow every view", async ({ page }) => {
+  await open(page, "search");
+  await example(page).getByRole("searchbox", { name: "Buscar eventos" }).fill("ALMUERZO");
+  await expect(example(page).getByRole("button", { name: /Almuerzo con el equipo/ })).toBeVisible();
+  await expect(example(page).getByRole("button", { name: /Daily standup/ })).toHaveCount(0);
+
+  await example(page).getByRole("searchbox", { name: "Buscar eventos" }).fill("");
+  await expect(
+    example(page)
+      .getByRole("button", { name: /Viaje a Cusco/ })
+      .first(),
+  ).toBeVisible();
+  await example(page).getByRole("checkbox", { name: "Solo con hora" }).check();
+  await expect(example(page).getByRole("button", { name: /Viaje a Cusco/ })).toHaveCount(0);
+});
+
+test("context menu: a built-in menu with an item of our own", async ({ page }) => {
+  await open(page, "context-menu");
+  await example(page)
+    .getByRole("button", { name: /Daily standup/ })
+    .click({ button: "right" });
+  await expect(page.getByRole("menuitem", { name: "Duplicar" })).toBeVisible();
+  await page.getByRole("menuitem", { name: "Compartir" }).click();
+  await expect(example(page).getByText("Compartiste «Daily standup».")).toBeVisible();
+});
+
+test("event preview: hovering shows the place and notes", async ({ page }) => {
+  await open(page, "event-preview");
+  await example(page)
+    .getByRole("button", { name: /Daily standup/ })
+    .hover();
+  await expect(page.getByRole("tooltip")).toContainText("Sala Miraflores");
+  await expect(page.getByRole("tooltip")).toContainText("Traer laptop.");
 });

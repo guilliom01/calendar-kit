@@ -55,6 +55,29 @@ export const examples: Example[] = [
     description:
       "Tasks with progress and dependencies. Drag a bar to move it, its ends to resize it.",
   },
+  {
+    slug: "calendars",
+    title: "Calendars",
+    description:
+      "Work, personal, holidays: events take their calendar's color, and a checkbox list hides or shows each calendar.",
+  },
+  {
+    slug: "search",
+    title: "Search and filters",
+    description:
+      "A search box that ignores accents and case, and a filter of your own, both applied to every view.",
+  },
+  {
+    slug: "context-menu",
+    title: "Context menu",
+    description:
+      "Right-click or Shift+F10 on an event: Open, Duplicate and Delete built in, plus items of your own.",
+  },
+  {
+    slug: "event-preview",
+    title: "Event preview",
+    description: "A card with an event's details on hover or keyboard focus.",
+  },
 ];
 
 const components = import.meta.glob<{ default: Component }>("./*.svelte", { eager: true });
