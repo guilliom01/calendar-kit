@@ -1,5 +1,5 @@
 import { startOfWeek, toZoned, type CalendarDate } from '@internationalized/date';
-import type { CalendarEvent, Resource } from '@calendar-kit/core';
+import type { CalendarSource, CalendarEvent, Resource } from '@calendar-kit/core';
 
 /** Rooms and people, grouped, for the timeline and resource views. */
 export const demoResources: Resource[] = [
@@ -9,6 +9,13 @@ export const demoResources: Resource[] = [
 	{ id: 'team', title: 'Equipo' },
 	{ id: 'ana', title: 'Ana', parentId: 'team', color: 'oklch(0.65 0.15 150)' },
 	{ id: 'luis', title: 'Luis', parentId: 'team', color: 'oklch(0.7 0.15 70)' }
+];
+
+/** Calendars of the demo events; the full demo lists them to show and hide. */
+export const demoCalendars: CalendarSource[] = [
+	{ id: 'work', title: 'Trabajo', color: 'oklch(0.6 0.15 250)' },
+	{ id: 'personal', title: 'Personal', color: 'oklch(0.65 0.15 150)' },
+	{ id: 'holidays', title: 'Feriados', color: 'oklch(0.6 0.2 25)' }
 ];
 
 /** Sample events around `today`, so the demo always has something to show. */
@@ -21,6 +28,7 @@ export function demoEvents(today: CalendarDate, locale: string, timeZone: string
 	return [
 		{
 			id: 'standup',
+			calendarId: 'work',
 			title: 'Daily standup',
 			start: at(day(1), 9),
 			end: at(day(1), 9, 30),
@@ -28,6 +36,7 @@ export function demoEvents(today: CalendarDate, locale: string, timeZone: string
 		},
 		{
 			id: 'design-review',
+			calendarId: 'work',
 			title: 'Design review',
 			start: at(day(1), 9, 15),
 			end: at(day(1), 10, 30),
@@ -36,6 +45,7 @@ export function demoEvents(today: CalendarDate, locale: string, timeZone: string
 		},
 		{
 			id: 'lunch',
+			calendarId: 'personal',
 			title: 'Almuerzo con el equipo',
 			start: at(day(2), 13),
 			end: at(day(2), 14, 30),
@@ -44,6 +54,7 @@ export function demoEvents(today: CalendarDate, locale: string, timeZone: string
 		},
 		{
 			id: 'workshop',
+			calendarId: 'work',
 			title: 'Svelte workshop',
 			start: at(day(3), 15),
 			end: at(day(3), 18),
@@ -52,6 +63,7 @@ export function demoEvents(today: CalendarDate, locale: string, timeZone: string
 		},
 		{
 			id: 'deploy',
+			calendarId: 'work',
 			title: 'Deploy nocturno',
 			start: at(day(4), 22),
 			end: at(day(5), 1),
@@ -59,6 +71,7 @@ export function demoEvents(today: CalendarDate, locale: string, timeZone: string
 		},
 		{
 			id: 'conference',
+			calendarId: 'work',
 			title: 'Conferencia en Cusco',
 			start: day(3),
 			end: day(6),
@@ -66,6 +79,7 @@ export function demoEvents(today: CalendarDate, locale: string, timeZone: string
 		},
 		{
 			id: 'holiday',
+			calendarId: 'holidays',
 			title: 'Feriado',
 			start: week.add({ weeks: 1, days: 2 }),
 			end: week.add({ weeks: 1, days: 3 }),
@@ -73,6 +87,7 @@ export function demoEvents(today: CalendarDate, locale: string, timeZone: string
 		},
 		{
 			id: 'english',
+			calendarId: 'personal',
 			title: 'Clase de inglés',
 			start: at(day(1), 19),
 			end: at(day(1), 20, 30),
@@ -81,6 +96,7 @@ export function demoEvents(today: CalendarDate, locale: string, timeZone: string
 		},
 		{
 			id: 'bills',
+			calendarId: 'personal',
 			title: 'Pago de servicios',
 			start: today.set({ day: 1 }).add({ months: 1 }).subtract({ days: 1 }),
 			end: today.set({ day: 1 }).add({ months: 1 }),
@@ -89,6 +105,7 @@ export function demoEvents(today: CalendarDate, locale: string, timeZone: string
 		},
 		...['Revisión 1:1', 'Planning', 'Retro', 'Café'].map((title, index) => ({
 			id: `busy-${index}`,
+			calendarId: 'work',
 			title,
 			start: at(day(5), 10 + index),
 			end: at(day(5), 10 + index, 45),
@@ -104,6 +121,7 @@ export function demoEvents(today: CalendarDate, locale: string, timeZone: string
 			] as const
 		).map(([id, title, from, to, progress, dependsOn]) => ({
 			id,
+			calendarId: 'work',
 			title,
 			start: day(from),
 			end: day(to),

@@ -178,7 +178,7 @@
 				preview?.id === event.id && 'opacity-70 shadow-md',
 				calendar.eventClass(event)
 			),
-			style: `grid-column: ${item.startIndex + 1} / span ${item.span}; grid-row: ${item.lane + 1}; --event-color: ${event.color ?? 'var(--primary)'}`,
+			style: `grid-column: ${item.startIndex + 1} / span ${item.span}; grid-row: ${item.lane + 1}; --event-color: ${calendar.colorOf(event)}`,
 			title: event.title || calendar.labels.untitled,
 			'data-event-id': event.id,
 			'aria-keyshortcuts': calendar.canEdit(event, 'move')

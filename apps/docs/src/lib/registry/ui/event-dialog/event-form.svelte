@@ -76,6 +76,8 @@
 		isAllDay(original) ? original.end.subtract({ days: 1 }).toString() : dateOf(original.end)
 	);
 	let resourceIds = $state([...(original.resourceIds ?? [])]);
+	// With calendars, every event belongs to one; new events start in the first.
+	let calendarId = $state(original.calendarId ?? calendar.calendars[0]?.id);
 	let progress = $state(Math.round((original.progress ?? 0) * 100));
 	let startTime = $state(isAllDay(original) ? '09:00' : timeOf(original.start));
 	let endTime = $state(isAllDay(original) ? '10:00' : timeOf(original.end));
@@ -207,6 +209,7 @@
 			title: title.trim(),
 			color,
 			rrule: buildRule(),
+			calendarId,
 			resourceIds: resourceIds.length ? resourceIds : undefined,
 			progress:
 				original.progress === undefined ? undefined : Math.min(100, Math.max(0, progress)) / 100
@@ -340,6 +343,21 @@
 				</div>
 			</div>
 		</fieldset>
+	{/if}
+
+	{#if calendar.calendars.length}
+		<div class="grid gap-2">
+			<Label for="calendar-event-calendar">{labels.calendar}</Label>
+			<select
+				id="calendar-event-calendar"
+				class="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs dark:bg-input/30"
+				bind:value={calendarId}
+			>
+				{#each calendar.calendars as source (source.id)}
+					<option value={source.id}>{source.title}</option>
+				{/each}
+			</select>
+		</div>
 	{/if}
 
 	{#if assignable.length}

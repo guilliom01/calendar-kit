@@ -153,7 +153,7 @@
 				preview?.id === event.id && 'opacity-80 shadow-md',
 				calendar.eventClass(event)
 			),
-			style: `inset-inline-start: ${(item.startIndex / days.length) * 100}%; width: ${(item.span / days.length) * 100}%; --event-color: ${event.color ?? 'var(--primary)'}`,
+			style: `inset-inline-start: ${(item.startIndex / days.length) * 100}%; width: ${(item.span / days.length) * 100}%; --event-color: ${calendar.colorOf(event)}`,
 			title,
 			'aria-label':
 				event.progress !== undefined

@@ -251,6 +251,24 @@
 			]
 		},
 		{
+			"name": "calendar-list",
+			"type": "registry:ui",
+			"title": "Calendar list",
+			"description": "Optional: one checkbox per calendar of the state's calendars, in its color, to show or hide its events.",
+			"dependencies": [],
+			"registryDependencies": ["checkbox", "utils", "./calendar-state.json"],
+			"files": [
+				{
+					"path": "src/lib/registry/ui/calendar-list/calendar-list.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/calendar-list/index.ts",
+					"type": "registry:ui"
+				}
+			]
+		},
+		{
 			"name": "import-export",
 			"type": "registry:ui",
 			"title": "Import and export",

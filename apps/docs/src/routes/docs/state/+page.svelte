@@ -82,6 +82,12 @@
 		},
 		{ name: 'editable', type: 'boolean', description: 'Set to false for a read-only calendar.' },
 		{
+			name: 'calendars',
+			type: 'CalendarSource[]',
+			description:
+				'{ id, title, color? } calendars events belong to (calendarId). Events without a color take their calendar color; hiddenCalendars hides them.'
+		},
+		{
 			name: 'confirmChanges',
 			type: 'boolean | (change) => boolean',
 			description:
@@ -216,6 +222,10 @@
 		<code>events</code>, <code>visibleEvents</code> (with recurring events expanded),
 		<code>range</code>, <code>days</code>, <code>title</code>, <code>loading</code>,
 		<code>canUndo</code>, <code>canRedo</code>: reactive read-outs.
+	</li>
+	<li>
+		<code>hiddenCalendars</code> (a reactive set), <code>setCalendarVisible(id, visible)</code>,
+		<code>colorOf(event)</code>: calendars shown and the color an event is drawn with.
 	</li>
 	<li>
 		<code>store</code>: the underlying <code>EventStore</code> from <code>@calendar-kit/core</code>,

@@ -66,7 +66,7 @@
 				'grid w-full grid-cols-[auto_1fr] items-center gap-x-3 rounded-md px-3 py-1.5 text-start text-sm hover:bg-muted sm:grid-cols-[auto_11rem_1fr]',
 				calendar.eventClass(event)
 			),
-			style: `--event-color: ${event.color ?? 'var(--primary)'}`,
+			style: `--event-color: ${calendar.colorOf(event)}`,
 			onclick: (click: MouseEvent) => calendar.clickEvent(event, click)
 		};
 	}

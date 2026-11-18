@@ -72,6 +72,7 @@ Events are all-day (`CalendarDate` start/end) or timed (`ZonedDateTime` start/en
 | `timeline-view`     | Resources as rows (nested, collapsible) across the week                                                                          |
 | `gantt-view`        | Tasks (`progress`, `dependsOn`) across the month with dependency arrows                                                          |
 | `event-dialog`      | A ready-made dialog to create, edit and delete events, and to pick the scope of changes to recurring events                      |
+| `calendar-list`     | Checkboxes to show or hide each calendar of `calendars`, in its color                                                            |
 | `recurrence-editor` | A full repeat-rule editor; plug it into `event-dialog` (snippet `recurrence`) or your own form                                   |
 | `calendar-state`    | Installed automatically: the runes state, event store and drag helpers                                                           |
 
@@ -119,6 +120,8 @@ Every interaction runs your hook first; return `false` to skip the built-in beha
 | `onEventChange` | An event is dragged or resized                            | Save it. Return an event to save that instead  |
 | `resolveScope`  | A recurring event is changed                              | Ask "this / following / all" in the dialog     |
 | `isEditable`    | Per event and action (`move`, `resize`, `delete`, `edit`) | Everything is editable when `editable` is true |
+
+With `calendars: [{ id, title, color }]`, events join a calendar through `calendarId`, take its color when they have none, and hide with it (`hiddenCalendars`, or the `calendar-list` block).
 
 `eventClass(event)` returns extra classes for an event in every view, for example `border-dashed` for tentative events.
 

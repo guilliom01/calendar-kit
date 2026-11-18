@@ -1,5 +1,5 @@
 import { createContext } from 'svelte';
-import { SvelteMap } from 'svelte/reactivity';
+import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 import {
 	DateFormatter,
 	getLocalTimeZone,
@@ -17,6 +17,7 @@ import {
 	viewRange,
 	weekDays,
 	type CalendarEvent,
+	type CalendarSource,
 	type CalendarView,
 	type DateRange,
 	type DayOfWeek,
@@ -69,6 +70,8 @@ export const defaultLabels = {
 	agenda: 'Agenda',
 	timeline: 'Timeline',
 	resources: 'Resources',
+	calendar: 'Calendar',
+	calendars: 'Calendars',
 	gantt: 'Gantt',
 	noEvents: 'No events',
 	loading: 'Loading…',
@@ -195,6 +198,8 @@ export interface CalendarStateOptions<T extends CalendarEvent> extends EventStor
 	/** Extra classes for an event's element in every view, e.g. dashed when tentative. */
 	eventClass?(event: T): string | undefined;
 	labels?: Partial<CalendarLabels>;
+	/** Calendars events belong to (`calendarId`): their colors, and which ones can be hidden. */
+	calendars?: CalendarSource[];
 	/** Builds ids for events created in the UI. Your backend can replace them in `onMutate`. */
 	createId?: () => string;
 	/** Loads events on demand, one month at a time, as the user navigates. */
@@ -295,6 +300,9 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 	loading = $state(false);
 	/** Views registered by `<Calendar.View>`, in order. */
 	readonly views = new SvelteMap<string, ViewDefinition>();
+	calendars: CalendarSource[] = $state.raw([]);
+	/** Ids of calendars whose events are not shown. */
+	readonly hiddenCalendars = new SvelteSet<string>();
 
 	#options: CalendarStateOptions<T>;
 	#createId: () => string;
@@ -312,6 +320,7 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 		this.date = date ?? today(this.timeZone);
 		this.firstDayOfWeek = firstDayOfWeek;
 		if (snapStep) this.snapStep = snapStep;
+		if (options.calendars) this.calendars = options.calendars;
 		if (options.defaultDuration) this.defaultDuration = options.defaultDuration;
 		if (editable !== undefined) this.editable = editable;
 		if (options.touchDrag !== undefined) this.touchDrag = options.touchDrag;
@@ -353,7 +362,15 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 			: weekDays(this.date, this.weekOptions)
 	);
 	/** Events and occurrences of recurring events that overlap the visible range. */
-	readonly visibleEvents = $derived(expandEvents(this.events, this.range, this.timeZone));
+	readonly visibleEvents = $derived(
+		expandEvents(
+			this.events.filter(
+				(event) => !event.calendarId || !this.hiddenCalendars.has(event.calendarId)
+			),
+			this.range,
+			this.timeZone
+		)
+	);
 	readonly title = $derived(formatTitle(this));
 
 	/** Registers a view (done by `<Calendar.View>`); returns a function that unregisters it. */
@@ -395,6 +412,21 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 	/** Classes from the `eventClass` option, for views to add to an event's element. */
 	eventClass(event: T) {
 		return this.#options.eventClass?.(event);
+	}
+
+	/** CSS color of an event: its own, its calendar's, or the theme's primary color. */
+	colorOf(event: T) {
+		return (
+			event.color ??
+			this.calendars.find((source) => source.id === event.calendarId)?.color ??
+			'var(--primary)'
+		);
+	}
+
+	/** Shows or hides the events of a calendar. */
+	setCalendarVisible(id: string, visible: boolean) {
+		if (visible) this.hiddenCalendars.delete(id);
+		else this.hiddenCalendars.add(id);
 	}
 
 	// Interactions, called by the views. Each runs its hook, then the built-in behavior.

@@ -3,6 +3,7 @@
 	import * as Calendar from '#lib/registry/ui/calendar/index.js';
 	import { CalendarState } from '#lib/registry/ui/calendar/index.js';
 	import { AgendaView } from '#lib/registry/ui/agenda-view/index.js';
+	import { CalendarList } from '#lib/registry/ui/calendar-list/index.js';
 	import {
 		ChangeConfirmDialog,
 		EventDialog,
@@ -15,7 +16,7 @@
 	import { TimeGrid } from '#lib/registry/ui/time-grid/index.js';
 	import { TimelineView } from '#lib/registry/ui/timeline-view/index.js';
 	import { YearView } from '#lib/registry/ui/year-view/index.js';
-	import { demoEvents, demoResources } from './demo-events.js';
+	import { demoCalendars, demoEvents, demoResources } from './demo-events.js';
 	import { spanishLabels } from './demo-labels.js';
 
 	const locale = 'es-PE';
@@ -27,6 +28,7 @@
 		locale,
 		timeZone,
 		events: demoEvents(today(timeZone), locale, timeZone),
+		calendars: demoCalendars,
 		// Simulates a backend call: changes show at once and "save" a moment later.
 		onMutate: () => new Promise((resolve) => setTimeout(resolve, 300)),
 		labels: spanishLabels
@@ -61,20 +63,25 @@
 			</ul>
 		{/if}
 
-		<Calendar.View name="month"><MonthView class="flex-1" /></Calendar.View>
-		<Calendar.View name="week"><TimeGrid class="flex-1" /></Calendar.View>
-		<Calendar.View name="day"><TimeGrid class="flex-1" /></Calendar.View>
-		<Calendar.View name="agenda"
-			><AgendaView class="flex-1" resources={demoResources} /></Calendar.View
-		>
-		<Calendar.View name="year"><YearView class="flex-1" /></Calendar.View>
-		<Calendar.View name="timeline">
-			<TimelineView class="flex-1" resources={demoResources} />
-		</Calendar.View>
-		<Calendar.View name="resources">
-			<TimeGrid class="flex-1" resources={demoResources} />
-		</Calendar.View>
-		<Calendar.View name="gantt"><GanttView class="flex-1" /></Calendar.View>
+		<div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
+			<CalendarList class="shrink-0 md:w-36 print:hidden" />
+			<div class="flex min-h-0 min-w-0 flex-1 flex-col">
+				<Calendar.View name="month"><MonthView class="flex-1" /></Calendar.View>
+				<Calendar.View name="week"><TimeGrid class="flex-1" /></Calendar.View>
+				<Calendar.View name="day"><TimeGrid class="flex-1" /></Calendar.View>
+				<Calendar.View name="agenda"
+					><AgendaView class="flex-1" resources={demoResources} /></Calendar.View
+				>
+				<Calendar.View name="year"><YearView class="flex-1" /></Calendar.View>
+				<Calendar.View name="timeline">
+					<TimelineView class="flex-1" resources={demoResources} />
+				</Calendar.View>
+				<Calendar.View name="resources">
+					<TimeGrid class="flex-1" resources={demoResources} />
+				</Calendar.View>
+				<Calendar.View name="gantt"><GanttView class="flex-1" /></Calendar.View>
+			</div>
+		</div>
 
 		<EventDialog resources={demoResources}>
 			{#snippet recurrence({ value, setValue, start })}

@@ -326,6 +326,20 @@
 	]}
 />
 
+<h2>calendar-list</h2>
+<p>
+	One checkbox per calendar in the state's <code>calendars</code>, in its color, to show or hide its
+	events. Events belong to a calendar through <code>calendarId</code> and take its color when they
+	have none. The event dialog shows a calendar select when <code>calendars</code> is set.
+</p>
+<PropsTable
+	caption="CalendarList props"
+	rows={[
+		...classOnly,
+		{ name: 'title', type: 'string', description: 'Heading. Default: labels.calendars.' }
+	]}
+/>
+
 <h2>event-dialog</h2>
 <p>
 	<code>EventDialog</code> creates, edits and deletes events (title, all-day, dates, repeat,

@@ -11,6 +11,8 @@ export const spanishLabels: Partial<CalendarLabels> = {
 	end: 'Fin',
 	color: 'Color',
 	save: 'Guardar',
+	calendar: 'Calendario',
+	calendars: 'Calendarios',
 	cancel: 'Cancelar',
 	delete: 'Eliminar',
 	undo: 'Deshacer',

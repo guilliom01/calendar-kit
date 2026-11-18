@@ -408,7 +408,7 @@
 				preview?.id === event.id && 'opacity-70 shadow-md',
 				calendar.eventClass(event)
 			),
-			style: `grid-column: ${item.startIndex + 2} / span ${item.span}; grid-row: ${item.lane + 1}; --event-color: ${event.color ?? 'var(--primary)'}`,
+			style: `grid-column: ${item.startIndex + 2} / span ${item.span}; grid-row: ${item.lane + 1}; --event-color: ${calendar.colorOf(event)}`,
 			title: event.title || calendar.labels.untitled,
 			'data-event-id': event.id,
 			'aria-keyshortcuts': calendar.canEdit(event, 'move')
@@ -432,7 +432,7 @@
 				preview?.id === event.id && 'z-20 opacity-80 shadow-lg',
 				calendar.eventClass(event)
 			),
-			style: `top: ${percent(item.start)}; height: ${percent(item.end - item.start)}; inset-inline-start: ${(item.column / item.columns) * 100}%; width: ${100 / item.columns}%; --event-color: ${event.color ?? 'var(--primary)'}`,
+			style: `top: ${percent(item.start)}; height: ${percent(item.end - item.start)}; inset-inline-start: ${(item.column / item.columns) * 100}%; width: ${100 / item.columns}%; --event-color: ${calendar.colorOf(event)}`,
 			title: event.title || calendar.labels.untitled,
 			'data-event-id': event.id,
 			'aria-keyshortcuts': calendar.canEdit(event, 'move')

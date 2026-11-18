@@ -17,7 +17,7 @@ const viewButton = (page: Page, name: string) => page.getByRole('button', { name
 test('month view shows the current month with its events', async ({ page }) => {
 	await expect(title(page)).toHaveText('noviembre de 2026');
 	await expect(page.getByText('Conferencia en Cusco')).toBeVisible();
-	await expect(page.getByText('Feriado')).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Feriado' })).toBeVisible();
 	// Friday: the conference bar plus 4 meetings; 3 lanes fit, 2 meetings collapse.
 	// The overnight deploy (Thu 22:00 to Fri 01:00) shows only on Thursday.
 	await expect(
@@ -1023,10 +1023,50 @@ test.describe('resizing from both edges', () => {
 		const bar = page.locator('[data-event-id]').first();
 		const before = (await bar.boundingBox())!.width;
 		const cell = (await page.locator('[data-date="2026-11-18"]').first().boundingBox())!;
-		await dragBy(page, bar.locator('.cursor-ew-resize').last(), cell.width * 2, 0);
+		const handle = bar.locator('.cursor-ew-resize').last();
+		// Keep the drag inside the scrolling gantt area, whatever the page width.
+		await handle.evaluate((element) =>
+			element.scrollIntoView({ inline: 'center', block: 'center' })
+		);
+		await dragBy(page, handle, cell.width * 2, 0);
 		await confirm(page, 'Cambiar');
 		await expect
 			.poll(async () => (await bar.boundingBox())!.width)
 			.toBeGreaterThan(before + cell.width);
+	});
+});
+
+test.describe('calendars', () => {
+	const eventColor = (page: Page, id: string) =>
+		page
+			.locator(`[data-event-id="${id}"]`)
+			.first()
+			.evaluate((element) => getComputedStyle(element).getPropertyValue('--event-color').trim());
+
+	test('hiding a calendar hides its events, and showing it brings them back', async ({ page }) => {
+		const holidays = page.getByRole('checkbox', { name: 'Feriados' });
+		await expect(holidays).toBeChecked();
+		await holidays.click();
+		await expect(holidays).not.toBeChecked();
+		await expect(page.getByRole('button', { name: 'Feriado' })).toHaveCount(0);
+		await expect(page.getByText('Conferencia en Cusco')).toBeVisible();
+
+		await holidays.click();
+		await expect(page.getByRole('button', { name: 'Feriado' })).toBeVisible();
+	});
+
+	test('events without a color take the color of their calendar', async ({ page }) => {
+		expect(await eventColor(page, 'standup')).toBe('oklch(0.6 0.15 250)');
+	});
+
+	test('the event dialog moves an event to another calendar', async ({ page }) => {
+		await page.getByRole('button', { name: /Daily standup/ }).click();
+		const dialog = page.getByRole('dialog');
+		const select = dialog.getByLabel('Calendario');
+		await expect(select).toHaveValue('work');
+		await select.selectOption({ label: 'Personal' });
+		await dialog.getByRole('button', { name: 'Guardar' }).click();
+		await expect(dialog).toBeHidden();
+		await expect.poll(() => eventColor(page, 'standup')).toBe('oklch(0.65 0.15 150)');
 	});
 });

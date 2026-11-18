@@ -3,6 +3,7 @@ import type { CalendarDate, ZonedDateTime } from '@internationalized/date';
 interface EventBase<TData> {
 	id: string;
 	title: string;
+	/** Id of the `CalendarSource` it belongs to (for its color and showing or hiding it). */
 	calendarId?: string | undefined;
 	/** Any CSS color; components fall back to the calendar or theme color. */
 	color?: string | undefined;
@@ -31,6 +32,14 @@ export interface Resource {
 	color?: string | undefined;
 	/** Makes this resource a child of another one, for grouped rows. */
 	parentId?: string | undefined;
+}
+
+/** A calendar events can belong to, like "Work" or "Holidays". */
+export interface CalendarSource {
+	id: string;
+	title: string;
+	/** Color of its events that have none of their own. */
+	color?: string | undefined;
 }
 
 /** Date-only event. `end` is exclusive, as in iCalendar: a one-day event ends the next day. */
