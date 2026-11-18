@@ -1,1 +1,1 @@
-export { default as AgendaView } from './agenda-view.svelte';
+export { default as AgendaView } from "./agenda-view.svelte";

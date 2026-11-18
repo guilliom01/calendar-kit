@@ -1,1 +1,1 @@
-export { default as RecurrenceEditor } from './recurrence-editor.svelte';
+export { default as RecurrenceEditor } from "./recurrence-editor.svelte";

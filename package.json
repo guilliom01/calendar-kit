@@ -1,19 +1,19 @@
 {
-	"name": "calendar-kit",
-	"private": true,
-	"type": "module",
-	"workspaces": [
-		"packages/*",
-		"apps/*"
-	],
-	"scripts": {
-		"build": "bun run --filter '@calendar-kit/core' build && bun run --filter '@calendar-kit/docs' build",
-		"test": "bun run --filter '*' test",
-		"check": "bun run --filter '*' check",
-		"lint": "oxfmt --check && bun run --filter '@calendar-kit/docs' lint",
-		"format": "oxfmt"
-	},
-	"devDependencies": {
-		"oxfmt": "^0.79.0"
-	}
+  "name": "calendar-kit",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "bun run --filter '@calendar-kit/core' build && bun run --filter '@calendar-kit/docs' build",
+    "test": "bun run --filter '*' test",
+    "check": "bun run --filter '*' check",
+    "lint": "oxfmt --check && bun run --filter '@calendar-kit/docs' lint",
+    "format": "oxfmt"
+  },
+  "devDependencies": {
+    "oxfmt": "^0.79.0"
+  }
 }

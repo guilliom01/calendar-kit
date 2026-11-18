@@ -1,8 +1,8 @@
 {
-	"recommendations": [
-		"svelte.svelte-vscode",
-		"oxc.oxc-vscode",
-		"dbaeumer.vscode-eslint",
-		"bradlc.vscode-tailwindcss"
-	]
+  "recommendations": [
+    "svelte.svelte-vscode",
+    "oxc.oxc-vscode",
+    "dbaeumer.vscode-eslint",
+    "bradlc.vscode-tailwindcss"
+  ]
 }

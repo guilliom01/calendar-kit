@@ -1,1 +1,1 @@
-export { default as GanttView } from './gantt-view.svelte';
+export { default as GanttView } from "./gantt-view.svelte";

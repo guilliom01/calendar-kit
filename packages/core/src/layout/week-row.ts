@@ -1,17 +1,17 @@
-import type { CalendarDate } from '@internationalized/date';
-import { eventBounds, spansDays, startOfDayMs } from '../events/queries.js';
-import type { CalendarEvent } from '../events/types.js';
+import type { CalendarDate } from "@internationalized/date";
+import { eventBounds, spansDays, startOfDayMs } from "../events/queries.js";
+import type { CalendarEvent } from "../events/types.js";
 
 export interface RowEventLayout<T extends CalendarEvent = CalendarEvent> {
-	event: T;
-	/** Index of the first visible day in the row. */
-	startIndex: number;
-	/** Number of visible days the event covers. */
-	span: number;
-	/** Vertical slot inside the row, 0 is the top one. */
-	lane: number;
-	continuesBefore: boolean;
-	continuesAfter: boolean;
+  event: T;
+  /** Index of the first visible day in the row. */
+  startIndex: number;
+  /** Number of visible days the event covers. */
+  span: number;
+  /** Vertical slot inside the row, 0 is the top one. */
+  lane: number;
+  continuesBefore: boolean;
+  continuesAfter: boolean;
 }
 
 /**
@@ -20,50 +20,50 @@ export interface RowEventLayout<T extends CalendarEvent = CalendarEvent> {
  * that is free on all its days.
  */
 export function layoutWeekRow<T extends CalendarEvent>(
-	events: readonly T[],
-	days: readonly CalendarDate[],
-	timeZone: string
+  events: readonly T[],
+  days: readonly CalendarDate[],
+  timeZone: string,
 ): RowEventLayout<T>[] {
-	const last = days.at(-1);
-	if (!last) return [];
+  const last = days.at(-1);
+  if (!last) return [];
 
-	const edges = [...days, last.add({ days: 1 })].map((day) => startOfDayMs(day, timeZone));
-	const rowStart = edges[0]!;
-	const rowEnd = edges.at(-1)!;
-	const placed: (RowEventLayout<T> & { sortStart: number })[] = [];
+  const edges = [...days, last.add({ days: 1 })].map((day) => startOfDayMs(day, timeZone));
+  const rowStart = edges[0]!;
+  const rowEnd = edges.at(-1)!;
+  const placed: (RowEventLayout<T> & { sortStart: number })[] = [];
 
-	for (const event of events) {
-		const bounds = eventBounds(event, timeZone);
-		const start = bounds.start;
-		// Short timed events (e.g. 22:00 to 01:00) show only on the day they start.
-		const end = spansDays(event) ? bounds.end : start + 1;
-		if (start >= rowEnd || end <= rowStart) continue;
+  for (const event of events) {
+    const bounds = eventBounds(event, timeZone);
+    const start = bounds.start;
+    // Short timed events (e.g. 22:00 to 01:00) show only on the day they start.
+    const end = spansDays(event) ? bounds.end : start + 1;
+    if (start >= rowEnd || end <= rowStart) continue;
 
-		const startIndex = days.findIndex((_, i) => start < edges[i + 1]!);
-		const endIndex = days.findLastIndex((_, i) => end > edges[i]!);
-		placed.push({
-			event,
-			startIndex,
-			span: endIndex - startIndex + 1,
-			lane: 0,
-			continuesBefore: start < rowStart,
-			continuesAfter: end > rowEnd,
-			sortStart: start
-		});
-	}
+    const startIndex = days.findIndex((_, i) => start < edges[i + 1]!);
+    const endIndex = days.findLastIndex((_, i) => end > edges[i]!);
+    placed.push({
+      event,
+      startIndex,
+      span: endIndex - startIndex + 1,
+      lane: 0,
+      continuesBefore: start < rowStart,
+      continuesAfter: end > rowEnd,
+      sortStart: start,
+    });
+  }
 
-	placed.sort(
-		(a, b) => a.startIndex - b.startIndex || b.span - a.span || a.sortStart - b.sortStart
-	);
+  placed.sort(
+    (a, b) => a.startIndex - b.startIndex || b.span - a.span || a.sortStart - b.sortStart,
+  );
 
-	const taken: boolean[][] = days.map(() => []);
-	for (const item of placed) {
-		const covered = taken.slice(item.startIndex, item.startIndex + item.span);
-		let lane = 0;
-		while (covered.some((lanes) => lanes[lane])) lane++;
-		for (const lanes of covered) lanes[lane] = true;
-		item.lane = lane;
-	}
+  const taken: boolean[][] = days.map(() => []);
+  for (const item of placed) {
+    const covered = taken.slice(item.startIndex, item.startIndex + item.span);
+    let lane = 0;
+    while (covered.some((lanes) => lanes[lane])) lane++;
+    for (const lanes of covered) lanes[lane] = true;
+    item.lane = lane;
+  }
 
-	return placed.map(({ sortStart: _, ...item }) => item);
+  return placed.map(({ sortStart: _, ...item }) => item);
 }

@@ -1,20 +1,20 @@
 {
-	"compilerOptions": {
-		"target": "ES2023",
-		"module": "NodeNext",
-		"moduleResolution": "NodeNext",
-		"lib": ["ES2023", "DOM"],
-		"strict": true,
-		"noUncheckedIndexedAccess": true,
-		"exactOptionalPropertyTypes": true,
-		"verbatimModuleSyntax": true,
-		"isolatedModules": true,
-		"skipLibCheck": true,
-		"declaration": true,
-		"declarationMap": true,
-		"sourceMap": true,
-		"rootDir": ".",
-		"outDir": "dist"
-	},
-	"include": ["src", "tests"]
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2023", "DOM"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "rootDir": ".",
+    "outDir": "dist"
+  },
+  "include": ["src", "tests"]
 }

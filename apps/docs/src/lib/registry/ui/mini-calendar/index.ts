@@ -1,1 +1,1 @@
-export { default as MiniCalendar } from './mini-calendar.svelte';
+export { default as MiniCalendar } from "./mini-calendar.svelte";

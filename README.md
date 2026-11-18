@@ -42,19 +42,19 @@ npx shadcn-svelte@latest add <registry-url>/r/full-calendar.json <registry-url>/
 
 ```svelte
 <script lang="ts">
-	import * as FullCalendar from '$lib/components/ui/full-calendar/index.js';
-	import { CalendarState } from '$lib/components/ui/full-calendar/index.js';
-	import { MonthView } from '$lib/components/ui/month-view/index.js';
+  import * as FullCalendar from "$lib/components/ui/full-calendar/index.js";
+  import { CalendarState } from "$lib/components/ui/full-calendar/index.js";
+  import { MonthView } from "$lib/components/ui/month-view/index.js";
 
-	const calendar = new CalendarState({ locale: 'es-PE', timeZone: 'America/Lima', events });
+  const calendar = new CalendarState({ locale: "es-PE", timeZone: "America/Lima", events });
 </script>
 
 <FullCalendar.Root state={calendar}>
-	<FullCalendar.Toolbar>
-		<FullCalendar.Nav />
-		<FullCalendar.Title />
-	</FullCalendar.Toolbar>
-	<FullCalendar.View name="month"><MonthView /></FullCalendar.View>
+  <FullCalendar.Toolbar>
+    <FullCalendar.Nav />
+    <FullCalendar.Title />
+  </FullCalendar.Toolbar>
+  <FullCalendar.View name="month"><MonthView /></FullCalendar.View>
 </FullCalendar.Root>
 ```
 
@@ -86,12 +86,12 @@ Each view is shown by a `<FullCalendar.View name="…">`. Registering a view als
 
 ```svelte
 <FullCalendar.View
-	name="3days"
-	label="3 días"
-	unit="days"
-	range={(date) => ({ start: date, end: date.add({ days: 3 }) })}
+  name="3days"
+  label="3 días"
+  unit="days"
+  range={(date) => ({ start: date, end: date.add({ days: 3 }) })}
 >
-	<MyThreeDayView />
+  <MyThreeDayView />
 </FullCalendar.View>
 ```
 
@@ -105,11 +105,11 @@ Views take snippets for their parts. Interactive parts (`event`, `dayNumber`, `d
 
 ```svelte
 <MonthView>
-	{#snippet event({ event, props, dragging })}
-		<button {...props} class={cn(props.class, 'rounded-full', dragging && 'ring-2')}>
-			{event.title}
-		</button>
-	{/snippet}
+  {#snippet event({ event, props, dragging })}
+    <button {...props} class={cn(props.class, "rounded-full", dragging && "ring-2")}>
+      {event.title}
+    </button>
+  {/snippet}
 </MonthView>
 ```
 

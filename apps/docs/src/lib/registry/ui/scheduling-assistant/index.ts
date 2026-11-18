@@ -1,1 +1,1 @@
-export { default as SchedulingAssistant } from './scheduling-assistant.svelte';
+export { default as SchedulingAssistant } from "./scheduling-assistant.svelte";
