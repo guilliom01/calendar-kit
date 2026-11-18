@@ -232,6 +232,32 @@
 </p>
 <Code code={loading} />
 
+<h2>Performance</h2>
+<p>Measured on a laptop with events spread over a year (2% of them weekly series):</p>
+<div class="overflow-x-auto" tabindex="0" role="region" aria-label="Performance measurements">
+	<table>
+		<thead>
+			<tr
+				><th scope="col">Operation</th><th scope="col">1,000 events</th><th scope="col">5,000</th
+				><th scope="col">20,000</th></tr
+			>
+		</thead>
+		<tbody>
+			<tr><td>Expand the visible month</td><td>5 ms</td><td>20 ms</td><td>70 ms</td></tr>
+			<tr><td>Month layout</td><td>0.6 ms</td><td>3 ms</td><td>14 ms</td></tr>
+			<tr><td>Week layout</td><td>1.6 ms</td><td>9 ms</td><td>35 ms</td></tr>
+			<tr><td>Agenda grouping</td><td>0.7 ms</td><td>4 ms</td><td>17 ms</td></tr>
+			<tr><td>Search</td><td>0.1 ms</td><td>0.4 ms</td><td>1.2 ms</td></tr>
+		</tbody>
+	</table>
+</div>
+<p>
+	Expanding runs when the period, filters or data change; dragging only redoes the layout of the
+	view. Up to about 5,000 events everything fits in a frame. Above that, use <code>loadEvents</code> so
+	the calendar only holds the months around the one shown. The agenda draws every event of the month,
+	so a month with thousands of events is better shown in other views.
+</p>
+
 <h2>Methods and fields</h2>
 <ul>
 	<li>
