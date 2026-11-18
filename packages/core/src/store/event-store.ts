@@ -60,6 +60,8 @@ export class ConflictError<T extends CalendarEvent = CalendarEvent> extends Erro
 export class EventStore<T extends CalendarEvent = CalendarEvent> {
 	#events: T[];
 	#listeners = new Set<Listener<T>>();
+	/** Events whose save hit a conflict; their later queued changes are not sent. */
+	#conflicted = new Set<string>();
 	#past: Entry<T>[] = [];
 	#future: Entry<T>[] = [];
 	#queues = new Map<string, Promise<unknown>>();
@@ -108,7 +110,8 @@ export class EventStore<T extends CalendarEvent = CalendarEvent> {
 	/**
 	 * Adds or replaces events that came from your backend (for example, a loaded month).
 	 * It is not a user change: it skips `onMutate` and the undo history. Events with a save on its
-	 * way keep their local copy: the saved version replaces it when the save ends.
+	 * way keep their local copy: the version `onMutate` returns replaces it when the save ends (if it
+	 * returns nothing, the local copy stays until the next reload).
 	 */
 	merge(events: readonly T[]) {
 		const incoming = new Map(
@@ -190,6 +193,8 @@ export class EventStore<T extends CalendarEvent = CalendarEvent> {
 		const previous = this.#queues.get(id) ?? Promise.resolve();
 
 		const task = previous.then(async () => {
+			// Built on the copy the server rejected: sending it would overwrite their version.
+			if (this.#conflicted.has(id)) return false;
 			try {
 				const saved = (await this.#options.onMutate?.(mutation)) ?? undefined;
 				const local = mutation.type === 'update' ? mutation.after : mutation.event;
@@ -198,6 +203,7 @@ export class EventStore<T extends CalendarEvent = CalendarEvent> {
 				return true;
 			} catch (error) {
 				if (error instanceof ConflictError) {
+					this.#conflicted.add(id);
 					this.#takeServer(id, error.current as T | null);
 					this.#options.onConflict?.(mutation, error.current as T | null);
 				} else {
@@ -210,7 +216,9 @@ export class EventStore<T extends CalendarEvent = CalendarEvent> {
 
 		this.#queues.set(id, task);
 		void task.finally(() => {
-			if (this.#queues.get(id) === task) this.#queues.delete(id);
+			if (this.#queues.get(id) !== task) return;
+			this.#queues.delete(id);
+			this.#conflicted.delete(id); // the queue is empty: new changes start from the server's version
 		});
 		return task;
 	}

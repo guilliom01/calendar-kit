@@ -225,6 +225,27 @@ describe('EventStore and the server', () => {
 		expect(store.canUndo).toBe(false);
 	});
 
+	it('does not send later queued changes of an event after its conflict', async () => {
+		const theirs = { ...meeting(), title: 'Theirs' };
+		const sent: string[] = [];
+		const store = new EventStore({
+			events: [meeting()],
+			onMutate: async (mutation) => {
+				const title = mutation.type === 'update' ? mutation.after.title : '';
+				sent.push(title);
+				if (title === 'First') throw new ConflictError(theirs);
+			}
+		});
+
+		const first = store.update({ ...meeting(), title: 'First' });
+		const second = store.update({ ...meeting(), title: 'Second' });
+		await Promise.all([first, second]);
+
+		// 'Second' was built on the stale copy: sending it would overwrite their change.
+		expect(sent).toEqual(['First']);
+		expect(titles(store)).toEqual(['Theirs']);
+	});
+
 	it('removes the event when the server says it was deleted', async () => {
 		const store = new EventStore({
 			events: [meeting()],
