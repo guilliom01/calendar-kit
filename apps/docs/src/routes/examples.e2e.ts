@@ -28,6 +28,10 @@ test("the examples index links every example", async ({ page }) => {
     "External drag",
     "Scheduling assistant",
     "Loading on demand",
+    "Saving and conflicts",
+    "Hooks",
+    "Permissions and styles",
+    "Custom rendering",
   ]) {
     // Inside the list: the docs menu also has a "Recurring events" page.
     await expect(
@@ -230,4 +234,65 @@ test("loading: months are requested once, with their neighbours", async ({ page 
   await expect(requests).toContainText("2027-01");
   // December was already preloaded, so it is not asked for again.
   await expect(requests).not.toContainText(/2026-12.*2026-12/);
+});
+
+test("saving: saved, rolled back on an error, or replaced on a conflict", async ({ page }) => {
+  await open(page, "saving");
+  const status = example(page).getByRole("status");
+  const rename = async (from: RegExp, to: string) => {
+    await example(page).getByRole("button", { name: from }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Título").fill(to);
+    await dialog.getByRole("button", { name: "Guardar" }).click();
+  };
+
+  await rename(/Daily standup/, "Standup");
+  await expect(status).toHaveText("Guardado: update");
+
+  await example(page).getByRole("combobox", { name: "Servidor" }).selectOption("error");
+  await rename(/Standup/, "No llega");
+  await expect(status).toHaveText("No se pudo guardar: se deshizo el cambio.");
+  await expect(example(page).getByRole("button", { name: /Standup/ })).toBeVisible();
+
+  await example(page).getByRole("combobox", { name: "Servidor" }).selectOption("conflict");
+  await rename(/Standup/, "Mío");
+  await expect(status).toHaveText("Otra persona lo cambió antes: se muestra su versión.");
+  await expect(
+    example(page).getByRole("button", { name: /Standup \(otra persona\)/ }),
+  ).toBeVisible();
+});
+
+test("hooks: our own reactions replace the built-in ones", async ({ page }) => {
+  await open(page, "hooks");
+  const status = example(page).getByRole("status");
+  await example(page)
+    .getByRole("button", { name: /Daily standup/ })
+    .click();
+  await expect(status).toHaveText("Abriste: Daily standup");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await example(page).getByRole("button", { name: "miércoles, 18 de noviembre de 2026" }).click();
+  await expect(status).toHaveText("Día: 2026-11-18");
+  await expect(title(page)).toHaveText("noviembre de 2026");
+});
+
+test("permissions: fixed, move-only and dashed events", async ({ page }) => {
+  await open(page, "permissions");
+  await expect(example(page).getByRole("button", { name: "Feriado" })).not.toHaveAttribute(
+    "aria-keyshortcuts",
+  );
+  const booking = example(page).getByRole("button", { name: /Reserva de sala/ });
+  await booking.focus();
+  await page.keyboard.press("Delete");
+  await expect(booking).toBeVisible();
+  await expect(example(page).getByRole("button", { name: /Por confirmar/ })).toHaveClass(
+    /border-dashed/,
+  );
+});
+
+test("custom rendering: our own event pills and day marks", async ({ page }) => {
+  await open(page, "custom-rendering");
+  await expect(example(page).getByRole("button", { name: /Daily standup/ })).toHaveClass(
+    /rounded-full/,
+  );
+  await expect(example(page).getByText("fin de semana").first()).toBeVisible();
 });

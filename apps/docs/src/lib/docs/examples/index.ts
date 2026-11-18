@@ -100,6 +100,30 @@ export const examples: Example[] = [
     description:
       "Load events month by month from your backend as the user navigates, with a loading indicator.",
   },
+  {
+    slug: "saving",
+    title: "Saving and conflicts",
+    description:
+      "Changes show at once and go to onMutate. A failed save is rolled back; a ConflictError shows the server's version.",
+  },
+  {
+    slug: "hooks",
+    title: "Hooks",
+    description:
+      "React to clicks, selections and changes your own way. Each hook runs first; returning false skips the built-in behavior.",
+  },
+  {
+    slug: "permissions",
+    title: "Permissions and styles",
+    description:
+      "Decide per event and action what users may do, and add classes to events in every view.",
+  },
+  {
+    slug: "custom-rendering",
+    title: "Custom rendering",
+    description:
+      "Draw events and day cells your own way with snippets, keeping dragging, clicks and accessibility.",
+  },
 ];
 
 const components = import.meta.glob<{ default: Component }>("./*.svelte", { eager: true });
