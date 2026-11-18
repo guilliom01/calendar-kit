@@ -55,7 +55,8 @@ test('the time grid renders our own events, hour labels, now line and resize han
 	await expect(page.getByTestId('custom-now')).toBeVisible();
 
 	const lunch = page.getByTestId('custom-timed').filter({ hasText: 'Almuerzo con el equipo' });
-	await expect(lunch).toHaveAttribute('title', 'Almuerzo con el equipo');
+	// The page mounts <EventPreview>, so events drop the native title tooltip.
+	await expect(lunch).toHaveAttribute('data-event-id', 'lunch');
 	const before = (await lunch.boundingBox())!.height;
 	const handle = (await lunch.getByTestId('custom-resize').boundingBox())!;
 	await drag(page, handle.x + handle.width / 2, handle.y + handle.height / 2, 0, 48);

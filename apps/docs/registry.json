@@ -305,6 +305,24 @@
 			]
 		},
 		{
+			"name": "event-preview",
+			"type": "registry:ui",
+			"title": "Event preview",
+			"description": "Optional: wrap the views to show a card with an event's details on hover or focus (accessible, dismissible with Escape). A snippet replaces its content.",
+			"dependencies": ["@calendar-kit/core"],
+			"registryDependencies": ["utils", "./calendar-state.json"],
+			"files": [
+				{
+					"path": "src/lib/registry/ui/event-preview/event-preview.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/event-preview/index.ts",
+					"type": "registry:ui"
+				}
+			]
+		},
+		{
 			"name": "import-export",
 			"type": "registry:ui",
 			"title": "Import and export",

@@ -154,7 +154,8 @@
 				calendar.eventClass(event)
 			),
 			style: `grid-column: ${item.startIndex + 1} / span ${item.span}; grid-row: ${item.lane + 1}; --event-color: ${calendar.colorOf(event)}`,
-			title: event.title || calendar.labels.untitled,
+			// The preview block shows richer details; two tooltips would overlap.
+			title: calendar.hasPreview ? undefined : event.title || calendar.labels.untitled,
 			'data-event-id': event.id,
 			'aria-keyshortcuts': calendar.canEdit(event, 'move')
 				? calendar.moveKey.toUpperCase()

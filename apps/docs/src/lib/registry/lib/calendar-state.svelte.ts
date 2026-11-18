@@ -1,4 +1,4 @@
-import { createContext } from 'svelte';
+import { createContext, untrack } from 'svelte';
 import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 import {
 	DateFormatter,
@@ -323,6 +323,7 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 	#loader: RangeLoader<T> | undefined;
 	// Mounted dialogs. Without one, the request it would show is resolved by a safe default.
 	#confirmDialogs = 0;
+	#previews = $state(0);
 	#scopeDialogs = 0;
 
 	constructor(options: CalendarStateOptions<T> = {}) {
@@ -529,6 +530,18 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 	}
 
 	/** Called by a mounted confirmation dialog; returns the function that unregisters it. */
+	/** Called by a mounted event preview; while one is mounted, views drop the native `title`. */
+	registerPreview() {
+		// Untracked: callers run this in an effect, which must not depend on the count it changes.
+		untrack(() => this.#previews++);
+		return () => untrack(() => void this.#previews--);
+	}
+
+	/** Whether an event preview is mounted. */
+	get hasPreview() {
+		return this.#previews > 0;
+	}
+
 	registerConfirmDialog() {
 		this.#confirmDialogs++;
 		return () => void this.#confirmDialogs--;

@@ -6,6 +6,7 @@
 	import { CalendarList } from '#lib/registry/ui/calendar-list/index.js';
 	import { CalendarSearch } from '#lib/registry/ui/calendar-search/index.js';
 	import { EventContextMenu } from '#lib/registry/ui/event-context-menu/index.js';
+	import { EventPreview } from '#lib/registry/ui/event-preview/index.js';
 	import {
 		ChangeConfirmDialog,
 		EventDialog,
@@ -69,20 +70,22 @@
 		<div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
 			<CalendarList class="shrink-0 md:w-36 print:hidden" />
 			<EventContextMenu class="min-w-0">
-				<Calendar.View name="month"><MonthView class="flex-1" /></Calendar.View>
-				<Calendar.View name="week"><TimeGrid class="flex-1" /></Calendar.View>
-				<Calendar.View name="day"><TimeGrid class="flex-1" /></Calendar.View>
-				<Calendar.View name="agenda"
-					><AgendaView class="flex-1" resources={demoResources} /></Calendar.View
-				>
-				<Calendar.View name="year"><YearView class="flex-1" /></Calendar.View>
-				<Calendar.View name="timeline">
-					<TimelineView class="flex-1" resources={demoResources} />
-				</Calendar.View>
-				<Calendar.View name="resources">
-					<TimeGrid class="flex-1" resources={demoResources} />
-				</Calendar.View>
-				<Calendar.View name="gantt"><GanttView class="flex-1" /></Calendar.View>
+				<EventPreview>
+					<Calendar.View name="month"><MonthView class="flex-1" /></Calendar.View>
+					<Calendar.View name="week"><TimeGrid class="flex-1" /></Calendar.View>
+					<Calendar.View name="day"><TimeGrid class="flex-1" /></Calendar.View>
+					<Calendar.View name="agenda"
+						><AgendaView class="flex-1" resources={demoResources} /></Calendar.View
+					>
+					<Calendar.View name="year"><YearView class="flex-1" /></Calendar.View>
+					<Calendar.View name="timeline">
+						<TimelineView class="flex-1" resources={demoResources} />
+					</Calendar.View>
+					<Calendar.View name="resources">
+						<TimeGrid class="flex-1" resources={demoResources} />
+					</Calendar.View>
+					<Calendar.View name="gantt"><GanttView class="flex-1" /></Calendar.View>
+				</EventPreview>
 			</EventContextMenu>
 		</div>
 

@@ -1132,3 +1132,56 @@ test.describe('context menu', () => {
 		await expect(menu(page)).toHaveCount(0);
 	});
 });
+
+test.describe('event preview', () => {
+	const preview = (page: Page) => page.getByRole('tooltip');
+
+	test('hovering an event shows its details, and Escape hides them', async ({ page }) => {
+		const workshop = page.getByRole('button', { name: /Svelte workshop/ });
+		await expect(workshop).not.toHaveAttribute('title');
+		await workshop.hover();
+		await expect(preview(page)).toContainText('Svelte workshop');
+		await expect(preview(page)).toContainText('3:00');
+		await expect(preview(page)).toContainText('Trabajo');
+
+		// The pointer can move onto the card without it closing.
+		await preview(page).hover();
+		await expect(preview(page)).toBeVisible();
+
+		await page.keyboard.press('Escape');
+		await expect(preview(page)).toHaveCount(0);
+	});
+
+	test('focusing an event shows its preview, linked as its description', async ({ page }) => {
+		const lunch = page.getByRole('button', { name: /Almuerzo con el equipo/ });
+		await lunch.focus();
+		await expect(preview(page)).toContainText('Almuerzo con el equipo');
+		const id = await preview(page).getAttribute('id');
+		await expect(lunch).toHaveAttribute('aria-describedby', id!);
+
+		await page.keyboard.press('Tab');
+		await expect(preview(page)).not.toContainText('Almuerzo con el equipo');
+	});
+
+	test('focus coming back after a mouse action does not pop a card', async ({ page }) => {
+		await viewButton(page, 'semana').click();
+		const lunch = page.getByRole('button', { name: /Almuerzo/ });
+		await lunch.scrollIntoViewIfNeeded();
+		const box = (await lunch.boundingBox())!;
+		await page.mouse.move(box.x + box.width / 2, box.y + box.height - 3);
+		await page.mouse.down();
+		await page.mouse.move(box.x + box.width / 2, box.y + box.height + 45, { steps: 5 });
+		await page.mouse.up();
+		// Closing the dialog gives focus back to the event, without a keyboard.
+		await confirm(page, 'Cambiar');
+		await page.mouse.move(0, 0);
+		await page.waitForTimeout(700);
+		await expect(preview(page)).toHaveCount(0);
+	});
+
+	test('the developer can render their own preview content', async ({ page }) => {
+		await page.goto('/personalizar');
+		await page.getByRole('button', { name: 'Feriado' }).first().hover();
+		await expect(preview(page)).toHaveText('Vista previa propia: Feriado');
+	});
+});

@@ -155,7 +155,7 @@
 				calendar.eventClass(event)
 			),
 			style: `inset-inline-start: ${(item.startIndex / days.length) * 100}%; width: ${(item.span / days.length) * 100}%; --event-color: ${calendar.colorOf(event)}`,
-			title,
+			title: calendar.hasPreview ? undefined : title,
 			'aria-label':
 				event.progress !== undefined
 					? `${title}, ${calendar.labels.progress} ${percent.format(event.progress)}`
