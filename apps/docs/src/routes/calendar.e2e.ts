@@ -968,3 +968,65 @@ test.describe('converting between all-day and timed by dragging', () => {
 		expect((to! - from! + 12) % 12).toBe(1);
 	});
 });
+
+test.describe('resizing from both edges', () => {
+	async function dragBy(page: Page, handle: ReturnType<Page['locator']>, dx: number, dy: number) {
+		const box = (await handle.boundingBox())!;
+		const [x, y] = [box.x + box.width / 2, box.y + box.height / 2];
+		await page.mouse.move(x, y);
+		await page.mouse.down();
+		await page.mouse.move(x + dx / 2, y + dy / 2, { steps: 5 });
+		await page.mouse.move(x + dx, y + dy, { steps: 5 });
+		await page.mouse.up();
+	}
+
+	test('the top edge of a timed event changes its start', async ({ page }) => {
+		await viewButton(page, 'semana').click();
+		const workshop = page.getByRole('button', { name: /Svelte workshop/ });
+		await workshop.scrollIntoViewIfNeeded();
+		await dragBy(page, workshop.locator('.cursor-ns-resize').first(), 0, -48);
+		await confirm(page, 'Cambiar');
+		await expect(workshop).toContainText('2:00 – 6:00 p. m.');
+	});
+
+	test('Shift+Alt+arrows change the start with the keyboard', async ({ page }) => {
+		await viewButton(page, 'semana').click();
+		const lunch = page.getByRole('button', { name: /Almuerzo/ });
+		await lunch.focus();
+		await page.keyboard.press('m');
+		await page.keyboard.press('Shift+Alt+ArrowUp');
+		await page.keyboard.press('Shift+Alt+ArrowUp');
+		await page.keyboard.press('Enter');
+		await expect(lunch).toContainText('12:30');
+		await expect(lunch).toContainText('2:30 p. m.');
+	});
+
+	test('both edges of a month bar change its first and last day', async ({ page }) => {
+		const conference = page.getByRole('button', { name: 'Conferencia en Cusco' });
+		const cell = (await page.locator('[data-date="2026-11-18"]').boundingBox())!;
+
+		await dragBy(page, conference.locator('.cursor-ew-resize').last(), cell.width, 0);
+		await confirm(page, 'Cambiar');
+		await dragBy(page, conference.locator('.cursor-ew-resize').first(), -cell.width, 0);
+		await confirm(page, 'Cambiar');
+
+		await page.getByRole('button', { name: 'sábado, 21 de noviembre de 2026' }).click();
+		await expect(page.getByRole('button', { name: /Conferencia en Cusco/ })).toBeVisible();
+		// Tuesday 17 is today.
+		await page.getByRole('button', { name: 'hoy' }).click();
+		await expect(title(page)).toHaveText('martes, 17 de noviembre de 2026');
+		await expect(page.getByRole('button', { name: /Conferencia en Cusco/ })).toBeVisible();
+	});
+
+	test('the end of a gantt bar changes its length', async ({ page }) => {
+		await viewButton(page, 'Gantt').click();
+		const bar = page.locator('[data-event-id]').first();
+		const before = (await bar.boundingBox())!.width;
+		const cell = (await page.locator('[data-date="2026-11-18"]').first().boundingBox())!;
+		await dragBy(page, bar.locator('.cursor-ew-resize').last(), cell.width * 2, 0);
+		await confirm(page, 'Cambiar');
+		await expect
+			.poll(async () => (await bar.boundingBox())!.width)
+			.toBeGreaterThan(before + cell.width);
+	});
+});

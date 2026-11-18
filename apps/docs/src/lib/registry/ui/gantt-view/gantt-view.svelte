@@ -2,7 +2,12 @@
 	import { DateFormatter, isToday, type CalendarDate } from '@internationalized/date';
 	import { eventBounds, layoutWeekRow, type CalendarEvent } from '@calendar-kit/core';
 	import type { Snippet } from 'svelte';
-	import { dragAcrossDays, touchOf, withPreview } from '#lib/registry/lib/calendar-drag.js';
+	import {
+		barResizeHandles,
+		dragAcrossDays,
+		touchOf,
+		withPreview
+	} from '#lib/registry/lib/calendar-drag.js';
 	import { dayStepper, keyboardMove } from '#lib/registry/lib/calendar-keyboard.js';
 	import {
 		getCalendar,
@@ -174,6 +179,16 @@
 			onclick: (click: MouseEvent) => calendar.clickDate(day, click)
 		};
 	}
+
+	/** The bar spans the whole shown range when it is clipped, so clipped edges get no handle. */
+	function resizeHandles(event: CalendarEvent, item: Item) {
+		return barResizeHandles(
+			calendar,
+			event,
+			{ continuesBefore: item.continuesBefore, continuesAfter: item.continuesAfter },
+			(resized) => (preview = resized)
+		);
+	}
 </script>
 
 <div
@@ -258,10 +273,12 @@
 						{#if eventSnippet}
 							{@render eventSnippet({
 								event,
+								resizeProps: resizeHandles(event, item!),
 								props: eventProps(event, item!),
 								dragging: preview?.id === event.id
 							})}
 						{:else}
+							{@const resize = resizeHandles(event, item!)}
 							<button {...eventProps(event, item!)}>
 								<span
 									class="absolute inset-y-0 start-0 bg-(--event-color)/60"
@@ -271,6 +288,8 @@
 									{#if eventContent}{@render eventContent(event)}{:else}{event.title ||
 											calendar.labels.untitled}{/if}
 								</span>
+								{#if resize.start}<span {...resize.start}></span>{/if}
+								{#if resize.end}<span {...resize.end}></span>{/if}
 							</button>
 						{/if}
 					</div>

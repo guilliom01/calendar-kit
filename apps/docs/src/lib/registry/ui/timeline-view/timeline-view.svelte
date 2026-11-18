@@ -12,7 +12,12 @@
 	} from '@calendar-kit/core';
 	import type { Snippet } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { dragAcrossDays, touchOf, withPreview } from '#lib/registry/lib/calendar-drag.js';
+	import {
+		barResizeHandles,
+		dragAcrossDays,
+		touchOf,
+		withPreview
+	} from '#lib/registry/lib/calendar-drag.js';
 	import {
 		dayStepper,
 		keyboardMove,
@@ -167,7 +172,7 @@
 		return {
 			type: 'button',
 			class: cn(
-				'pointer-events-auto mx-0.5 flex min-w-0 items-center gap-1 rounded bg-(--event-color)/20 px-1.5 text-start text-xs font-medium [-webkit-touch-callout:none] hover:bg-(--event-color)/30',
+				'pointer-events-auto relative mx-0.5 flex min-w-0 items-center gap-1 rounded bg-(--event-color)/20 px-1.5 text-start text-xs font-medium [-webkit-touch-callout:none] hover:bg-(--event-color)/30',
 				item.continuesBefore && 'ms-0 rounded-s-none',
 				item.continuesAfter && 'me-0 rounded-e-none',
 				preview?.id === event.id && 'opacity-70 shadow-md',
@@ -191,6 +196,10 @@
 			class: 'flex items-center justify-center gap-1.5 py-2 text-sm hover:bg-muted',
 			onclick: (click: MouseEvent) => calendar.clickDate(day, click)
 		};
+	}
+
+	function resizeHandles(item: Item) {
+		return barResizeHandles(calendar, item.event, item, (resized) => (preview = resized));
 	}
 </script>
 
@@ -300,10 +309,12 @@
 						{#if eventSnippet}
 							{@render eventSnippet({
 								event,
+								resizeProps: resizeHandles(item),
 								props: eventProps(item, row.id),
 								dragging: preview?.id === event.id
 							})}
 						{:else}
+							{@const resize = resizeHandles(item)}
 							<button {...eventProps(item, row.id)}>
 								{#if eventContent}
 									{@render eventContent(event)}
@@ -315,6 +326,8 @@
 									{/if}
 									<span class="truncate">{event.title || calendar.labels.untitled}</span>
 								{/if}
+								{#if resize.start}<span {...resize.start}></span>{/if}
+								{#if resize.end}<span {...resize.end}></span>{/if}
 							</button>
 						{/if}
 					{/each}

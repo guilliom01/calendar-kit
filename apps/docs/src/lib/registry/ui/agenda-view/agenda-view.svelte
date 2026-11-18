@@ -17,7 +17,9 @@
 		/** Custom content for each event row (the row button stays). */
 		eventContent?: Snippet<[CalendarEvent]>;
 		/** Replaces a whole event row. Spread `props` to keep opening the event. */
-		event?: Snippet<[Omit<EventSnippetArgs, 'dragging'> & { when: string; resources: string }]>;
+		event?: Snippet<
+			[Omit<EventSnippetArgs, 'dragging' | 'resizeProps'> & { when: string; resources: string }]
+		>;
 		/** Replaces the day heading button. Spread `props` to keep opening the day. */
 		dayHeader?: Snippet<[DaySnippetArgs]>;
 	}

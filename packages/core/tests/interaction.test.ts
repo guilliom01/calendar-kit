@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CalendarDate, parseZonedDateTime } from '@internationalized/date';
-import { moveEvent, resizeEvent, snapMinutes, zonedAt } from '../src/index.js';
+import { moveEvent, resizeEvent, resizeEventStart, snapMinutes, zonedAt } from '../src/index.js';
 import { allDay, timeZone, timed } from './fixtures.js';
 
 const day = new CalendarDate(2026, 11, 18);
@@ -80,5 +80,35 @@ describe('resizeEvent', () => {
 	it('keeps at least one day for all-day events', () => {
 		const resized = resizeEvent(allDay('trip', day, new CalendarDate(2026, 11, 20)), day);
 		expect(resized.end.toString()).toBe('2026-11-19');
+	});
+});
+
+describe('resizeEventStart', () => {
+	it('changes the start of a timed event and keeps its end', () => {
+		const resized = resizeEventStart(
+			timed('a', '2026-11-18T09:00', '2026-11-18T10:00'),
+			lima('2026-11-18T08:30')
+		);
+		expect(resized.start.toString()).toBe(lima('2026-11-18T08:30').toString());
+		expect(resized.end.toString()).toBe(lima('2026-11-18T10:00').toString());
+	});
+
+	it('keeps at least the minimum duration', () => {
+		const resized = resizeEventStart(
+			timed('a', '2026-11-18T09:00', '2026-11-18T10:00'),
+			lima('2026-11-18T11:00'),
+			{ minDuration: 30 }
+		);
+		expect(resized.start.toString()).toBe(lima('2026-11-18T09:30').toString());
+	});
+
+	it('changes the first day of an all-day event, keeping at least one day', () => {
+		const trip = allDay('trip', day, new CalendarDate(2026, 11, 20));
+		expect(resizeEventStart(trip, new CalendarDate(2026, 11, 16)).start.toString()).toBe(
+			'2026-11-16'
+		);
+		expect(resizeEventStart(trip, new CalendarDate(2026, 11, 25)).start.toString()).toBe(
+			'2026-11-19'
+		);
 	});
 });

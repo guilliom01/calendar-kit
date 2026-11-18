@@ -45,3 +45,22 @@ export function resizeEvent<T extends CalendarEvent>(
 	const shortest = event.start.add({ minutes: minDuration });
 	return { ...event, end: end.compare(shortest) < 0 ? shortest : end };
 }
+
+/**
+ * Returns a copy of `event` starting at `start`, keeping its end. The event never gets shorter
+ * than `minDuration` minutes (timed) or one day (all-day).
+ */
+export function resizeEventStart<T extends CalendarEvent>(
+	event: T,
+	start: CalendarDate | ZonedDateTime,
+	{ minDuration = 15 }: ResizeOptions = {}
+): T {
+	if (isAllDay(event)) {
+		if (isZoned(start)) throw new TypeError('All-day events start on a CalendarDate.');
+		const latest = event.end.subtract({ days: 1 });
+		return { ...event, start: start.compare(latest) > 0 ? latest : start };
+	}
+	if (!isZoned(start)) throw new TypeError('Timed events start on a ZonedDateTime.');
+	const latest = event.end.subtract({ minutes: minDuration });
+	return { ...event, start: start.compare(latest) > 0 ? latest : start };
+}

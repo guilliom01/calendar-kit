@@ -74,9 +74,9 @@
 	};
 	const eventRow = (args: string) => ({
 		name: 'event',
-		type: `Snippet<[{ event, props, dragging${args} }]>`,
+		type: `Snippet<[{ event, props, resizeProps, dragging${args} }]>`,
 		description:
-			'Replaces the whole event element. Spread props on yours to keep clicks, dragging, keyboard and ARIA.'
+			'Replaces the whole event element. Spread props on yours to keep clicks, dragging, keyboard and ARIA; render resizeProps.start and .end inside it to keep resizing.'
 	});
 	const dayHeaderRow = {
 		name: 'dayHeader',
@@ -204,8 +204,9 @@
 <h2>time-grid</h2>
 <p>
 	Week and day views with hours, an all-day row, overlapping events side by side and a "now" line.
-	Drag to move, drag the bottom edge to resize, drag over empty time to create. Dragging an event
-	between the all-day row and the hours converts it (all-day events get <code>defaultDuration</code
+	Drag to move, drag the top or bottom edge to resize, drag over empty time to create. Dragging an
+	event between the all-day row and the hours converts it (all-day events get <code
+		>defaultDuration</code
 	>).
 </p>
 <PropsTable
@@ -226,9 +227,8 @@
 		},
 		eventContentRow,
 		{
-			...eventRow(', allDay, resizeProps? '),
-			description:
-				'Replaces timed blocks and all-day bars. Put an element with resizeProps inside timed blocks to keep resizing.'
+			...eventRow(', allDay'),
+			description: 'Replaces timed blocks and all-day bars; allDay tells which one it is.'
 		},
 		dayHeaderRow,
 		{

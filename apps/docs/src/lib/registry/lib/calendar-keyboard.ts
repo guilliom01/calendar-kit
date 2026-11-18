@@ -1,4 +1,4 @@
-import { moveEvent, resizeEvent, type CalendarEvent } from '@calendar-kit/core';
+import { moveEvent, resizeEvent, resizeEventStart, type CalendarEvent } from '@calendar-kit/core';
 import { fillLabel, type CalendarState } from './calendar-state.svelte.js';
 
 /** Arrow pressed in move mode, already mirrored for right-to-left pages. */
@@ -9,6 +9,8 @@ export interface MoveStep {
 	vertical: -1 | 0 | 1;
 	/** Shift held: change the length instead of moving. */
 	resize: boolean;
+	/** Shift+Alt held: change the start instead of the end. */
+	fromStart: boolean;
 }
 
 /** Computes the event after one arrow press, or null when that arrow does nothing in this view. */
@@ -16,7 +18,7 @@ export type MoveStepper<T extends CalendarEvent> = (current: T, step: MoveStep) 
 
 /**
  * Keyboard move mode for a focused event: arrows move a preview (announced to screen readers),
- * Shift+arrows change its length, Enter saves through `changeEvent` (hooks and scope questions
+ * Shift+arrows move its end, Shift+Alt+arrows its start, Enter saves through `changeEvent` (hooks and scope questions
  * included, no confirmation dialog) and Escape cancels. Focus returns to the event afterwards.
  */
 export function keyboardMove<T extends CalendarEvent>(
@@ -70,7 +72,8 @@ export function keyboardMove<T extends CalendarEvent>(
 		const next = stepper(current, {
 			horizontal: arrow[0],
 			vertical: arrow[1],
-			resize: key.shiftKey
+			resize: key.shiftKey,
+			fromStart: key.shiftKey && key.altKey
 		});
 		if (!next) return;
 		if (key.shiftKey) resized = true;
@@ -85,12 +88,16 @@ export function keyboardMove<T extends CalendarEvent>(
 
 /**
  * Steps for day-based views: left/right one day, up/down `verticalDays` days (a week in the month
- * view; omit it where up/down mean something else), Shift+left/right one day shorter or longer.
+ * view; omit it where up/down mean something else), Shift+left/right move the end a day and
+ * Shift+Alt+left/right move the start a day.
  */
 export function dayStepper<T extends CalendarEvent>(verticalDays?: number): MoveStepper<T> {
-	return (current, { horizontal, vertical, resize }) => {
+	return (current, { horizontal, vertical, resize, fromStart }) => {
 		if (resize) {
-			return horizontal ? resizeEvent(current, current.end.add({ days: horizontal })) : null;
+			if (!horizontal) return null;
+			return fromStart
+				? resizeEventStart(current, current.start.add({ days: horizontal }))
+				: resizeEvent(current, current.end.add({ days: horizontal }));
 		}
 		const days = horizontal || (verticalDays && vertical ? vertical * verticalDays : 0);
 		return days ? moveEvent(current, current.start.add({ days })) : null;

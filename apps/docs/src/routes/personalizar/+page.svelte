@@ -90,7 +90,8 @@
 						class={cn(props.class, 'rounded-lg border-s-0')}
 					>
 						<strong class="truncate">{event.title}</strong>
-						{#if resizeProps}<span {...resizeProps} data-testid="custom-resize"></span>{/if}
+						{#if resizeProps.start}<span {...resizeProps.start}></span>{/if}
+						{#if resizeProps.end}<span {...resizeProps.end} data-testid="custom-resize"></span>{/if}
 					</button>
 				{/snippet}
 				{#snippet hourLabel({ hour })}

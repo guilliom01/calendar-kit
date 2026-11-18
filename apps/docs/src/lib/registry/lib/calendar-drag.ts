@@ -1,5 +1,12 @@
 import { parseDate, type CalendarDate } from '@internationalized/date';
-import { daysBetween, moveEvent, type CalendarEvent } from '@calendar-kit/core';
+import {
+	daysBetween,
+	moveEvent,
+	resizeEvent,
+	resizeEventStart,
+	type CalendarEvent
+} from '@calendar-kit/core';
+import type { CalendarState, ResizeHandles } from './calendar-state.svelte.js';
 
 /** Pixels the pointer must travel before a press becomes a drag. */
 const DRAG_THRESHOLD = 4;
@@ -263,6 +270,83 @@ export function dragAcrossDays<T extends CalendarEvent>(
 		},
 		touch
 	);
+}
+
+/**
+ * Resizes `event` by whole days from its `edge`, following the day cells (`data-date`) under the
+ * pointer. Timed events keep their times of day.
+ */
+export function resizeAcrossDays<T extends CalendarEvent>(
+	down: PointerEvent,
+	event: T,
+	edge: 'start' | 'end',
+	handlers: DayDragHandlers<T>,
+	touch: TouchDrag = 400
+) {
+	const from = cellAtPoint(down.clientX, down.clientY);
+	if (!from) return;
+	let resized: T | null = null;
+
+	trackPointer(
+		down,
+		{
+			onMove: (move) => {
+				const to = cellAtPoint(move.clientX, move.clientY);
+				if (!to) return;
+				const days = daysBetween(from.date, to.date);
+				resized = !days
+					? null
+					: edge === 'start'
+						? resizeEventStart(event, event.start.add({ days }))
+						: resizeEvent(event, event.end.add({ days }));
+				handlers.onPreview(resized ?? event);
+			},
+			onDrop: () => {
+				handlers.onPreview(null);
+				handlers.onDrop(resized);
+			},
+			onCancel: () => handlers.onPreview(null),
+			onLift: () => handlers.onPreview(event)
+		},
+		touch
+	);
+}
+
+/**
+ * Start and end handles of a bar that spans days (month, timeline, gantt, all-day row). Edges
+ * that continue outside the shown range, or events the user may not resize, get no handle.
+ */
+export function barResizeHandles<T extends CalendarEvent>(
+	calendar: CalendarState<T>,
+	event: T,
+	edges: { continuesBefore: boolean; continuesAfter: boolean },
+	onPreview: (preview: T | null) => void
+): ResizeHandles {
+	if (!calendar.canEdit(event, 'resize')) return {};
+	const handle = (edge: 'start' | 'end') => ({
+		'aria-hidden': 'true',
+		class: `absolute inset-y-0 ${edge === 'start' ? 'start-0' : 'end-0'} w-1.5 cursor-ew-resize`,
+		onpointerdown: (down: PointerEvent) => {
+			down.stopPropagation(); // not a move of the whole bar
+			resizeAcrossDays(
+				down,
+				event,
+				edge,
+				{
+					onPreview,
+					onDrop: (resized) => {
+						if (resized)
+							void calendar.changeEvent({ event: resized, previous: event, kind: 'resize' });
+					}
+				},
+				touchOf(calendar)
+			);
+		}
+	});
+	return {
+		start: edges.continuesBefore ? undefined : handle('start'),
+		end: edges.continuesAfter ? undefined : handle('end')
+	};
 }
 
 /** `events` with `preview` shown instead of the event with the same id (or added, if new). */

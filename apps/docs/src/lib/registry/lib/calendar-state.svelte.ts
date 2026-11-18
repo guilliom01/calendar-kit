@@ -128,10 +128,20 @@ export interface Selection<T extends CalendarEvent> {
  */
 export type PartProps = Record<string, unknown> & { class?: string; style?: string };
 
+/**
+ * Invisible handles that resize an event from its start or end edge; missing when that edge cannot
+ * be resized (not allowed, or it continues outside the shown range). Put them inside your element.
+ */
+export interface ResizeHandles {
+	start?: PartProps;
+	end?: PartProps;
+}
+
 /** Arguments of a view's `event` snippet, which replaces the whole event element. */
 export interface EventSnippetArgs<T extends CalendarEvent = CalendarEvent> {
 	event: T;
 	props: PartProps;
+	resizeProps: ResizeHandles;
 	/** True while this event is being dragged or moved with the keyboard. */
 	dragging: boolean;
 }

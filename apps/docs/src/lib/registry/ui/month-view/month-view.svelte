@@ -2,7 +2,12 @@
 	import { DateFormatter, isSameMonth, isToday, type CalendarDate } from '@internationalized/date';
 	import { isAllDay, layoutWeekRow, monthGrid, type CalendarEvent } from '@calendar-kit/core';
 	import type { Snippet } from 'svelte';
-	import { dragAcrossDays, touchOf, withPreview } from '#lib/registry/lib/calendar-drag.js';
+	import {
+		dragAcrossDays,
+		touchOf,
+		withPreview,
+		barResizeHandles
+	} from '#lib/registry/lib/calendar-drag.js';
 	import * as Popover from '#lib/registry/ui/popover/index.js';
 	import { dayStepper, keyboardMove } from '#lib/registry/lib/calendar-keyboard.js';
 	import {
@@ -138,7 +143,7 @@
 		return {
 			type: 'button',
 			class: cn(
-				'pointer-events-auto mx-0.5 flex min-w-0 items-center gap-1 rounded px-1.5 text-start text-xs [-webkit-touch-callout:none]',
+				'pointer-events-auto relative mx-0.5 flex min-w-0 items-center gap-1 rounded px-1.5 text-start text-xs [-webkit-touch-callout:none]',
 				bar
 					? 'bg-(--event-color)/15 font-medium text-foreground hover:bg-(--event-color)/25'
 					: 'text-foreground hover:bg-muted',
@@ -169,6 +174,14 @@
 			'aria-label': fullDate.format(toDate(day)),
 			onclick: (click: MouseEvent) => calendar.clickDate(day, click)
 		};
+	}
+
+	/** Edge handles of multi-day bars; single-day timed chips are not resized here. */
+	function resizeHandles(item: Item) {
+		const bar = isAllDay(item.event) || item.span > 1;
+		return bar
+			? barResizeHandles(calendar, item.event, item, (resized) => (preview = resized))
+			: {};
 	}
 </script>
 
@@ -233,11 +246,13 @@
 					{#if eventSnippet}
 						{@render eventSnippet({
 							event,
+							resizeProps: resizeHandles(item),
 							props: eventProps(item),
 							dragging: preview?.id === event.id
 						})}
 					{:else}
 						{@const bar = isAllDay(event) || item.span > 1}
+						{@const resize = resizeHandles(item)}
 						<button {...eventProps(item)}>
 							{#if eventContent}
 								{@render eventContent(event)}
@@ -252,6 +267,8 @@
 								{/if}
 								<span class="truncate">{event.title || calendar.labels.untitled}</span>
 							{/if}
+							{#if resize.start}<span {...resize.start}></span>{/if}
+							{#if resize.end}<span {...resize.end}></span>{/if}
 						</button>
 					{/if}
 				{/each}

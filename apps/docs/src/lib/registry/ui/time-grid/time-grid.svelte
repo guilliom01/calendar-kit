@@ -18,6 +18,7 @@
 		layoutWeekRow,
 		moveEvent,
 		resizeEvent,
+		resizeEventStart,
 		snapMinutes,
 		spansDays,
 		zonedAt,
@@ -27,7 +28,12 @@
 		type TimedEventLayout
 	} from '@calendar-kit/core';
 	import type { Snippet } from 'svelte';
-	import { touchOf, trackPointer, withPreview } from '#lib/registry/lib/calendar-drag.js';
+	import {
+		barResizeHandles,
+		touchOf,
+		trackPointer,
+		withPreview
+	} from '#lib/registry/lib/calendar-drag.js';
 	import {
 		dayStepper,
 		keyboardMove,
@@ -37,7 +43,8 @@
 		getCalendar,
 		type DaySnippetArgs,
 		type EventSnippetArgs,
-		type PartProps
+		type PartProps,
+		type ResizeHandles
 	} from '#lib/registry/lib/calendar-state.svelte.js';
 	import { cn } from '#lib/utils.js';
 
@@ -52,10 +59,10 @@
 		/** Custom content inside each event block (the block itself stays). */
 		eventContent?: Snippet<[CalendarEvent]>;
 		/**
-		 * Replaces the whole event element, timed or all-day. Spread `props` on your element; for timed
-		 * events put a child with `resizeProps` at its bottom edge to keep resizing.
+		 * Replaces the whole event element, timed or all-day. Spread `props` on your element and put
+		 * the `resizeProps` handles inside it to keep resizing from either edge.
 		 */
-		event?: Snippet<[EventSnippetArgs & { allDay: boolean; resizeProps?: PartProps }]>;
+		event?: Snippet<[EventSnippetArgs & { allDay: boolean }]>;
 		/** Replaces the day header button. Spread `props` to keep opening the day. */
 		dayHeader?: Snippet<[DaySnippetArgs]>;
 		/** Content of a resource column header (with `resources`). */
@@ -237,7 +244,7 @@
 		);
 	}
 
-	function startResize(down: PointerEvent, item: TimedEventLayout) {
+	function startResize(down: PointerEvent, item: TimedEventLayout, edge: 'start' | 'end') {
 		down.stopPropagation();
 		if (!calendar.canEdit(item.event, 'resize')) return;
 		const event = item.event as TimedEvent;
@@ -247,7 +254,11 @@
 			{
 				onMove: (move) => {
 					const { day, minutes } = pointAt(move);
-					preview = resizeEvent(event, at(day, snapMinutes(minutes, step)), { minDuration: step });
+					const time = at(day, snapMinutes(minutes, step));
+					preview =
+						edge === 'start'
+							? resizeEventStart(event, time, { minDuration: step })
+							: resizeEvent(event, time, { minDuration: step });
 				},
 				onDrop: () => finishDrag(event, 'resize'),
 				onCancel: () => (preview = null),
@@ -309,7 +320,7 @@
 						moved = {
 							...event,
 							start: at(day, start),
-							end: at(day, start + calendar.defaultDuration)
+							end: at(day, start).add({ minutes: calendar.defaultDuration })
 						} as CalendarEvent;
 					} else moved = moveEvent(event, event.start.add({ days: daysBetween(source.day, day) }));
 					preview = withColumn(moved, event, source.column, column);
@@ -328,10 +339,19 @@
 	}
 
 	/** Up/down move by `snapStep` minutes; left/right move a day (or to the next resource column). */
-	const timedStepper: MoveStepper<CalendarEvent> = (current, { horizontal, vertical, resize }) => {
+	const timedStepper: MoveStepper<CalendarEvent> = (
+		current,
+		{ horizontal, vertical, resize, fromStart }
+	) => {
 		if (resize) {
-			const end = current.end.add({ minutes: vertical * step });
-			return vertical ? resizeEvent(current, end, { minDuration: step }) : null;
+			if (!vertical) return null;
+			return fromStart
+				? resizeEventStart(current, current.start.add({ minutes: vertical * step }), {
+						minDuration: step
+					})
+				: resizeEvent(current, current.end.add({ minutes: vertical * step }), {
+						minDuration: step
+					});
 		}
 		if (vertical) return moveEvent(current, current.start.add({ minutes: vertical * step }));
 		if (!horizontal) return null;
@@ -382,7 +402,7 @@
 		return {
 			type: 'button',
 			class: cn(
-				'mx-0.5 flex min-w-0 items-center rounded bg-(--event-color)/15 px-1.5 text-start text-xs font-medium [-webkit-touch-callout:none] hover:bg-(--event-color)/25',
+				'relative mx-0.5 flex min-w-0 items-center rounded bg-(--event-color)/15 px-1.5 text-start text-xs font-medium [-webkit-touch-callout:none] hover:bg-(--event-color)/25',
 				item.continuesBefore && 'ms-0 rounded-s-none',
 				item.continuesAfter && 'me-0 rounded-e-none',
 				preview?.id === event.id && 'opacity-70 shadow-md',
@@ -424,15 +444,22 @@
 		};
 	}
 
-	/** Attributes of the bottom-edge resize handle, or undefined when the event cannot be resized. */
-	function resizeProps(item: TimedItem): PartProps | undefined {
-		if (!calendar.canEdit(item.event, 'resize') || item.continuesAfter) return undefined;
-		return {
+	/** Top and bottom handles of a timed block; edges that continue on another day get none. */
+	function resizeProps(item: TimedItem): ResizeHandles {
+		if (!calendar.canEdit(item.event, 'resize')) return {};
+		const handle = (edge: 'start' | 'end') => ({
 			'aria-hidden': 'true',
-			class: 'absolute inset-x-0 bottom-0 h-2 cursor-ns-resize',
-			onpointerdown: (down: PointerEvent) => startResize(down, item)
+			class: `absolute inset-x-0 ${edge === 'start' ? 'top-0' : 'bottom-0'} h-2 cursor-ns-resize`,
+			onpointerdown: (down: PointerEvent) => startResize(down, item, edge)
+		});
+		return {
+			start: item.continuesBefore ? undefined : handle('start'),
+			end: item.continuesAfter ? undefined : handle('end')
 		};
 	}
+
+	const allDayResize = (item: AllDayItem) =>
+		barResizeHandles(calendar, item.event, item, (resized) => (preview = resized));
 
 	function dayHeaderProps(day: CalendarDate): PartProps {
 		return {
@@ -526,16 +553,20 @@
 				{@render eventSnippet({
 					event,
 					props: allDayProps(item),
+					resizeProps: allDayResize(item),
 					dragging: preview?.id === event.id,
 					allDay: true
 				})}
 			{:else}
+				{@const resize = allDayResize(item)}
 				<button {...allDayProps(item)}>
 					{#if eventContent}
 						{@render eventContent(event)}
 					{:else}
 						<span class="truncate">{event.title || calendar.labels.untitled}</span>
 					{/if}
+					{#if resize.start}<span {...resize.start}></span>{/if}
+					{#if resize.end}<span {...resize.end}></span>{/if}
 				</button>
 			{/if}
 		{/each}
@@ -602,7 +633,8 @@
 										</span>
 									{/if}
 								{/if}
-								{#if resize}<span {...resize}></span>{/if}
+								{#if resize.start}<span {...resize.start}></span>{/if}
+								{#if resize.end}<span {...resize.end}></span>{/if}
 							</button>
 						{/if}
 					{/each}

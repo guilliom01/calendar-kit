@@ -46,8 +46,8 @@
 	<li>
 		Press <kbd>M</kbd> on a focused event to move it without a mouse: arrow keys move it (minutes and
 		days in the time grid, days and weeks in the month view, resources in the timeline), Shift with arrows
-		changes its length, Enter saves and Escape cancels. Each step is announced to screen readers; hooks
-		and recurring-event scopes still apply.
+		moves its end and Shift+Alt with arrows its start, Enter saves and Escape cancels. Each step is announced
+		to screen readers; hooks and recurring-event scopes still apply.
 	</li>
 	<li>
 		Every view, the event dialog and the demo pages pass the axe-core WCAG 2.1 A and AA rules, in

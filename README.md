@@ -92,7 +92,7 @@ Resources are props of the views that use them: `<TimeGrid resources={…} />`, 
 
 ### Customizing what views draw
 
-Views take snippets for their parts. Interactive parts (`event`, `dayNumber`, `dayHeader`, `more`) receive `props` with the handlers, ARIA attributes, class and style of the default element: spread them on your own element and clicks, dragging, keyboard moves and screen reader labels keep working. Display parts (`dayCell`, `resourceLabel`, `hourLabel`, `nowIndicator`, `taskLabel`) receive data only. `eventContent` changes only the inside of an event.
+Views take snippets for their parts. Interactive parts (`event`, `dayNumber`, `dayHeader`, `more`) receive `props` with the handlers, ARIA attributes, class and style of the default element: spread them on your own element and clicks, dragging, keyboard moves and screen reader labels keep working. `event` also receives `resizeProps.start` and `resizeProps.end`, the resize handles to put inside it. Display parts (`dayCell`, `resourceLabel`, `hourLabel`, `nowIndicator`, `taskLabel`) receive data only. `eventContent` changes only the inside of an event.
 
 ```svelte
 <MonthView>
@@ -128,7 +128,7 @@ Without `event-dialog`, nothing opens: react to `onEventClick` and `onSelect` wi
 
 Changes show right away and are sent to `onMutate(mutation)` (create, update or delete). Return the saved event to replace the local one (for example with a server id); throw to roll the change back (`onError` is called). Changes to the same event are saved in order, and undo/redo (`Calendar.UndoRedo`, Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z) reach `onMutate` as inverse changes.
 
-Users can drag events across days, hours and resources, resize them from the bottom edge, draw new ones over empty time, and press Delete to remove the focused one. Escape cancels a drag. In the week and day views, dragging between the all-day row and the hours converts an event (all-day events get `defaultDuration`, 60 minutes by default). Resting the pointer near the edge of a scrolling area scrolls it, so events can reach hours or days that are not visible.
+Users can drag events across days, hours and resources, resize them from either edge (top and bottom in the time grid, both ends of bars in the month, timeline, all-day row and gantt; Shift+arrows and Shift+Alt+arrows in keyboard move mode), draw new ones over empty time, and press Delete to remove the focused one. Escape cancels a drag. In the week and day views, dragging between the all-day row and the hours converts an event (all-day events get `defaultDuration`, 60 minutes by default). Resting the pointer near the edge of a scrolling area scrolls it, so events can reach hours or days that are not visible.
 
 ### Recurring events
 
