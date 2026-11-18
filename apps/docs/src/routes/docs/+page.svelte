@@ -5,7 +5,7 @@
   // Written in parts so this page's own <script> block does not end here.
   const closeScript = "</" + "script>";
 
-  const install = `npx shadcn-svelte@latest add <registry-url>/r/full-calendar.json <registry-url>/r/month-view.json`;
+  const install = `npx shadcn-svelte@latest add https://calendar-kit.pages.dev/r/full-calendar.json https://calendar-kit.pages.dev/r/month-view.json`;
 
   const quickStart = `<script lang="ts">
 	import { today, toZoned } from '@internationalized/date';

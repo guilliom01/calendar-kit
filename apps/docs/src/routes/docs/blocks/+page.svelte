@@ -110,7 +110,7 @@ ${"</" + "script>"}
 <h1>Blocks</h1>
 <p>
   Every block is an item of the registry. Add it with <code
-    >npx shadcn-svelte add &lt;registry-url&gt;/r/&lt;item&gt;.json</code
+    >npx shadcn-svelte add https://calendar-kit.pages.dev/r/&lt;item&gt;.json</code
   >; its dependencies (other items, npm packages) come along. <code>calendar-state</code> is installed
   by every block.
 </p>

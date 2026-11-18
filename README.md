@@ -36,8 +36,10 @@ Building blocks, not a black box. You install only the pieces you use, compose t
 
 Add the calendar parts and the views you want:
 
+Docs and demos: https://calendar-kit.pages.dev
+
 ```sh
-npx shadcn-svelte@latest add <registry-url>/r/full-calendar.json <registry-url>/r/month-view.json
+npx shadcn-svelte@latest add https://calendar-kit.pages.dev/r/full-calendar.json https://calendar-kit.pages.dev/r/month-view.json
 ```
 
 ```svelte
