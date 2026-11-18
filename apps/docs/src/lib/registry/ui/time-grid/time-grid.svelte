@@ -585,8 +585,13 @@
     {/each}
   </div>
 
+  <!-- Focusable so keyboard users can scroll the hours even when the period has no events. -->
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
   <div
-    class="min-h-0 flex-1 overflow-y-auto print:overflow-visible"
+    class="min-h-0 flex-1 overflow-y-auto outline-none focus-visible:ring-2 focus-visible:ring-ring print:overflow-visible"
+    tabindex="0"
+    role="region"
+    aria-label={calendar.title}
     {@attach (node) => {
       node.scrollTop = (node.scrollHeight * scrollToHour) / 24;
     }}
