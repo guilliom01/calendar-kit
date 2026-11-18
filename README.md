@@ -37,25 +37,25 @@ Building blocks, not a black box. You install only the pieces you use, compose t
 Add the calendar parts and the views you want:
 
 ```sh
-npx shadcn-svelte@latest add <registry-url>/r/calendar.json <registry-url>/r/month-view.json
+npx shadcn-svelte@latest add <registry-url>/r/full-calendar.json <registry-url>/r/month-view.json
 ```
 
 ```svelte
 <script lang="ts">
-	import * as Calendar from '$lib/components/ui/calendar/index.js';
-	import { CalendarState } from '$lib/components/ui/calendar/index.js';
+	import * as FullCalendar from '$lib/components/ui/full-calendar/index.js';
+	import { CalendarState } from '$lib/components/ui/full-calendar/index.js';
 	import { MonthView } from '$lib/components/ui/month-view/index.js';
 
 	const calendar = new CalendarState({ locale: 'es-PE', timeZone: 'America/Lima', events });
 </script>
 
-<Calendar.Root state={calendar}>
-	<Calendar.Toolbar>
-		<Calendar.Nav />
-		<Calendar.Title />
-	</Calendar.Toolbar>
-	<Calendar.View name="month"><MonthView /></Calendar.View>
-</Calendar.Root>
+<FullCalendar.Root state={calendar}>
+	<FullCalendar.Toolbar>
+		<FullCalendar.Nav />
+		<FullCalendar.Title />
+	</FullCalendar.Toolbar>
+	<FullCalendar.View name="month"><MonthView /></FullCalendar.View>
+</FullCalendar.Root>
 ```
 
 Events are all-day (`CalendarDate` start/end) or timed (`ZonedDateTime` start/end). `end` is exclusive, as in iCalendar. Dates and calendar words come from `Intl`, so they follow `locale`; the few texts Intl cannot provide are in `labels` (see `defaultLabels`).
@@ -64,7 +64,7 @@ Events are all-day (`CalendarDate` start/end) or timed (`ZonedDateTime` start/en
 
 | Item                 | Add it when you want…                                                                                                            |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `calendar`           | Always. `Root`, `View`, `Toolbar` and parts: `Nav`, `Title`, `ViewSwitcher`, `NewEvent`, `UndoRedo`, `TimeZoneSelect`, `Loading` |
+| `full-calendar`      | Always. `Root`, `View`, `Toolbar` and parts: `Nav`, `Title`, `ViewSwitcher`, `NewEvent`, `UndoRedo`, `TimeZoneSelect`, `Loading` |
 | `month-view`         | A month grid with multi-day bars and "+N" overflow                                                                               |
 | `time-grid`          | Week or day views; with `resources`, one column per resource                                                                     |
 | `agenda-view`        | The month's events listed day by day                                                                                             |
@@ -79,17 +79,17 @@ Events are all-day (`CalendarDate` start/end) or timed (`ZonedDateTime` start/en
 | `recurrence-editor`  | A full repeat-rule editor; plug it into `event-dialog` (snippet `recurrence`) or your own form                                   |
 | `calendar-state`     | Installed automatically: the runes state, event store and drag helpers                                                           |
 
-Each view is shown by a `<Calendar.View name="…">`. Registering a view also lists it in `<Calendar.ViewSwitcher>`. Built-in names (`month`, `week`, `day`, `agenda`, `year`, `timeline`, `resources`, `gantt`) know their date range; for your own view, pass `range` and `unit`:
+Each view is shown by a `<FullCalendar.View name="…">`. Registering a view also lists it in `<FullCalendar.ViewSwitcher>`. Built-in names (`month`, `week`, `day`, `agenda`, `year`, `timeline`, `resources`, `gantt`) know their date range; for your own view, pass `range` and `unit`:
 
 ```svelte
-<Calendar.View
+<FullCalendar.View
 	name="3days"
 	label="3 días"
 	unit="days"
 	range={(date) => ({ start: date, end: date.add({ days: 3 }) })}
 >
 	<MyThreeDayView />
-</Calendar.View>
+</FullCalendar.View>
 ```
 
 Resources are props of the views that use them: `<TimeGrid resources={…} />`, `<TimelineView resources={…} />`, `<AgendaView resources={…} />`, `<EventDialog resources={…} />`. A resource is `{ id, title, color?, parentId? }`; assign events with `resourceIds`.
@@ -135,7 +135,7 @@ Without `event-dialog`, nothing opens: react to `onEventClick` and `onSelect` wi
 
 ## Saving changes
 
-Changes show right away and are sent to `onMutate(mutation)` (create, update or delete). Return the saved event to replace the local one (for example with a server id); throw to roll the change back (`onError` is called). Changes to the same event are saved in order, and undo/redo (`Calendar.UndoRedo`, Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z) reach `onMutate` as inverse changes.
+Changes show right away and are sent to `onMutate(mutation)` (create, update or delete). Return the saved event to replace the local one (for example with a server id); throw to roll the change back (`onError` is called). Changes to the same event are saved in order, and undo/redo (`FullCalendar.UndoRedo`, Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z) reach `onMutate` as inverse changes.
 
 Users can drag events across days, hours and resources, resize them from either edge (top and bottom in the time grid, both ends of bars in the month, timeline, all-day row and gantt; Shift+arrows and Shift+Alt+arrows in keyboard move mode), draw new ones over empty time, and press Delete to remove the focused one. Escape cancels a drag. In the week and day views, dragging between the all-day row and the hours converts an event (all-day events get `defaultDuration`, 60 minutes by default). Resting the pointer near the edge of a scrolling area scrolls it, so events can reach hours or days that are not visible.
 
@@ -145,11 +145,11 @@ Give an event an RFC 5545 `rrule` (for example `FREQ=WEEKLY;INTERVAL=2;BYDAY=TU,
 
 ### Loading events on demand
 
-Pass `loadEvents(range)` instead of (or as well as) `events`. The calendar asks for whole months as the user navigates, caches them, shares in-flight requests, preloads `preload` months on each side (default 1) and exposes `loading` (shown by `Calendar.Loading`). Loaded events skip the undo history. A month that fails (`onLoadError`) is requested again next time.
+Pass `loadEvents(range)` instead of (or as well as) `events`. The calendar asks for whole months as the user navigates, caches them, shares in-flight requests, preloads `preload` months on each side (default 1) and exposes `loading` (shown by `FullCalendar.Loading`). Loaded events skip the undo history. A month that fails (`onLoadError`) is requested again next time.
 
 ### Time zones
 
-`timeZone` decides where events are shown; `Calendar.TimeZoneSelect` lets users change it. Timed events move to the new local time, and all-day events stay on their dates.
+`timeZone` decides where events are shown; `FullCalendar.TimeZoneSelect` lets users change it. Timed events move to the new local time, and all-day events stay on their dates.
 
 ## Adding a registry item
 

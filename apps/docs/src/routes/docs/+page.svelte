@@ -5,12 +5,12 @@
 	// Written in parts so this page's own <script> block does not end here.
 	const closeScript = '</' + 'script>';
 
-	const install = `npx shadcn-svelte@latest add <registry-url>/r/calendar.json <registry-url>/r/month-view.json`;
+	const install = `npx shadcn-svelte@latest add <registry-url>/r/full-calendar.json <registry-url>/r/month-view.json`;
 
 	const quickStart = `<script lang="ts">
 	import { today, toZoned } from '@internationalized/date';
-	import * as Calendar from '$lib/components/ui/calendar/index.js';
-	import { CalendarState } from '$lib/components/ui/calendar/index.js';
+	import * as FullCalendar from '$lib/components/ui/full-calendar/index.js';
+	import { CalendarState } from '$lib/components/ui/full-calendar/index.js';
 	import { MonthView } from '$lib/components/ui/month-view/index.js';
 
 	const timeZone = 'America/Lima';
@@ -31,13 +31,13 @@
 	});
 ${closeScript}
 
-<Calendar.Root state={calendar}>
-	<Calendar.Toolbar>
-		<Calendar.Nav />
-		<Calendar.Title />
-	</Calendar.Toolbar>
-	<Calendar.View name="month"><MonthView /></Calendar.View>
-</Calendar.Root>`;
+<FullCalendar.Root state={calendar}>
+	<FullCalendar.Toolbar>
+		<FullCalendar.Nav />
+		<FullCalendar.Title />
+	</FullCalendar.Toolbar>
+	<FullCalendar.View name="month"><MonthView /></FullCalendar.View>
+</FullCalendar.Root>`;
 </script>
 
 <svelte:head><title>Introduction · calendar-kit docs</title></svelte:head>

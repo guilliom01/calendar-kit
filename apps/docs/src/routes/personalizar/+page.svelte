@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { today } from '@internationalized/date';
-	import * as Calendar from '#lib/registry/ui/calendar/index.js';
-	import { CalendarState } from '#lib/registry/ui/calendar/index.js';
+	import * as FullCalendar from '#lib/registry/ui/full-calendar/index.js';
+	import { CalendarState } from '#lib/registry/ui/full-calendar/index.js';
 	import { MonthView } from '#lib/registry/ui/month-view/index.js';
 	import { TimeGrid } from '#lib/registry/ui/time-grid/index.js';
 	import { TimelineView } from '#lib/registry/ui/timeline-view/index.js';
@@ -44,12 +44,12 @@
 		{message}
 	</p>
 
-	<Calendar.Root state={calendar} class="flex-1">
-		<Calendar.Toolbar>
-			<Calendar.Nav />
-			<Calendar.Title />
-			<Calendar.ViewSwitcher class="ms-auto" />
-		</Calendar.Toolbar>
+	<FullCalendar.Root state={calendar} class="flex-1">
+		<FullCalendar.Toolbar>
+			<FullCalendar.Nav />
+			<FullCalendar.Title />
+			<FullCalendar.ViewSwitcher class="ms-auto" />
+		</FullCalendar.Toolbar>
 
 		<EventContextMenu>
 			<!-- Our own item next to the built-in ones. -->
@@ -62,7 +62,7 @@
 				{#snippet content({ event })}
 					Vista previa propia: {event.title}
 				{/snippet}
-				<Calendar.View name="month">
+				<FullCalendar.View name="month">
 					<MonthView class="flex-1">
 						<!-- Our own chip: a pill with a dot. `props` keeps drag, click, keyboard and ARIA; keep it a button so it stays focusable. -->
 						{#snippet event({ event, props, dragging })}
@@ -93,9 +93,9 @@
 							<button {...props} data-testid="custom-more">Ver {count} más</button>
 						{/snippet}
 					</MonthView>
-				</Calendar.View>
+				</FullCalendar.View>
 
-				<Calendar.View name="week">
+				<FullCalendar.View name="week">
 					<TimeGrid class="flex-1">
 						{#snippet event({ event, props, resizeProps })}
 							<button
@@ -116,9 +116,9 @@
 							<div class="h-0.5 bg-primary" data-testid="custom-now"></div>
 						{/snippet}
 					</TimeGrid>
-				</Calendar.View>
+				</FullCalendar.View>
 
-				<Calendar.View name="timeline">
+				<FullCalendar.View name="timeline">
 					<TimelineView class="flex-1" resources={demoResources}>
 						{#snippet resourceLabel({ title, hasChildren, collapsed, toggle })}
 							<span class="flex items-center gap-2">
@@ -139,8 +139,8 @@
 							</span>
 						{/snippet}
 					</TimelineView>
-				</Calendar.View>
+				</FullCalendar.View>
 			</EventPreview>
 		</EventContextMenu>
-	</Calendar.Root>
+	</FullCalendar.Root>
 </main>

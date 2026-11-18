@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { today } from '@internationalized/date';
-	import * as Calendar from '#lib/registry/ui/calendar/index.js';
-	import { CalendarState } from '#lib/registry/ui/calendar/index.js';
+	import * as FullCalendar from '#lib/registry/ui/full-calendar/index.js';
+	import { CalendarState } from '#lib/registry/ui/full-calendar/index.js';
 	import { MonthView } from '#lib/registry/ui/month-view/index.js';
 	import type { CalendarEvent } from '@calendar-kit/core';
 	import { demoEvents } from '../demo-events.js';
@@ -36,13 +36,13 @@
 <main class="mx-auto flex h-full max-w-5xl flex-col gap-4 p-4">
 	<h1 class="text-2xl font-semibold">Solo vista de mes</h1>
 
-	<Calendar.Root state={calendar} class="flex-1">
-		<Calendar.Toolbar>
-			<Calendar.Nav />
-			<Calendar.Title />
-		</Calendar.Toolbar>
-		<Calendar.View name="month"><MonthView class="flex-1" /></Calendar.View>
-	</Calendar.Root>
+	<FullCalendar.Root state={calendar} class="flex-1">
+		<FullCalendar.Toolbar>
+			<FullCalendar.Nav />
+			<FullCalendar.Title />
+		</FullCalendar.Toolbar>
+		<FullCalendar.View name="month"><MonthView class="flex-1" /></FullCalendar.View>
+	</FullCalendar.Root>
 
 	<aside class="rounded-lg border p-3 text-sm" aria-live="polite" data-testid="panel">
 		{#if selected}

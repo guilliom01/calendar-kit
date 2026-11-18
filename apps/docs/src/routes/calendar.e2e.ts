@@ -605,13 +605,17 @@ test('the documentation covers every block and links its sections', async ({ pag
 	const docs = page.getByRole('navigation', { name: 'Documentation' });
 	await docs.getByRole('link', { name: 'Blocks' }).click();
 	for (const item of [
-		'calendar',
+		'full-calendar',
 		'month-view',
 		'time-grid',
 		'agenda-view',
 		'year-view',
 		'timeline-view',
 		'gantt-view',
+		'calendar-search',
+		'calendar-list',
+		'event-context-menu',
+		'event-preview',
 		'event-dialog',
 		'recurrence-editor',
 		'import-export'

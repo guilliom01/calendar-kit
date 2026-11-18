@@ -252,7 +252,7 @@ export interface EventDraft<T extends CalendarEvent> {
 	isNew: boolean;
 }
 
-/** A view registered by `<Calendar.View>`. Built-in names get their range automatically. */
+/** A view registered by `<FullCalendar.View>`. Built-in names get their range automatically. */
 export interface ViewDefinition {
 	name: string;
 	label?: string;
@@ -275,7 +275,7 @@ const BUILT_IN_VIEWS = new Set<string>([
 
 /**
  * Reactive calendar state shared by every calendar part through context. It knows nothing about
- * specific views: they register themselves with `<Calendar.View>`.
+ * specific views: they register themselves with `<FullCalendar.View>`.
  *
  * Event changes go through an `EventStore`: they show right away, are saved with `onMutate`,
  * roll back if saving fails, and can be undone. Recurring events (`rrule`) are expanded for the
@@ -302,12 +302,12 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 	changeRequest: EventChange<T> | null = $state.raw(null);
 	touchDrag = $state(true);
 	moveKey = $state('m');
-	/** Text for screen readers, read by the live region of `<Calendar.Root>`. */
+	/** Text for screen readers, read by the live region of `<FullCalendar.Root>`. */
 	announcement = $state('');
 	touchDragDelay = $state(400);
 	/** True while events of the visible range are being loaded. */
 	loading = $state(false);
-	/** Views registered by `<Calendar.View>`, in order. */
+	/** Views registered by `<FullCalendar.View>`, in order. */
 	readonly views = new SvelteMap<string, ViewDefinition>();
 	calendars: CalendarSource[] = $state.raw([]);
 	/** Ids of calendars whose events are not shown. */
@@ -395,7 +395,7 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 	);
 	readonly title = $derived(formatTitle(this));
 
-	/** Registers a view (done by `<Calendar.View>`); returns a function that unregisters it. */
+	/** Registers a view (done by `<FullCalendar.View>`); returns a function that unregisters it. */
 	registerView(definition: ViewDefinition) {
 		this.views.set(definition.name, definition);
 		return () => {
@@ -403,7 +403,7 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 		};
 	}
 
-	/** Loads the events of `range` when `loadEvents` is set; `<Calendar.Root>` calls it on navigation. */
+	/** Loads the events of `range` when `loadEvents` is set; `<FullCalendar.Root>` calls it on navigation. */
 	ensureLoaded(range: DateRange = this.range) {
 		return this.#loader?.ensure(range) ?? Promise.resolve();
 	}

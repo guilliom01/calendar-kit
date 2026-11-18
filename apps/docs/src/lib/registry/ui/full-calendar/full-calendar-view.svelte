@@ -11,7 +11,7 @@
 
 	const calendar = getCalendar();
 
-	// Registering makes the view selectable (and listed by <Calendar.ViewSwitcher>).
+	// Registering makes the view selectable (and listed by <FullCalendar.ViewSwitcher>).
 	$effect.pre(() => calendar.registerView({ ...definition }));
 </script>
 

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { toZoned, type CalendarDate } from '@internationalized/date';
 	import type { CalendarEvent, DateRange } from '@calendar-kit/core';
-	import * as Calendar from '#lib/registry/ui/calendar/index.js';
-	import { CalendarState } from '#lib/registry/ui/calendar/index.js';
+	import * as FullCalendar from '#lib/registry/ui/full-calendar/index.js';
+	import { CalendarState } from '#lib/registry/ui/full-calendar/index.js';
 	import { MonthView } from '#lib/registry/ui/month-view/index.js';
 
 	const timeZone = 'America/Lima';
@@ -40,12 +40,12 @@
 	<p class="text-sm text-muted-foreground" data-testid="requests">
 		Meses pedidos: {requests.join(', ')}
 	</p>
-	<Calendar.Root state={calendar} class="flex-1">
-		<Calendar.Toolbar>
-			<Calendar.Nav />
-			<Calendar.Title />
-			<Calendar.Loading />
-		</Calendar.Toolbar>
-		<Calendar.View name="month"><MonthView class="flex-1" /></Calendar.View>
-	</Calendar.Root>
+	<FullCalendar.Root state={calendar} class="flex-1">
+		<FullCalendar.Toolbar>
+			<FullCalendar.Nav />
+			<FullCalendar.Title />
+			<FullCalendar.Loading />
+		</FullCalendar.Toolbar>
+		<FullCalendar.View name="month"><MonthView class="flex-1" /></FullCalendar.View>
+	</FullCalendar.Root>
 </main>

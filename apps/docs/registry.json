@@ -33,7 +33,7 @@
 			]
 		},
 		{
-			"name": "calendar",
+			"name": "full-calendar",
 			"type": "registry:ui",
 			"title": "Calendar",
 			"description": "Calendar building blocks: Root, View, Toolbar, Nav, Title, ViewSwitcher, NewEvent, UndoRedo, TimeZoneSelect and Loading. Add only the views you need.",
@@ -41,47 +41,47 @@
 			"registryDependencies": ["button", "utils", "./calendar-state.json"],
 			"files": [
 				{
-					"path": "src/lib/registry/ui/calendar/calendar-loading.svelte",
+					"path": "src/lib/registry/ui/full-calendar/full-calendar-loading.svelte",
 					"type": "registry:ui"
 				},
 				{
-					"path": "src/lib/registry/ui/calendar/calendar-nav.svelte",
+					"path": "src/lib/registry/ui/full-calendar/full-calendar-nav.svelte",
 					"type": "registry:ui"
 				},
 				{
-					"path": "src/lib/registry/ui/calendar/calendar-new-event.svelte",
+					"path": "src/lib/registry/ui/full-calendar/full-calendar-new-event.svelte",
 					"type": "registry:ui"
 				},
 				{
-					"path": "src/lib/registry/ui/calendar/calendar-root.svelte",
+					"path": "src/lib/registry/ui/full-calendar/full-calendar-root.svelte",
 					"type": "registry:ui"
 				},
 				{
-					"path": "src/lib/registry/ui/calendar/calendar-time-zone-select.svelte",
+					"path": "src/lib/registry/ui/full-calendar/full-calendar-time-zone-select.svelte",
 					"type": "registry:ui"
 				},
 				{
-					"path": "src/lib/registry/ui/calendar/calendar-title.svelte",
+					"path": "src/lib/registry/ui/full-calendar/full-calendar-title.svelte",
 					"type": "registry:ui"
 				},
 				{
-					"path": "src/lib/registry/ui/calendar/calendar-toolbar.svelte",
+					"path": "src/lib/registry/ui/full-calendar/full-calendar-toolbar.svelte",
 					"type": "registry:ui"
 				},
 				{
-					"path": "src/lib/registry/ui/calendar/calendar-undo-redo.svelte",
+					"path": "src/lib/registry/ui/full-calendar/full-calendar-undo-redo.svelte",
 					"type": "registry:ui"
 				},
 				{
-					"path": "src/lib/registry/ui/calendar/calendar-view-switcher.svelte",
+					"path": "src/lib/registry/ui/full-calendar/full-calendar-view-switcher.svelte",
 					"type": "registry:ui"
 				},
 				{
-					"path": "src/lib/registry/ui/calendar/calendar-view.svelte",
+					"path": "src/lib/registry/ui/full-calendar/full-calendar-view.svelte",
 					"type": "registry:ui"
 				},
 				{
-					"path": "src/lib/registry/ui/calendar/index.ts",
+					"path": "src/lib/registry/ui/full-calendar/index.ts",
 					"type": "registry:ui"
 				}
 			]

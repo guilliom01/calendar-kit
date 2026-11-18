@@ -65,7 +65,7 @@
 	</li>
 	<li>
 		Every pointer action has a keyboard path: the dialog edits dates and times, and <code
-			>Calendar.NewEvent</code
+			>FullCalendar.NewEvent</code
 		> creates events.
 	</li>
 </ul>

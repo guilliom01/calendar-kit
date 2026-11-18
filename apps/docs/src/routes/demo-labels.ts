@@ -1,4 +1,4 @@
-import type { CalendarLabels } from '#lib/registry/ui/calendar/index.js';
+import type { CalendarLabels } from '#lib/registry/ui/full-calendar/index.js';
 
 /** Spanish texts for everything Intl cannot translate. */
 export const spanishLabels: Partial<CalendarLabels> = {

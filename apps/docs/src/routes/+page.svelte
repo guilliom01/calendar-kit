@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { today } from '@internationalized/date';
-	import * as Calendar from '#lib/registry/ui/calendar/index.js';
-	import { CalendarState } from '#lib/registry/ui/calendar/index.js';
+	import * as FullCalendar from '#lib/registry/ui/full-calendar/index.js';
+	import { CalendarState } from '#lib/registry/ui/full-calendar/index.js';
 	import { AgendaView } from '#lib/registry/ui/agenda-view/index.js';
 	import { CalendarList } from '#lib/registry/ui/calendar-list/index.js';
 	import { CalendarSearch } from '#lib/registry/ui/calendar-search/index.js';
@@ -44,23 +44,23 @@
 	<h1 class="text-2xl font-semibold">Calendario completo</h1>
 
 	<!-- Every block composed together. Each one is optional: keep only what you need. -->
-	<Calendar.Root state={calendar} class="flex-1">
-		<Calendar.Toolbar>
-			<Calendar.NewEvent />
-			<Calendar.Nav />
-			<Calendar.Title />
-			<Calendar.Loading />
+	<FullCalendar.Root state={calendar} class="flex-1">
+		<FullCalendar.Toolbar>
+			<FullCalendar.NewEvent />
+			<FullCalendar.Nav />
+			<FullCalendar.Title />
+			<FullCalendar.Loading />
 			<CalendarSearch class="w-48" />
 			<div class="ms-auto flex flex-wrap items-center gap-2">
 				<Exchange.ImportIcs onImport={({ warnings }) => (importWarnings = warnings)} />
 				<Exchange.ExportIcs filename="calendario.ics" name="calendar-kit" />
 				<Exchange.ExportCsv filename="calendario.csv" />
 				<Exchange.Print />
-				<Calendar.TimeZoneSelect />
-				<Calendar.UndoRedo />
-				<Calendar.ViewSwitcher />
+				<FullCalendar.TimeZoneSelect />
+				<FullCalendar.UndoRedo />
+				<FullCalendar.ViewSwitcher />
 			</div>
-		</Calendar.Toolbar>
+		</FullCalendar.Toolbar>
 		{#if importWarnings.length}
 			<ul class="rounded-lg border p-3 text-sm text-muted-foreground" data-testid="import-warnings">
 				{#each importWarnings as warning (warning)}<li>{warning}</li>{/each}
@@ -71,20 +71,20 @@
 			<CalendarList class="shrink-0 md:w-36 print:hidden" />
 			<EventContextMenu class="min-w-0">
 				<EventPreview>
-					<Calendar.View name="month"><MonthView class="flex-1" /></Calendar.View>
-					<Calendar.View name="week"><TimeGrid class="flex-1" /></Calendar.View>
-					<Calendar.View name="day"><TimeGrid class="flex-1" /></Calendar.View>
-					<Calendar.View name="agenda"
-						><AgendaView class="flex-1" resources={demoResources} /></Calendar.View
+					<FullCalendar.View name="month"><MonthView class="flex-1" /></FullCalendar.View>
+					<FullCalendar.View name="week"><TimeGrid class="flex-1" /></FullCalendar.View>
+					<FullCalendar.View name="day"><TimeGrid class="flex-1" /></FullCalendar.View>
+					<FullCalendar.View name="agenda"
+						><AgendaView class="flex-1" resources={demoResources} /></FullCalendar.View
 					>
-					<Calendar.View name="year"><YearView class="flex-1" /></Calendar.View>
-					<Calendar.View name="timeline">
+					<FullCalendar.View name="year"><YearView class="flex-1" /></FullCalendar.View>
+					<FullCalendar.View name="timeline">
 						<TimelineView class="flex-1" resources={demoResources} />
-					</Calendar.View>
-					<Calendar.View name="resources">
+					</FullCalendar.View>
+					<FullCalendar.View name="resources">
 						<TimeGrid class="flex-1" resources={demoResources} />
-					</Calendar.View>
-					<Calendar.View name="gantt"><GanttView class="flex-1" /></Calendar.View>
+					</FullCalendar.View>
+					<FullCalendar.View name="gantt"><GanttView class="flex-1" /></FullCalendar.View>
 				</EventPreview>
 			</EventContextMenu>
 		</div>
@@ -96,5 +96,5 @@
 		</EventDialog>
 		<RecurrenceScopeDialog />
 		<ChangeConfirmDialog />
-	</Calendar.Root>
+	</FullCalendar.Root>
 </main>

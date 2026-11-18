@@ -3,39 +3,39 @@
 	import Code from '#lib/docs/code.svelte';
 	import PropsTable from '#lib/docs/props-table.svelte';
 
-	const full = `<Calendar.Root state={calendar}>
-	<Calendar.Toolbar>
-		<Calendar.NewEvent />
-		<Calendar.Nav />
-		<Calendar.Title />
-		<Calendar.Loading />
-		<Calendar.TimeZoneSelect />
-		<Calendar.UndoRedo />
-		<Calendar.ViewSwitcher />
-	</Calendar.Toolbar>
+	const full = `<FullCalendar.Root state={calendar}>
+	<FullCalendar.Toolbar>
+		<FullCalendar.NewEvent />
+		<FullCalendar.Nav />
+		<FullCalendar.Title />
+		<FullCalendar.Loading />
+		<FullCalendar.TimeZoneSelect />
+		<FullCalendar.UndoRedo />
+		<FullCalendar.ViewSwitcher />
+	</FullCalendar.Toolbar>
 
-	<Calendar.View name="month"><MonthView /></Calendar.View>
-	<Calendar.View name="week"><TimeGrid /></Calendar.View>
-	<Calendar.View name="day"><TimeGrid /></Calendar.View>
-	<Calendar.View name="agenda"><AgendaView /></Calendar.View>
-	<Calendar.View name="year"><YearView /></Calendar.View>
-	<Calendar.View name="timeline"><TimelineView {resources} /></Calendar.View>
-	<Calendar.View name="resources"><TimeGrid {resources} /></Calendar.View>
-	<Calendar.View name="gantt"><GanttView /></Calendar.View>
+	<FullCalendar.View name="month"><MonthView /></FullCalendar.View>
+	<FullCalendar.View name="week"><TimeGrid /></FullCalendar.View>
+	<FullCalendar.View name="day"><TimeGrid /></FullCalendar.View>
+	<FullCalendar.View name="agenda"><AgendaView /></FullCalendar.View>
+	<FullCalendar.View name="year"><YearView /></FullCalendar.View>
+	<FullCalendar.View name="timeline"><TimelineView {resources} /></FullCalendar.View>
+	<FullCalendar.View name="resources"><TimeGrid {resources} /></FullCalendar.View>
+	<FullCalendar.View name="gantt"><GanttView /></FullCalendar.View>
 
 	<EventDialog {resources} />
 	<RecurrenceScopeDialog />
 	<ChangeConfirmDialog />
-</Calendar.Root>`;
+</FullCalendar.Root>`;
 
-	const customView = `<Calendar.View
+	const customView = `<FullCalendar.View
 	name="3days"
 	label="3 days"
 	unit="days"
 	range={(date) => ({ start: date, end: date.add({ days: 3 }) })}
 >
 	<MyThreeDayView />
-</Calendar.View>`;
+</FullCalendar.View>`;
 
 	const eventContent = `<MonthView>
 	{#snippet eventContent(event)}
@@ -63,7 +63,7 @@
 	{#snippet extra({ event, actions })}
 		<ContextMenu.Item onSelect={() => share(event)}>Share</ContextMenu.Item>
 	{/snippet}
-	<Calendar.View name="month"><MonthView /></Calendar.View>
+	<FullCalendar.View name="month"><MonthView /></FullCalendar.View>
 </EventContextMenu>`;
 
 	const recurrence = `<EventDialog>
@@ -105,13 +105,13 @@
 <p>A calendar with every block looks like this. Keep only the lines you need:</p>
 <Code code={full} />
 
-<h2>calendar</h2>
+<h2>full-calendar</h2>
 <p>
-	The parts every calendar uses. <code>Calendar.Root</code> shares the state with everything inside it;
-	the rest are optional.
+	The parts every calendar uses. <code>FullCalendar.Root</code> shares the state with everything inside
+	it; the rest are optional.
 </p>
 <PropsTable
-	caption="Calendar parts"
+	caption="FullCalendar parts"
 	rows={[
 		{
 			name: 'Root',

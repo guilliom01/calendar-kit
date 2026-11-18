@@ -9,12 +9,12 @@
 	let warnings: string[] = $state([]);
 ${closeScript}
 
-<Calendar.Toolbar>
+<FullCalendar.Toolbar>
 	<Exchange.ImportIcs onImport={(result) => (warnings = result.warnings)} />
 	<Exchange.ExportIcs filename="team.ics" name="Team" />
 	<Exchange.ExportCsv filename="team.csv" />
 	<Exchange.Print />
-</Calendar.Toolbar>`;
+</FullCalendar.Toolbar>`;
 
 	const core = `import { parseICS, toICS, toCSV } from '@calendar-kit/core';
 

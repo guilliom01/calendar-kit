@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getDayOfWeek, today } from '@internationalized/date';
-	import * as Calendar from '#lib/registry/ui/calendar/index.js';
-	import { CalendarState } from '#lib/registry/ui/calendar/index.js';
+	import * as FullCalendar from '#lib/registry/ui/full-calendar/index.js';
+	import { CalendarState } from '#lib/registry/ui/full-calendar/index.js';
 	import { MonthView } from '#lib/registry/ui/month-view/index.js';
 	import { demoEvents } from '../demo-events.js';
 
@@ -67,11 +67,11 @@
 	<p class="rounded-lg border p-3 text-sm" aria-live="polite" data-testid="message">
 		{message || 'Arrastra un evento o haz clic en un día vacío.'}
 	</p>
-	<Calendar.Root state={calendar} class="flex-1">
-		<Calendar.Toolbar>
-			<Calendar.Nav />
-			<Calendar.Title />
-		</Calendar.Toolbar>
-		<Calendar.View name="month"><MonthView class="flex-1" /></Calendar.View>
-	</Calendar.Root>
+	<FullCalendar.Root state={calendar} class="flex-1">
+		<FullCalendar.Toolbar>
+			<FullCalendar.Nav />
+			<FullCalendar.Title />
+		</FullCalendar.Toolbar>
+		<FullCalendar.View name="month"><MonthView class="flex-1" /></FullCalendar.View>
+	</FullCalendar.Root>
 </main>
