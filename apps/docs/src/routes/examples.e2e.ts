@@ -11,8 +11,20 @@ const open = (page: Page, slug: string) => page.goto(`/docs/examples/${slug}`);
 
 test("the examples index links every example", async ({ page }) => {
   await page.goto("/docs/examples");
-  for (const name of ["Basic", "Events", "Views", "Editing"]) {
-    await expect(page.getByRole("link", { name: new RegExp(`^${name}`) })).toBeVisible();
+  for (const name of [
+    "Basic",
+    "Events",
+    "Views",
+    "Editing",
+    "Recurring events",
+    "Time zones",
+    "Resources",
+    "Gantt",
+  ]) {
+    // Inside the list: the docs menu also has a "Recurring events" page.
+    await expect(
+      page.locator("ol").getByRole("link", { name: new RegExp(`^${name}`) }),
+    ).toBeVisible();
   }
 });
 
@@ -63,4 +75,46 @@ test("editing: create an event, then undo it", async ({ page }) => {
 
   await example(page).getByRole("button", { name: "Deshacer" }).click();
   await expect(example(page).getByRole("button", { name: /Clase de cerámica/ })).toHaveCount(0);
+});
+
+test("recurring: a weekly series, and changing one occurrence asks for its scope", async ({
+  page,
+}) => {
+  await open(page, "recurring");
+  await example(page).getByRole("button", { name: "semana", exact: true }).click();
+  const classes = example(page).getByRole("button", { name: /Clase de inglés/ });
+  await expect(classes).toHaveCount(2);
+  await classes.first().click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Título").fill("Clase de inglés (aula 3)");
+  await dialog.getByRole("button", { name: "Guardar" }).click();
+  await expect(
+    page.getByRole("dialog").getByRole("heading", { name: "Editar evento recurrente" }),
+  ).toBeVisible();
+});
+
+test("time zones: the same event moves on screen with the calendar's zone", async ({ page }) => {
+  await open(page, "time-zones");
+  const madrid = example(page).getByRole("button", { name: /Llamada con Madrid/ });
+  await expect(madrid).toContainText("10:00 – 11:00 a. m.");
+  await example(page).getByRole("combobox", { name: "Zona horaria" }).selectOption("Europe/Madrid");
+  await expect(madrid).toContainText("4:00 – 5:00 p. m.");
+});
+
+test("resources: columns per resource, and rows in the timeline", async ({ page }) => {
+  await open(page, "resources");
+  await expect(example(page).getByText("Sala A", { exact: true })).toBeVisible();
+  // One event, two resources (Sala B and Luis): it shows in both columns.
+  await expect(example(page).getByRole("button", { name: /Demo al cliente/ })).toHaveCount(2);
+  await example(page).getByRole("button", { name: "Línea de tiempo", exact: true }).click();
+  await expect(example(page).getByRole("button", { name: "Equipo", exact: true })).toHaveAttribute(
+    "aria-expanded",
+    "true",
+  );
+});
+
+test("gantt: tasks with progress and dependency arrows", async ({ page }) => {
+  await open(page, "gantt");
+  await expect(example(page).locator("[data-event-id]")).toHaveCount(4);
+  await expect(example(page).locator("svg path[marker-end]")).toHaveCount(3);
 });

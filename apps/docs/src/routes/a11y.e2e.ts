@@ -93,6 +93,10 @@ for (const colorScheme of ["light", "dark"] as const) {
       "/docs/examples/events",
       "/docs/examples/views",
       "/docs/examples/editing",
+      "/docs/examples/recurring",
+      "/docs/examples/time-zones",
+      "/docs/examples/resources",
+      "/docs/examples/gantt",
     ]) {
       await page.goto(path);
       expect(await scan(page), path).toEqual([]);
