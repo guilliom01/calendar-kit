@@ -8,6 +8,7 @@ export const spanishLabels: Partial<CalendarLabels> = {
 	editEvent: 'Editar evento',
 	title: 'Título',
 	location: 'Lugar',
+	endBeforeStart: 'El fin debe ser posterior al inicio.',
 	description: 'Descripción',
 	start: 'Inicio',
 	end: 'Fin',

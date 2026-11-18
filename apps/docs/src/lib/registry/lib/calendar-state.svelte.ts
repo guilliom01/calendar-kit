@@ -38,6 +38,7 @@ export const defaultLabels = {
 	editEvent: 'Edit event',
 	title: 'Title',
 	location: 'Location',
+	endBeforeStart: 'The end must be after the start.',
 	description: 'Description',
 	start: 'Start',
 	end: 'End',
@@ -231,6 +232,12 @@ export interface CalendarStateOptions<T extends CalendarEvent> extends EventStor
 	labels?: Partial<CalendarLabels>;
 	/** Shows only the events it returns true for, in every view. Change it later with `filter`. */
 	filter?(event: T): boolean;
+	/**
+	 * Your rules for the event dialog: messages by field (`title`, `start`, `end`, `location`,
+	 * `description`, or any other key for a general message). Nothing is saved while one is
+	 * returned. The dialog already checks that the end is after the start.
+	 */
+	validate?(event: T): Record<string, string> | void;
 	/** Calendars events belong to (`calendarId`): their colors, and which ones can be hidden. */
 	calendars?: CalendarSource[];
 	/** Builds ids for events created in the UI. Your backend can replace them in `onMutate`. */
@@ -468,6 +475,11 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 			(event) =>
 				(!this.filter || this.filter(event)) && matchesQuery(event, this.query, this.locale)
 		);
+	}
+
+	/** Messages from the `validate` option for `event`, by field. */
+	validate(event: T): Record<string, string> {
+		return this.#options.validate?.(event) ?? {};
 	}
 
 	/** CSS color of an event: its own, its calendar's, or the theme's primary color. */

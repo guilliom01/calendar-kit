@@ -68,3 +68,17 @@ for (const colorScheme of ['light', 'dark'] as const) {
 		expect(await scan(page), 'compact month').toEqual([]);
 	});
 }
+
+for (const colorScheme of ['light', 'dark'] as const) {
+	test(`validation messages pass WCAG 2.1 AA in ${colorScheme} mode`, async ({ page }) => {
+		await page.emulateMedia({ colorScheme });
+		await page.clock.setFixedTime(new Date('2026-11-17T14:00:00-05:00'));
+		await page.goto('/');
+		await page.getByRole('button', { name: /Svelte workshop/ }).click();
+		const dialog = page.getByRole('dialog');
+		await dialog.getByLabel('Fin', { exact: true }).first().fill('2026-11-10');
+		await dialog.getByRole('button', { name: 'Guardar' }).click();
+		await expect(dialog.getByText('El fin debe ser posterior al inicio.')).toBeVisible();
+		expect(await scan(page), 'dialog with an error').toEqual([]);
+	});
+}

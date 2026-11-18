@@ -1369,3 +1369,30 @@ test('an event keeps a location and a description, shown in its preview and foun
 	await expect(page.getByRole('button', { name: /Svelte workshop/ })).toBeVisible();
 	await expect(page.getByRole('button', { name: /Daily standup/ })).toHaveCount(0);
 });
+
+test.describe('event dialog validation', () => {
+	test('an end before the start is reported next to the field, not silently fixed', async ({
+		page
+	}) => {
+		await page.getByRole('button', { name: /Svelte workshop/ }).click();
+		const dialog = page.getByRole('dialog');
+		const end = dialog.getByLabel('Fin', { exact: true }).first();
+		await end.fill('2026-11-10');
+		await dialog.getByRole('button', { name: 'Guardar' }).click();
+
+		await expect(dialog.getByText('El fin debe ser posterior al inicio.')).toBeVisible();
+		await expect(end).toHaveAttribute('aria-invalid', 'true');
+		await expect(end).toBeFocused();
+		await expect(dialog).toBeVisible();
+	});
+
+	test('the developer adds rules with validate', async ({ page }) => {
+		await page.goto('/ganchos');
+		await page.getByRole('button', { name: /Svelte workshop/ }).click();
+		const dialog = page.getByRole('dialog');
+		await dialog.getByLabel('Título').fill('');
+		await dialog.getByRole('button', { name: 'Guardar' }).click();
+		await expect(dialog.getByText('El título es obligatorio.')).toBeVisible();
+		await expect(dialog.getByLabel('Título')).toHaveAttribute('aria-invalid', 'true');
+	});
+});

@@ -17,7 +17,6 @@
 		formatRRule,
 		isAllDay,
 		parseRRule,
-		resizeEvent,
 		WEEKDAYS,
 		type CalendarEvent,
 		type RecurrenceRule,
@@ -222,22 +221,57 @@
 		if (allDay) {
 			const start = parseDate(startDate);
 			const lastDay = parseDate(endDate);
-			const end = (lastDay.compare(start) < 0 ? start : lastDay).add({ days: 1 });
-			return { ...base, start, end };
+			return { ...base, start, end: lastDay.add({ days: 1 }) };
 		}
-		const start = zoned(startDate, startTime);
-		return resizeEvent({ ...base, start, end: start }, zoned(endDate, endTime), {
-			minDuration: calendar.snapStep
-		});
+		return { ...base, start: zoned(startDate, startTime), end: zoned(endDate, endTime) };
+	}
+
+	/** Field ids, so a message can sit next to (and point to) its field. */
+	const fieldIds: Record<string, string> = {
+		title: 'calendar-event-title',
+		location: 'calendar-event-location',
+		start: 'calendar-event-start-date',
+		end: 'calendar-event-end-date',
+		description: 'calendar-event-description'
+	};
+
+	/** Messages by field (`title`, `end`…); other keys show above the buttons. */
+	let errors: Record<string, string> = $state({});
+	const otherErrors = $derived(
+		Object.entries(errors)
+			.filter(([field]) => !(field in fieldIds))
+			.map(([, message]) => message)
+	);
+	const clear = (field: string) => delete errors[field];
+	const invalid = (field: string) => ({
+		'aria-invalid': errors[field] ? ('true' as const) : undefined,
+		'aria-describedby': errors[field] ? `${fieldIds[field]}-error` : undefined
+	});
+
+	/** The built-in rule (the end after the start), then the state's `validate`. */
+	function check(event: CalendarEvent) {
+		const found: Record<string, string> = {};
+		if ((event.end as typeof event.start).compare(event.start as never) <= 0) {
+			found.end = labels.endBeforeStart;
+		}
+		return { ...found, ...calendar.validate(event) };
 	}
 
 	// Native select styled like the shadcn input, for accessibility and mobile pickers.
 	const selectClass =
 		'h-9 w-full rounded-md border border-input bg-transparent px-2.5 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30';
 
-	function submit(event: SubmitEvent) {
-		event.preventDefault();
-		calendar.saveDraft(buildEvent());
+	function submit(submitEvent: SubmitEvent) {
+		submitEvent.preventDefault();
+		const event = buildEvent();
+		errors = check(event);
+		const first = Object.keys(errors)[0];
+		if (first) {
+			// Nothing is saved or corrected: the user sees why and fixes it.
+			document.getElementById(fieldIds[first] ?? '')?.focus();
+			return;
+		}
+		calendar.saveDraft(event);
 	}
 
 	function remove() {
@@ -245,6 +279,12 @@
 		void calendar.remove(original.id);
 	}
 </script>
+
+{#snippet message(field: string)}
+	{#if errors[field]}
+		<p id="{fieldIds[field]}-error" class="text-sm text-destructive">{errors[field]}</p>
+	{/if}
+{/snippet}
 
 <form class="grid gap-4" onsubmit={submit}>
 	<Dialog.Header>
@@ -258,12 +298,22 @@
 			bind:value={title}
 			placeholder={labels.untitled}
 			autocomplete="off"
+			oninput={() => clear('title')}
+			{...invalid('title')}
 		/>
+		{@render message('title')}
 	</div>
 
 	<div class="grid gap-2">
 		<Label for="calendar-event-location">{labels.location}</Label>
-		<Input id="calendar-event-location" bind:value={location} autocomplete="off" />
+		<Input
+			id="calendar-event-location"
+			bind:value={location}
+			autocomplete="off"
+			oninput={() => clear('location')}
+			{...invalid('location')}
+		/>
+		{@render message('location')}
 	</div>
 
 	<div class="flex items-center gap-2">
@@ -273,7 +323,14 @@
 
 	<div class="grid grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-2">
 		<Label for="calendar-event-start-date">{labels.start}</Label>
-		<Input id="calendar-event-start-date" type="date" bind:value={startDate} required />
+		<Input
+			id="calendar-event-start-date"
+			type="date"
+			bind:value={startDate}
+			required
+			oninput={() => clear('end')}
+			{...invalid('start')}
+		/>
 		{#if allDay}<span></span>{:else}
 			<Input
 				aria-label="{labels.start}, {hourLabel}"
@@ -286,7 +343,14 @@
 		{/if}
 
 		<Label for="calendar-event-end-date">{labels.end}</Label>
-		<Input id="calendar-event-end-date" type="date" bind:value={endDate} required />
+		<Input
+			id="calendar-event-end-date"
+			type="date"
+			bind:value={endDate}
+			required
+			oninput={() => clear('end')}
+			{...invalid('end')}
+		/>
 		{#if allDay}<span></span>{:else}
 			<Input
 				aria-label="{labels.end}, {hourLabel}"
@@ -295,8 +359,11 @@
 				bind:value={endTime}
 				required
 				class="w-32"
+				oninput={() => clear('end')}
+				aria-invalid={errors.end ? 'true' : undefined}
 			/>
 		{/if}
+		<div class="col-span-full empty:hidden">{@render message('start')}{@render message('end')}</div>
 	</div>
 
 	{#if recurrence}
@@ -360,7 +427,10 @@
 			id="calendar-event-description"
 			rows="3"
 			class="min-h-16 w-full rounded-md border border-input bg-transparent px-2.5 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-			bind:value={description}></textarea>
+			bind:value={description}
+			oninput={() => clear('description')}
+			{...invalid('description')}></textarea>
+		{@render message('description')}
 	</div>
 
 	{#if calendar.calendars.length}
@@ -429,6 +499,12 @@
 			{/each}
 		</div>
 	</fieldset>
+
+	{#if otherErrors.length}
+		<ul role="alert" class="grid gap-1 text-sm text-destructive">
+			{#each otherErrors as text (text)}<li>{text}</li>{/each}
+		</ul>
+	{/if}
 
 	<Dialog.Footer class="gap-2 sm:justify-between">
 		{#if !draft.isNew && calendar.canEdit(original, 'delete')}

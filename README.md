@@ -119,17 +119,18 @@ The demo page `/personalizar` uses them in the month, week and timeline views.
 
 Every interaction runs your hook first; return `false` to skip the built-in behavior.
 
-| Option               | When                                                      | Built-in behavior                               |
-| -------------------- | --------------------------------------------------------- | ----------------------------------------------- |
-| `onEventClick`       | An event is clicked or activated                          | Open the event dialog (if you added one)        |
-| `onMoreClick`        | "+N" is clicked in the month view                         | A popover listing every event of that day       |
-| `onEventContextMenu` | An event is right-clicked (or Shift+F10)                  | The `event-context-menu` block, if you added it |
-| `onExternalDrop`     | An item from `draggable` is dropped                       | Create an event with its title there            |
-| `onDateClick`        | A day number or day header is clicked                     | Show the day view (if you registered one)       |
-| `onSelect`           | An empty day or time range is picked                      | Open the dialog for a new event                 |
-| `onEventChange`      | An event is dragged or resized                            | Save it. Return an event to save that instead   |
-| `resolveScope`       | A recurring event is changed                              | Ask "this / following / all" in the dialog      |
-| `isEditable`         | Per event and action (`move`, `resize`, `delete`, `edit`) | Everything is editable when `editable` is true  |
+| Option               | When                                                      | Built-in behavior                                                                     |
+| -------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `onEventClick`       | An event is clicked or activated                          | Open the event dialog (if you added one)                                              |
+| `onMoreClick`        | "+N" is clicked in the month view                         | A popover listing every event of that day                                             |
+| `onEventContextMenu` | An event is right-clicked (or Shift+F10)                  | The `event-context-menu` block, if you added it                                       |
+| `onExternalDrop`     | An item from `draggable` is dropped                       | Create an event with its title there                                                  |
+| `onDateClick`        | A day number or day header is clicked                     | Show the day view (if you registered one)                                             |
+| `onSelect`           | An empty day or time range is picked                      | Open the dialog for a new event                                                       |
+| `onEventChange`      | An event is dragged or resized                            | Save it. Return an event to save that instead                                         |
+| `resolveScope`       | A recurring event is changed                              | Ask "this / following / all" in the dialog                                            |
+| `isEditable`         | Per event and action (`move`, `resize`, `delete`, `edit`) | Everything is editable when `editable` is true                                        |
+| `validate`           | The event dialog is saved                                 | Only checks that the end is after the start; return `{ field: message }` to add rules |
 
 With `calendars: [{ id, title, color }]`, events join a calendar through `calendarId`, take its color when they have none, and hide with it (`hiddenCalendars`, or the `calendar-list` block).
 

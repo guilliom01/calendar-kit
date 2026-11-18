@@ -4,7 +4,9 @@
 	import { CalendarState } from '#lib/registry/ui/full-calendar/index.js';
 	import { MonthView } from '#lib/registry/ui/month-view/index.js';
 	import { draggable } from '#lib/registry/lib/calendar-drag.js';
+	import { EventDialog } from '#lib/registry/ui/event-dialog/index.js';
 	import { demoEvents } from '../demo-events.js';
+	import { spanishLabels } from '../demo-labels.js';
 
 	const timeZone = 'America/Lima';
 	let message = $state('');
@@ -13,7 +15,7 @@
 	const calendar = new CalendarState({
 		locale: 'es-PE',
 		timeZone,
-		labels: { moreEvents: { one: '{count} evento más', other: '{count} eventos más' } },
+		labels: spanishLabels,
 		events: demoEvents(today(timeZone), 'es-PE', timeZone).filter(
 			(event) => event.progress === undefined
 		),
@@ -36,6 +38,8 @@
 			message = `Más eventos el ${day.toString()}: ${events.length}`;
 			return false;
 		},
+		// Our own rule in the event dialog, next to the built-in ones.
+		validate: (event) => (event.title.trim() ? undefined : { title: 'El título es obligatorio.' }),
 		// Dropped items are only reported, never created.
 		onExternalDrop: ({ item, start }) => {
 			message = `Soltaste «${item.title}» el ${start.toString()}`;
@@ -85,5 +89,6 @@
 			<FullCalendar.Title />
 		</FullCalendar.Toolbar>
 		<FullCalendar.View name="month"><MonthView class="flex-1" /></FullCalendar.View>
+		<EventDialog />
 	</FullCalendar.Root>
 </main>

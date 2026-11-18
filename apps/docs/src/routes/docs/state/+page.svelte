@@ -163,6 +163,12 @@
 				'"+N" was clicked in the month view. Built-in: a popover listing every event of the day.'
 		},
 		{
+			name: 'validate(event)',
+			type: '{ [field]: message } | void',
+			description:
+				'Your rules for the event dialog, by field (title, start, end, location, description) or any other key for a general message. Nothing is saved while there is one. The dialog already checks that the end is after the start.'
+		},
+		{
 			name: 'onExternalDrop({ item, start, end, allDay, resourceIds })',
 			type: 'boolean | event | void',
 			description:
