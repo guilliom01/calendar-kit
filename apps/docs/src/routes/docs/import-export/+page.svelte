@@ -13,14 +13,16 @@ ${closeScript}
 	<Exchange.ImportIcs onImport={(result) => (warnings = result.warnings)} />
 	<Exchange.ExportIcs filename="team.ics" name="Team" />
 	<Exchange.ExportCsv filename="team.csv" />
+	<Exchange.ExportXlsx filename="team.xlsx" sheetName="Team" />
 	<Exchange.Print />
 </FullCalendar.Toolbar>`;
 
-	const core = `import { parseICS, toICS, toCSV } from '@calendar-kit/core';
+	const core = `import { parseICS, toICS, toCSV, toXLSX } from '@calendar-kit/core';
 
 const file = toICS(events, { name: 'Team' });
 const { events: imported, warnings } = parseICS(text, { timeZone: 'America/Lima' });
-const sheet = toCSV(visibleEvents, { timeZone: 'America/Lima' });`;
+const sheet = toCSV(visibleEvents, { timeZone: 'America/Lima' });
+const workbook = toXLSX(visibleEvents, { timeZone: 'America/Lima', sheetName: 'Team' }); // Uint8Array`;
 </script>
 
 <svelte:head><title>Import and export · calendar-kit docs</title></svelte:head>
@@ -45,16 +47,29 @@ const sheet = toCSV(visibleEvents, { timeZone: 'America/Lima' });`;
 	</li>
 </ul>
 
-<h2>CSV</h2>
+<h2>CSV and Excel</h2>
 <p>
-	Exports what the user sees: the visible range, with recurring events expanded, one row each with
-	local times. The file starts with a BOM so Excel reads accents correctly.
+	Both export what the user sees: the visible range, with recurring events expanded, one row each
+	with local times. Pass <code>events</code> to export something else (for example
+	<code>calendar.events</code>, with each series once).
 </p>
+<ul>
+	<li>
+		<code>ExportCsv</code>: plain text. It starts with a byte order mark so Excel reads accents and
+		ñ correctly; <code>bom={'{false}'}</code> leaves it out for other tools.
+	</li>
+	<li>
+		<code>ExportXlsx</code>: an Excel workbook (<code>toXLSX</code>, no dependencies) where start
+		and end are real dates Excel can sort and filter, and <code>all_day</code> is a boolean.
+		<code>sheetName</code> names the sheet.
+	</li>
+</ul>
 
 <h2>Print and PDF</h2>
 <p>
-	<code>Print</code> opens the browser's print dialog, which also saves as PDF. In print, the calendar
-	controls hide themselves and scrolling areas expand so nothing is cut.
+	<code>Print</code> opens the browser's print dialog, which also saves as PDF: that is the way to get
+	an image of the calendar. In print, the calendar controls hide themselves and scrolling areas expand
+	so nothing is cut.
 </p>
 
 <h2>Without the buttons</h2>

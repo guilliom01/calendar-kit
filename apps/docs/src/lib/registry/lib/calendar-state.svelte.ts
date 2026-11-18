@@ -96,6 +96,7 @@ export const defaultLabels = {
 	exportIcs: 'Export .ics',
 	importIcs: 'Import .ics',
 	exportCsv: 'Export CSV',
+	exportXlsx: 'Export Excel',
 	print: 'Print',
 	moreEvents: { one: '{count} more event', other: '{count} more events' } as PluralForms,
 	confirmMoveTitle: 'Move event?',

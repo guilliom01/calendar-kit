@@ -379,6 +379,10 @@
 					"type": "registry:ui"
 				},
 				{
+					"path": "src/lib/registry/ui/import-export/export-xlsx-button.svelte",
+					"type": "registry:ui"
+				},
+				{
 					"path": "src/lib/registry/ui/import-export/print-button.svelte",
 					"type": "registry:ui"
 				},

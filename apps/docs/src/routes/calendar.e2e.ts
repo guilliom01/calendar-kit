@@ -479,11 +479,35 @@ test('the demo navigation opens each page and marks the current one', async ({ p
 });
 
 test.describe('import and export', () => {
-	const readDownload = async (download: import('@playwright/test').Download) => {
+	const downloadBytes = async (download: import('@playwright/test').Download) => {
 		const chunks: Buffer[] = [];
 		for await (const chunk of (await download.createReadStream())!) chunks.push(chunk as Buffer);
-		return Buffer.concat(chunks).toString('utf8');
+		return Buffer.concat(chunks);
 	};
+	const readDownload = async (download: import('@playwright/test').Download) =>
+		(await downloadBytes(download)).toString('utf8');
+	const exportWith = (page: Page, name: string) =>
+		Promise.all([page.waitForEvent('download'), page.getByRole('button', { name }).click()]).then(
+			([download]) => download
+		);
+
+	test('exports an Excel workbook with the visible events', async ({ page }) => {
+		const download = await exportWith(page, 'Exportar Excel');
+		expect(download.suggestedFilename()).toBe('calendario.xlsx');
+		const bytes = await downloadBytes(download);
+		expect(bytes.subarray(0, 4).toString('latin1')).toBe('PK\x03\x04');
+		// Stored without compression, so the sheet's text is readable in the bytes.
+		expect(bytes.toString('utf8')).toContain('<t>Daily standup</t>');
+	});
+
+	test('the CSV starts with a BOM for Excel, unless the button turns it off', async ({ page }) => {
+		const withBom = await downloadBytes(await exportWith(page, 'Exportar CSV'));
+		expect([...withBom.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
+
+		await page.goto('/personalizar');
+		const plain = await downloadBytes(await exportWith(page, 'Exportar CSV'));
+		expect(plain.subarray(0, 2).toString('utf8')).toBe('id');
+	});
 
 	test('exports the events as .ics, with series and their rules', async ({ page }) => {
 		const [download] = await Promise.all([

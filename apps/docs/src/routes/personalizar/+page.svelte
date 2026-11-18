@@ -8,6 +8,7 @@
 	import * as ContextMenu from '#lib/registry/ui/context-menu/index.js';
 	import { EventContextMenu } from '#lib/registry/ui/event-context-menu/index.js';
 	import { EventPreview } from '#lib/registry/ui/event-preview/index.js';
+	import * as Exchange from '#lib/registry/ui/import-export/index.js';
 	import { cn } from '#lib/utils.js';
 	import { demoEvents, demoResources } from '../demo-events.js';
 	import { spanishLabels } from '../demo-labels.js';
@@ -48,7 +49,9 @@
 		<FullCalendar.Toolbar>
 			<FullCalendar.Nav />
 			<FullCalendar.Title />
-			<FullCalendar.ViewSwitcher class="ms-auto" />
+			<!-- A plain UTF-8 CSV, without the byte order mark Excel needs. -->
+			<Exchange.ExportCsv class="ms-auto" bom={false} filename="eventos.csv" />
+			<FullCalendar.ViewSwitcher />
 		</FullCalendar.Toolbar>
 
 		<EventContextMenu>

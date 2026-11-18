@@ -66,6 +66,7 @@
 				<Exchange.ImportIcs onImport={({ warnings }) => (importWarnings = warnings)} />
 				<Exchange.ExportIcs filename="calendario.ics" name="calendar-kit" />
 				<Exchange.ExportCsv filename="calendario.csv" />
+				<Exchange.ExportXlsx filename="calendario.xlsx" sheetName="Eventos" />
 				<Exchange.Print />
 				<FullCalendar.TimeZoneSelect />
 				<FullCalendar.UndoRedo />
