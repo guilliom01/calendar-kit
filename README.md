@@ -22,7 +22,7 @@ Requires [Bun](https://bun.sh).
 bun install
 bun run test     # core unit tests (Vitest) + docs e2e (Playwright)
 bun run check    # type checks
-bun run lint     # Prettier + ESLint
+bun run lint     # oxfmt (check) + ESLint
 bun run build    # builds core, the registry and the docs site
 ```
 

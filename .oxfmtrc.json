@@ -1,0 +1,29 @@
+{
+	"$schema": "./node_modules/oxfmt/configuration_schema.json",
+	"useTabs": true,
+	"singleQuote": true,
+	"trailingComma": "none",
+	"printWidth": 100,
+	"sortPackageJson": false,
+	"sortTailwindcss": {
+		"stylesheet": "./apps/docs/src/routes/layout.css"
+	},
+	"svelte": {},
+	"associations": [
+		{
+			"files": ["*.svelte"],
+			"language": "svelte"
+		}
+	],
+	"ignorePatterns": [
+		"package-lock.json",
+		"pnpm-lock.yaml",
+		"yarn.lock",
+		"bun.lock",
+		"bun.lockb",
+		"dist/",
+		".svelte-kit/",
+		"build/",
+		"apps/docs/static/r/"
+	]
+}

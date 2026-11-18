@@ -58,8 +58,7 @@
 		if (over.pointerType === 'touch') return;
 		const anchor = eventElement(over.target);
 		clearTimeout(timer);
-		if (!anchor)
-			hideSoon(); // grace period to cross empty space onto the card
+		if (!anchor) hideSoon(); // grace period to cross empty space onto the card
 		else if (anchor !== shown?.anchor) {
 			// Another event: the old card would cover the way, so it goes at once.
 			hide();

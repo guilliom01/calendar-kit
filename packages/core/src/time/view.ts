@@ -14,7 +14,14 @@ import type { WeekOptions } from './week.js';
  * - `gantt`: one row per event across the month.
  */
 export type CalendarView =
-	'month' | 'week' | 'day' | 'year' | 'agenda' | 'timeline' | 'resources' | 'gantt';
+	| 'month'
+	| 'week'
+	| 'day'
+	| 'year'
+	| 'agenda'
+	| 'timeline'
+	| 'resources'
+	| 'gantt';
 
 /** Range of days; `end` is exclusive. */
 export interface DateRange {
