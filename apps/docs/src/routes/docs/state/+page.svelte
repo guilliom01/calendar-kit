@@ -234,6 +234,8 @@
 
 <h2>Performance</h2>
 <p>Measured on a laptop with events spread over a year (2% of them weekly series):</p>
+<!-- Focusable so keyboard users can scroll it on narrow screens. -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div class="overflow-x-auto" tabindex="0" role="region" aria-label="Performance measurements">
 	<table>
 		<thead>
