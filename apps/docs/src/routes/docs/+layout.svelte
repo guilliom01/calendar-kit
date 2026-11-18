@@ -7,6 +7,7 @@
 
   const sections = [
     { href: resolve("/docs"), label: "Introduction" },
+    { href: resolve("/docs/examples"), label: "Examples" },
     { href: resolve("/docs/blocks"), label: "Blocks" },
     { href: resolve("/docs/state"), label: "State and hooks" },
     { href: resolve("/docs/recurrence"), label: "Recurring events" },
@@ -50,34 +51,34 @@
     font-weight: 700;
     margin-bottom: 1rem;
   }
-  .docs :global(h2) {
+  .docs :global(h2:not(.docs-example *)) {
     font-size: 1.25rem;
     font-weight: 600;
     margin-top: 2.5rem;
     margin-bottom: 0.75rem;
   }
-  .docs :global(h3) {
+  .docs :global(h3:not(.docs-example *)) {
     font-weight: 600;
     margin-top: 1.5rem;
     margin-bottom: 0.5rem;
   }
-  .docs :global(p),
-  .docs :global(ul) {
+  .docs :global(p:not(.docs-example *)),
+  .docs :global(ul:not(.docs-example *)) {
     margin-block: 0.75rem;
     line-height: 1.7;
     max-width: 72ch;
   }
-  .docs :global(ul) {
+  .docs :global(ul:not(.docs-example *)) {
     list-style: disc;
     padding-inline-start: 1.25rem;
   }
-  .docs :global(:not(pre) > code) {
+  .docs :global(:not(pre) > code:not(.docs-example *)) {
     font-size: 0.875em;
     background: var(--muted);
     border-radius: 0.25rem;
     padding: 0.1rem 0.3rem;
   }
-  .docs :global(a:not([aria-current])) {
+  .docs :global(a:not([aria-current]):not(.docs-example *)) {
     text-decoration: underline;
     text-underline-offset: 3px;
   }

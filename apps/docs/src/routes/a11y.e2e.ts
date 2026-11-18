@@ -82,3 +82,20 @@ for (const colorScheme of ["light", "dark"] as const) {
     expect(await scan(page), "dialog with an error").toEqual([]);
   });
 }
+
+for (const colorScheme of ["light", "dark"] as const) {
+  test(`the docs examples pass WCAG 2.1 AA in ${colorScheme} mode`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme });
+    await page.clock.setFixedTime(new Date("2026-11-17T14:00:00-05:00"));
+    for (const path of [
+      "/docs/examples",
+      "/docs/examples/basic",
+      "/docs/examples/events",
+      "/docs/examples/views",
+      "/docs/examples/editing",
+    ]) {
+      await page.goto(path);
+      expect(await scan(page), path).toEqual([]);
+    }
+  });
+}
