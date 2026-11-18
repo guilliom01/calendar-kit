@@ -377,22 +377,8 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 			? [this.date]
 			: weekDays(this.date, this.weekOptions)
 	);
-	/**
-	 * Events and occurrences of recurring events that overlap the visible range, without hidden
-	 * calendars and only those that pass `filter` and `query`.
-	 */
-	readonly visibleEvents = $derived(
-		expandEvents(
-			this.events.filter(
-				(event) => !event.calendarId || !this.hiddenCalendars.has(event.calendarId)
-			),
-			this.range,
-			this.timeZone
-		).filter(
-			(event) =>
-				(!this.filter || this.filter(event)) && matchesQuery(event, this.query, this.locale)
-		)
-	);
+	/** Events and occurrences in the visible range, as the views show them (see `eventsIn`). */
+	readonly visibleEvents = $derived(this.eventsIn(this.range));
 	readonly title = $derived(formatTitle(this));
 
 	/** Registers a view (done by `<FullCalendar.View>`); returns a function that unregisters it. */
@@ -434,6 +420,23 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 	/** Classes from the `eventClass` option, for views to add to an event's element. */
 	eventClass(event: T) {
 		return this.#options.eventClass?.(event);
+	}
+
+	/**
+	 * Events and occurrences of recurring events that overlap `range`, without hidden calendars and
+	 * only those that pass `filter` and `query`: what the views show for that range.
+	 */
+	eventsIn(range: DateRange) {
+		return expandEvents(
+			this.events.filter(
+				(event) => !event.calendarId || !this.hiddenCalendars.has(event.calendarId)
+			),
+			range,
+			this.timeZone
+		).filter(
+			(event) =>
+				(!this.filter || this.filter(event)) && matchesQuery(event, this.query, this.locale)
+		);
 	}
 
 	/** CSS color of an event: its own, its calendar's, or the theme's primary color. */

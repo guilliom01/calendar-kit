@@ -13,6 +13,9 @@ async function confirm(page: Page, action: 'Mover' | 'Cambiar') {
 	await expect(page.getByRole('dialog')).toBeHidden();
 }
 const viewButton = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
+/** A day button of the views, not of the mini calendar, which repeats the same names. */
+const dayButton = (page: Page, name: string) =>
+	page.getByRole('button', { name }).and(page.locator(':not([data-mini-date])'));
 
 test('month view shows the current month with its events', async ({ page }) => {
 	await expect(title(page)).toHaveText('noviembre de 2026');
@@ -53,7 +56,7 @@ test('week and day views show the time grid', async ({ page }) => {
 });
 
 test('clicking a day number opens that day', async ({ page }) => {
-	await page.getByRole('button', { name: 'miércoles, 18 de noviembre de 2026' }).click();
+	await dayButton(page, 'miércoles, 18 de noviembre de 2026').click();
 	await expect(title(page)).toHaveText('miércoles, 18 de noviembre de 2026');
 	await expect(page.getByText('Svelte workshop')).toBeVisible();
 });
@@ -129,7 +132,7 @@ test.describe('editing', () => {
 		box = (await workshop.boundingBox())!;
 		await drag(page, box.x + box.width / 2, box.y + 20, box.width, 0);
 		await confirm(page, 'Mover');
-		await page.getByRole('button', { name: 'jueves, 19 de noviembre de 2026' }).click();
+		await dayButton(page, 'jueves, 19 de noviembre de 2026').click();
 		await expect(page.getByRole('button', { name: /Svelte workshop/ })).toContainText(
 			'4:00 – 7:00 p. m.'
 		);
@@ -149,7 +152,7 @@ test.describe('editing', () => {
 		);
 		await confirm(page, 'Mover');
 
-		await page.getByRole('button', { name: 'jueves, 26 de noviembre de 2026' }).click();
+		await dayButton(page, 'jueves, 26 de noviembre de 2026').click();
 		await expect(page.getByRole('button', { name: 'Feriado' })).toBeVisible();
 	});
 
@@ -272,19 +275,19 @@ test.describe('recurring events', () => {
 
 	test('a monthly series on the last day lands on 30 and 31', async ({ page }) => {
 		const bills = page.getByRole('button', { name: 'Pago de servicios' });
-		await page.getByRole('button', { name: 'lunes, 30 de noviembre de 2026' }).click();
+		await dayButton(page, 'lunes, 30 de noviembre de 2026').click();
 		await expect(bills).toBeVisible();
 		await page.getByRole('button', { name: 'mañana' }).click();
 		await expect(bills).toHaveCount(0);
 
 		await viewButton(page, 'mes').click();
-		await page.getByRole('button', { name: 'jueves, 31 de diciembre de 2026' }).click();
+		await dayButton(page, 'jueves, 31 de diciembre de 2026').click();
 		await expect(bills).toBeVisible();
 	});
 });
 
 test('switching the time zone shows timed events at the new local time', async ({ page }) => {
-	await page.getByRole('button', { name: 'lunes, 16 de noviembre de 2026' }).click();
+	await dayButton(page, 'lunes, 16 de noviembre de 2026').click();
 	const review = page.getByRole('button', { name: /Design review/ });
 	await expect(review).toContainText('9:15 – 10:30 a. m.');
 
@@ -309,9 +312,7 @@ test.describe('more views', () => {
 		await viewButton(page, 'año').click();
 		await expect(title(page)).toHaveText('2026');
 
-		await page
-			.getByRole('button', { name: 'miércoles, 18 de noviembre de 2026, 3 eventos' })
-			.click();
+		await dayButton(page, 'miércoles, 18 de noviembre de 2026, 3 eventos').click();
 		await expect(title(page)).toHaveText('miércoles, 18 de noviembre de 2026');
 	});
 
@@ -412,7 +413,7 @@ test.describe('building blocks', () => {
 		await expect(page.getByTestId('panel')).toHaveText('Evento elegido: Svelte workshop');
 		await expect(page.getByRole('dialog')).toHaveCount(0);
 
-		await page.getByRole('button', { name: 'miércoles, 25 de noviembre de 2026' }).click();
+		await dayButton(page, 'miércoles, 25 de noviembre de 2026').click();
 		await expect(page.getByTestId('panel')).toHaveText('Día elegido: 2026-11-25');
 		await expect(title(page)).toHaveText('noviembre de 2026');
 	});
@@ -564,12 +565,8 @@ test.describe('import and export', () => {
 test.describe('languages and directions', () => {
 	test('counts use plural rules: "1 evento", "3 eventos"', async ({ page }) => {
 		await viewButton(page, 'año').click();
-		await expect(
-			page.getByRole('button', { name: 'martes, 17 de noviembre de 2026, 1 evento' })
-		).toBeVisible();
-		await expect(
-			page.getByRole('button', { name: 'miércoles, 18 de noviembre de 2026, 3 eventos' })
-		).toBeVisible();
+		await expect(dayButton(page, 'martes, 17 de noviembre de 2026, 1 evento')).toBeVisible();
+		await expect(dayButton(page, 'miércoles, 18 de noviembre de 2026, 3 eventos')).toBeVisible();
 	});
 
 	test('right-to-left pages drag toward the next day and mirror the gantt', async ({ page }) => {
@@ -586,7 +583,7 @@ test.describe('languages and directions', () => {
 		await page.mouse.move(box.x + box.width / 2 - box.width, box.y + 20, { steps: 5 });
 		await page.mouse.up();
 		await confirm(page, 'Mover');
-		await page.getByRole('button', { name: 'jueves, 19 de noviembre de 2026' }).click();
+		await dayButton(page, 'jueves, 19 de noviembre de 2026').click();
 		await expect(page.getByRole('button', { name: /Svelte workshop/ })).toContainText(
 			'3:00 – 6:00 p. m.'
 		);
@@ -612,6 +609,7 @@ test('the documentation covers every block and links its sections', async ({ pag
 		'year-view',
 		'timeline-view',
 		'gantt-view',
+		'mini-calendar',
 		'calendar-search',
 		'calendar-list',
 		'event-context-menu',
@@ -806,7 +804,7 @@ test.describe('keyboard move mode', () => {
 		await expect(live(page)).toHaveText('miércoles, 18 de noviembre de 2026');
 		await page.keyboard.press('Enter');
 
-		await page.getByRole('button', { name: 'miércoles, 18 de noviembre de 2026' }).first().click();
+		await dayButton(page, 'miércoles, 18 de noviembre de 2026').first().click();
 		await expect(page.getByRole('button', { name: 'Feriado' })).toBeVisible();
 	});
 
@@ -949,7 +947,7 @@ test.describe('converting between all-day and timed by dragging', () => {
 		);
 		await confirm(page, 'Mover');
 		await expect(workshop).not.toContainText(/\d:\d\d/);
-		await page.getByRole('button', { name: 'miércoles, 18 de noviembre de 2026' }).click();
+		await dayButton(page, 'miércoles, 18 de noviembre de 2026').click();
 		await expect(page.getByRole('button', { name: /Svelte workshop/ })).not.toContainText(
 			/\d:\d\d/
 		);
@@ -1014,7 +1012,7 @@ test.describe('resizing from both edges', () => {
 		await dragBy(page, conference.locator('.cursor-ew-resize').first(), -cell.width, 0);
 		await confirm(page, 'Cambiar');
 
-		await page.getByRole('button', { name: 'sábado, 21 de noviembre de 2026' }).click();
+		await dayButton(page, 'sábado, 21 de noviembre de 2026').click();
 		await expect(page.getByRole('button', { name: /Conferencia en Cusco/ })).toBeVisible();
 		// Tuesday 17 is today.
 		await page.getByRole('button', { name: 'hoy' }).click();
@@ -1187,5 +1185,40 @@ test.describe('event preview', () => {
 		await page.goto('/personalizar');
 		await page.getByRole('button', { name: 'Feriado' }).first().hover();
 		await expect(preview(page)).toHaveText('Vista previa propia: Feriado');
+	});
+});
+
+test.describe('mini calendar', () => {
+	const mini = (page: Page) => page.getByRole('grid', { name: 'noviembre de 2026' });
+
+	test('shows its own month and opens a day of another month', async ({ page }) => {
+		await expect(mini(page)).toBeVisible();
+		await page.getByRole('button', { name: 'diciembre de 2026', exact: true }).click();
+		const december = page.getByRole('grid', { name: 'diciembre de 2026' });
+		await december.getByRole('button', { name: /^jueves, 10 de diciembre de 2026/ }).click();
+		await expect(title(page)).toHaveText('diciembre de 2026');
+	});
+
+	test('marks days with events and the visible range', async ({ page }) => {
+		await expect(
+			mini(page).getByRole('button', { name: /^miércoles, 18 de noviembre de 2026, \d+ eventos/ })
+		).toBeVisible();
+		await expect(
+			mini(page).getByRole('button', { name: 'martes, 17 de noviembre de 2026', exact: false })
+		).toHaveAttribute('aria-current', 'date');
+	});
+
+	test('moves with the arrow keys and opens the focused day with Enter', async ({ page }) => {
+		await viewButton(page, 'semana').click();
+		const today = mini(page).getByRole('button', { name: /^martes, 17 de noviembre de 2026/ });
+		await today.focus();
+		await page.keyboard.press('ArrowDown');
+		await page.keyboard.press('ArrowRight');
+		await expect(
+			mini(page).getByRole('button', { name: /^miércoles, 25 de noviembre de 2026/ })
+		).toBeFocused();
+		await page.keyboard.press('Enter');
+		await expect(title(page)).toContainText('22');
+		await expect(title(page)).toContainText('28');
 	});
 });

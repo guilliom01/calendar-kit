@@ -323,6 +323,24 @@
 			]
 		},
 		{
+			"name": "mini-calendar",
+			"type": "registry:ui",
+			"title": "Mini calendar",
+			"description": "Optional: a small month to jump to any date, with dots on days that have events, the visible range shaded and arrow-key navigation.",
+			"dependencies": ["@calendar-kit/core", "@internationalized/date", "@lucide/svelte"],
+			"registryDependencies": ["utils", "./calendar-state.json"],
+			"files": [
+				{
+					"path": "src/lib/registry/ui/mini-calendar/mini-calendar.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/mini-calendar/index.ts",
+					"type": "registry:ui"
+				}
+			]
+		},
+		{
 			"name": "import-export",
 			"type": "registry:ui",
 			"title": "Import and export",

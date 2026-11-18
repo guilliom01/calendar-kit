@@ -7,6 +7,7 @@
 	import { CalendarSearch } from '#lib/registry/ui/calendar-search/index.js';
 	import { EventContextMenu } from '#lib/registry/ui/event-context-menu/index.js';
 	import { EventPreview } from '#lib/registry/ui/event-preview/index.js';
+	import { MiniCalendar } from '#lib/registry/ui/mini-calendar/index.js';
 	import {
 		ChangeConfirmDialog,
 		EventDialog,
@@ -68,7 +69,10 @@
 		{/if}
 
 		<div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
-			<CalendarList class="shrink-0 md:w-36 print:hidden" />
+			<aside class="flex shrink-0 flex-col gap-6 md:w-56 print:hidden">
+				<MiniCalendar />
+				<CalendarList />
+			</aside>
 			<EventContextMenu class="min-w-0">
 				<EventPreview>
 					<FullCalendar.View name="month"><MonthView class="flex-1" /></FullCalendar.View>

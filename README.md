@@ -72,6 +72,7 @@ Events are all-day (`CalendarDate` start/end) or timed (`ZonedDateTime` start/en
 | `timeline-view`      | Resources as rows (nested, collapsible) across the week                                                                          |
 | `gantt-view`         | Tasks (`progress`, `dependsOn`) across the month with dependency arrows                                                          |
 | `event-dialog`       | A ready-made dialog to create, edit and delete events, and to pick the scope of changes to recurring events                      |
+| `mini-calendar`      | A small month to jump to any date, with dots on busy days and keyboard navigation                                                |
 | `calendar-search`    | A search box: every view shows only events whose title has every word (accents and case ignored)                                 |
 | `event-context-menu` | A right-click / Shift+F10 menu on events (Open, Duplicate, Move to calendar, Delete); snippets replace or extend it              |
 | `event-preview`      | A card with an event's details on hover or keyboard focus (accessible); a snippet replaces its content                           |

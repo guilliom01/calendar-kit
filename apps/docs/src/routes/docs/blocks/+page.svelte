@@ -334,6 +334,14 @@
 	]}
 />
 
+<h2>mini-calendar</h2>
+<p>
+	A small month to jump to any date: its arrows browse months, a click moves the calendar to that
+	day (keeping the view), days with events get a dot and the visible range is shaded. Arrow keys
+	move between days, Page Up and Page Down between months, Enter opens the focused day.
+</p>
+<PropsTable caption="MiniCalendar props" rows={classOnly} />
+
 <h2>calendar-search</h2>
 <p>
 	A search box bound to the state's <code>query</code>: every view shows only the events whose title
