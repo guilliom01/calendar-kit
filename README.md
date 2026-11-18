@@ -148,6 +148,10 @@ Changes show right away and are sent to `onMutate(mutation)` (create, update or 
 
 Users can drag events across days, hours and resources, resize them from either edge (top and bottom in the time grid, both ends of bars in the month, timeline, all-day row and gantt; Shift+arrows and Shift+Alt+arrows in keyboard move mode), draw new ones over empty time, and press Delete to remove the focused one. Escape cancels a drag. In the week and day views, dragging between the all-day row and the hours converts an event (all-day events get `defaultDuration`, 60 minutes by default). Resting the pointer near the edge of a scrolling area scrolls it, so events can reach hours or days that are not visible.
 
+### Browsers
+
+The end-to-end tests run in Chromium only (desktop and phone sizes). Firefox and Safari (WebKit, including iPhone touch dragging) are not tested yet.
+
 ### Performance
 
 With 5,000 events, expanding the visible month takes about 20 ms and laying out a week about 9 ms, so dragging stays smooth; with 20,000 they take 70 ms and 35 ms. Above about 5,000 events, load them by range with `loadEvents`. The docs have the full numbers, and a core test fails if they get much worse.
