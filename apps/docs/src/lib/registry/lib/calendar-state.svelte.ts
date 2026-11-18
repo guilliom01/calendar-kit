@@ -383,8 +383,8 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 		this.labels = { ...defaultLabels, ...labels };
 		this.#createId = options.createId ?? (() => crypto.randomUUID());
 
-		const { events, onMutate, onError, historyLimit } = options;
-		this.store = new EventStore({ events, onMutate, onError, historyLimit });
+		const { events, onMutate, onError, onConflict, historyLimit } = options;
+		this.store = new EventStore({ events, onMutate, onError, onConflict, historyLimit });
 		this.store.subscribe((list) => {
 			this.events = list;
 			this.#syncHistory();

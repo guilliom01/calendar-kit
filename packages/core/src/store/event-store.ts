@@ -16,6 +16,11 @@ export interface EventStoreOptions<T extends CalendarEvent> {
 	onMutate?(mutation: Mutation<T>): Promise<T | void> | T | void;
 	/** Called when `onMutate` fails, after the rollback. */
 	onError?(error: unknown, mutation: Mutation<T>): void;
+	/**
+	 * Called when `onMutate` threw a `ConflictError`, after the server's version (`current`, or
+	 * null when it was deleted) replaced the local one. Tell the user here.
+	 */
+	onConflict?(mutation: Mutation<T>, current: T | null): void;
 	/** Undo steps to keep. */
 	historyLimit?: number | undefined;
 }
@@ -41,6 +46,17 @@ const targetId = (mutation: Mutation) =>
  * Changes are applied locally first, then sent to `onMutate`. Changes to the same event are sent
  * in order. If saving fails, the change is rolled back unless a later change already replaced it.
  */
+/**
+ * Throw it from `onMutate` when the server has a newer version of the event: `current`, or null
+ * when it was deleted. The store shows that version instead of rolling back to the stale one.
+ */
+export class ConflictError<T extends CalendarEvent = CalendarEvent> extends Error {
+	constructor(readonly current: T | null) {
+		super('The event changed on the server');
+		this.name = 'ConflictError';
+	}
+}
+
 export class EventStore<T extends CalendarEvent = CalendarEvent> {
 	#events: T[];
 	#listeners = new Set<Listener<T>>();
@@ -91,11 +107,14 @@ export class EventStore<T extends CalendarEvent = CalendarEvent> {
 
 	/**
 	 * Adds or replaces events that came from your backend (for example, a loaded month).
-	 * It is not a user change: it skips `onMutate` and the undo history.
+	 * It is not a user change: it skips `onMutate` and the undo history. Events with a save on its
+	 * way keep their local copy: the saved version replaces it when the save ends.
 	 */
 	merge(events: readonly T[]) {
-		if (events.length === 0) return;
-		const incoming = new Map(events.map((event) => [event.id, event]));
+		const incoming = new Map(
+			events.filter((event) => !this.#queues.has(event.id)).map((event) => [event.id, event])
+		);
+		if (incoming.size === 0) return;
 		const updated = this.#events.map((event) => {
 			const replacement = incoming.get(event.id);
 			incoming.delete(event.id);
@@ -178,8 +197,13 @@ export class EventStore<T extends CalendarEvent = CalendarEvent> {
 				onSaved?.(mutation.type === 'delete' ? undefined : (saved ?? local));
 				return true;
 			} catch (error) {
-				this.#rollback(mutation);
-				this.#options.onError?.(error, mutation);
+				if (error instanceof ConflictError) {
+					this.#takeServer(id, error.current as T | null);
+					this.#options.onConflict?.(mutation, error.current as T | null);
+				} else {
+					this.#rollback(mutation);
+					this.#options.onError?.(error, mutation);
+				}
 				return false;
 			}
 		});
@@ -200,6 +224,24 @@ export class EventStore<T extends CalendarEvent = CalendarEvent> {
 				event.id === mutation.before.id ? mutation.after : event
 			);
 		}
+		this.#notify();
+	}
+
+	/**
+	 * After a conflict, shows the server's version of `id` (or removes it) and forgets the undo
+	 * steps that touch it: undoing them would write the stale copy back.
+	 */
+	#takeServer(id: string, current: T | null) {
+		const others = this.#events.filter((event) => event.id !== id);
+		const at = this.#events.findIndex((event) => event.id === id);
+		this.#events = current
+			? at === -1
+				? [...others, current]
+				: this.#events.map((event) => (event.id === id ? current : event))
+			: others;
+		const touches = (entry: Entry<T>) => entry.some((mutation) => targetId(mutation) === id);
+		this.#past = this.#past.filter((entry) => !touches(entry));
+		this.#future = this.#future.filter((entry) => !touches(entry));
 		this.#notify();
 	}
 

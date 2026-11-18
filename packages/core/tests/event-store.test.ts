@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { EventStore, type CalendarEvent, type Mutation } from '../src/index.js';
+import { ConflictError, EventStore, type CalendarEvent, type Mutation } from '../src/index.js';
 import { timed } from './fixtures.js';
 
 const ids = (store: EventStore) => store.events.map((event) => event.id);
@@ -188,5 +188,49 @@ describe('EventStore', () => {
 		expect(await store.update(meeting())).toBeUndefined();
 		await store.remove('missing');
 		expect(onMutate).not.toHaveBeenCalled();
+	});
+});
+
+describe('EventStore and the server', () => {
+	it('keeps an unsaved change when a reload brings the old copy, then shows the saved one', async () => {
+		const save = deferred<CalendarEvent>();
+		const store = new EventStore({ events: [meeting()], onMutate: () => save.promise });
+
+		const pending = store.update({ ...meeting(), title: 'Mine' });
+		// A month reload arrives while the save is on its way, with the server's old copy.
+		store.merge([meeting()]);
+		expect(titles(store)).toEqual(['Mine']);
+
+		save.resolve({ ...meeting(), title: 'Mine (saved)' });
+		await pending;
+		expect(titles(store)).toEqual(['Mine (saved)']);
+	});
+
+	it('shows the server version on a conflict instead of the stale local one', async () => {
+		const theirs = { ...meeting(), title: 'Changed by someone else' };
+		const onConflict = vi.fn();
+		const onError = vi.fn();
+		const store = new EventStore({
+			events: [meeting()],
+			onMutate: () => Promise.reject(new ConflictError(theirs)),
+			onConflict,
+			onError
+		});
+
+		await store.update({ ...meeting(), title: 'Mine' });
+		expect(titles(store)).toEqual(['Changed by someone else']);
+		expect(onConflict).toHaveBeenCalledWith(expect.objectContaining({ type: 'update' }), theirs);
+		expect(onError).not.toHaveBeenCalled();
+		// Undoing would write the stale copy back over theirs.
+		expect(store.canUndo).toBe(false);
+	});
+
+	it('removes the event when the server says it was deleted', async () => {
+		const store = new EventStore({
+			events: [meeting()],
+			onMutate: () => Promise.reject(new ConflictError(null))
+		});
+		await store.update({ ...meeting(), title: 'Mine' });
+		expect(ids(store)).toEqual([]);
 	});
 });

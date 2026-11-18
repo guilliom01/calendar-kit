@@ -144,7 +144,7 @@ Without `event-dialog`, nothing opens: react to `onEventClick` and `onSelect` wi
 
 ## Saving changes
 
-Changes show right away and are sent to `onMutate(mutation)` (create, update or delete). Return the saved event to replace the local one (for example with a server id); throw to roll the change back (`onError` is called). Changes to the same event are saved in order, and undo/redo (`FullCalendar.UndoRedo`, Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z) reach `onMutate` as inverse changes.
+Changes show right away and are sent to `onMutate(mutation)` (create, update or delete). Return the saved event to replace the local one (for example with a server id); throw to roll the change back (`onError` is called). Changes to the same event are saved in order, and undo/redo (`FullCalendar.UndoRedo`, Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z) reach `onMutate` as inverse changes. If the server has a newer version, throw `new ConflictError(current)` from `onMutate`: the calendar shows the server's version and calls `onConflict` so you can tell the user.
 
 Users can drag events across days, hours and resources, resize them from either edge (top and bottom in the time grid, both ends of bars in the month, timeline, all-day row and gantt; Shift+arrows and Shift+Alt+arrows in keyboard move mode), draw new ones over empty time, and press Delete to remove the focused one. Escape cancels a drag. In the week and day views, dragging between the all-day row and the hours converts an event (all-day events get `defaultDuration`, 60 minutes by default). Resting the pointer near the edge of a scrolling area scrolls it, so events can reach hours or days that are not visible.
 

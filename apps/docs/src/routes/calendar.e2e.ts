@@ -1396,3 +1396,19 @@ test.describe('event dialog validation', () => {
 		await expect(dialog.getByLabel('Título')).toHaveAttribute('aria-invalid', 'true');
 	});
 });
+
+test('a conflict shows the server version and the developer tells the user', async ({ page }) => {
+	await page.getByRole('button', { name: /Svelte workshop/ }).click();
+	const dialog = page.getByRole('dialog');
+	// The demo backend answers titles with "conflicto" with its own newer version.
+	await dialog.getByLabel('Título').fill('Prueba de conflicto');
+	await dialog.getByRole('button', { name: 'Guardar' }).click();
+
+	await expect(page.getByRole('status')).toHaveText(
+		'Otra persona cambió «Svelte workshop» mientras lo editabas: se muestra su versión.'
+	);
+	await expect(
+		page.getByRole('button', { name: /Svelte workshop \(versión del servidor\)/ })
+	).toBeVisible();
+	await expect(page.getByRole('button', { name: /Prueba de conflicto/ })).toHaveCount(0);
+});

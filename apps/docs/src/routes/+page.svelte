@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { today } from '@internationalized/date';
+	import { ConflictError } from '@calendar-kit/core';
 	import * as FullCalendar from '#lib/registry/ui/full-calendar/index.js';
 	import { CalendarState } from '#lib/registry/ui/full-calendar/index.js';
 	import { AgendaView } from '#lib/registry/ui/agenda-view/index.js';
@@ -28,6 +29,7 @@
 	const timeZone = 'America/Lima';
 
 	let importWarnings: string[] = $state([]);
+	let notice = $state('');
 	// Tasks without a date; dragging one onto the calendar schedules it.
 	let pending = $state([
 		{ id: 'call', title: 'Llamar al proveedor', duration: 60 },
@@ -43,8 +45,23 @@
 		onExternalDrop: ({ item }) => {
 			pending = pending.filter((task) => task.id !== (item.data as { id: string }).id);
 		},
-		// Simulates a backend call: changes show at once and "save" a moment later.
-		onMutate: () => new Promise((resolve) => setTimeout(resolve, 300)),
+		// Simulates a backend call: changes show at once and "save" a moment later. Titles with
+		// "conflicto" get the answer of a server where someone else changed the event first.
+		onMutate: (mutation) =>
+			new Promise((resolve, reject) =>
+				setTimeout(() => {
+					if (mutation.type === 'update' && /conflicto/i.test(mutation.after.title)) {
+						const title = `${mutation.before.title} (versión del servidor)`;
+						reject(new ConflictError({ ...mutation.before, title }));
+					} else resolve(undefined);
+				}, 300)
+			),
+		onConflict: (mutation, current) => {
+			const title = mutation.type === 'update' ? mutation.before.title : mutation.event.title;
+			notice = current
+				? `Otra persona cambió «${title}» mientras lo editabas: se muestra su versión.`
+				: `Otra persona eliminó «${title}».`;
+		},
 		labels: spanishLabels
 	});
 </script>
@@ -73,6 +90,7 @@
 				<FullCalendar.ViewSwitcher />
 			</div>
 		</FullCalendar.Toolbar>
+		<p role="status" class="text-sm empty:hidden">{notice}</p>
 		{#if importWarnings.length}
 			<ul class="rounded-lg border p-3 text-sm text-muted-foreground" data-testid="import-warnings">
 				{#each importWarnings as warning (warning)}<li>{warning}</li>{/each}
