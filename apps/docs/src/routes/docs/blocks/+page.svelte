@@ -67,7 +67,7 @@
 </EventContextMenu>`;
 
   const external = `<script lang="ts">
-	import { draggable } from '$lib/calendar-drag.js';
+	import { draggable } from '#lib/calendar-drag.js';
 ${"</" + "script>"}
 
 <ul>

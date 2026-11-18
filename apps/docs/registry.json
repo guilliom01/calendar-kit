@@ -1,7 +1,7 @@
 {
   "$schema": "https://shadcn-svelte.com/schema/registry.json",
   "name": "calendar-kit",
-  "homepage": "https://github.com/calendar-kit/calendar-kit",
+  "homepage": "https://github.com/guilliom01/calendar-kit",
   "aliases": {
     "lib": "#lib/registry/lib",
     "ui": "#lib/registry/ui",
@@ -15,7 +15,7 @@
       "type": "registry:lib",
       "title": "Calendar state",
       "description": "Reactive calendar state (Svelte 5 runes) shared through context, plus pointer drag and keyboard move helpers.",
-      "dependencies": ["@guilli/calendar-core", "@internationalized/date"],
+      "dependencies": ["@guilli/calendar-core@^0.1.0", "@internationalized/date"],
       "registryDependencies": [],
       "files": [
         {
@@ -37,7 +37,7 @@
       "type": "registry:ui",
       "title": "Calendar",
       "description": "Calendar building blocks: Root, View, Toolbar, Nav, Title, ViewSwitcher, NewEvent, UndoRedo, TimeZoneSelect and Loading. Add only the views you need.",
-      "dependencies": ["@guilli/calendar-core", "@internationalized/date", "@lucide/svelte"],
+      "dependencies": ["@guilli/calendar-core@^0.1.0", "@internationalized/date", "@lucide/svelte"],
       "registryDependencies": ["button", "utils", "./calendar-state.json"],
       "files": [
         {
@@ -91,7 +91,7 @@
       "type": "registry:ui",
       "title": "Month view",
       "description": "Month grid with all-day bars, timed events and a +N popover listing a full day.",
-      "dependencies": ["@guilli/calendar-core", "@internationalized/date"],
+      "dependencies": ["@guilli/calendar-core@^0.1.0", "@internationalized/date"],
       "registryDependencies": ["popover", "utils", "./calendar-state.json"],
       "files": [
         {
@@ -109,7 +109,7 @@
       "type": "registry:ui",
       "title": "Time grid",
       "description": "Week and day views: hours, all-day row, overlapping events in columns and a now line.",
-      "dependencies": ["@guilli/calendar-core", "@internationalized/date"],
+      "dependencies": ["@guilli/calendar-core@^0.1.0", "@internationalized/date"],
       "registryDependencies": ["utils", "./calendar-state.json"],
       "files": [
         {
@@ -127,7 +127,7 @@
       "type": "registry:ui",
       "title": "Agenda view",
       "description": "The month's events listed day by day, with times and resources.",
-      "dependencies": ["@guilli/calendar-core", "@internationalized/date"],
+      "dependencies": ["@guilli/calendar-core@^0.1.0", "@internationalized/date"],
       "registryDependencies": ["utils", "./calendar-state.json"],
       "files": [
         {
@@ -145,7 +145,7 @@
       "type": "registry:ui",
       "title": "Year view",
       "description": "Twelve small months; busier days get a stronger tint. Click a day to open it.",
-      "dependencies": ["@guilli/calendar-core", "@internationalized/date"],
+      "dependencies": ["@guilli/calendar-core@^0.1.0", "@internationalized/date"],
       "registryDependencies": ["utils", "./calendar-state.json"],
       "files": [
         {
@@ -163,7 +163,7 @@
       "type": "registry:ui",
       "title": "Timeline view",
       "description": "Resources as rows (nested, collapsible) and the week's days as columns; drag events between days and resources.",
-      "dependencies": ["@guilli/calendar-core", "@internationalized/date", "@lucide/svelte"],
+      "dependencies": ["@guilli/calendar-core@^0.1.0", "@internationalized/date", "@lucide/svelte"],
       "registryDependencies": ["utils", "./calendar-state.json"],
       "files": [
         {
@@ -181,7 +181,7 @@
       "type": "registry:ui",
       "title": "Gantt view",
       "description": "One row per task across the month, with progress bars and dependency arrows.",
-      "dependencies": ["@guilli/calendar-core", "@internationalized/date"],
+      "dependencies": ["@guilli/calendar-core@^0.1.0", "@internationalized/date"],
       "registryDependencies": ["utils", "./calendar-state.json"],
       "files": [
         {
@@ -199,7 +199,7 @@
       "type": "registry:ui",
       "title": "Event dialog",
       "description": "Dialogs to create, edit and delete events, to choose the scope of changes to recurring events, and to confirm drags and resizes.",
-      "dependencies": ["@guilli/calendar-core", "@internationalized/date"],
+      "dependencies": ["@guilli/calendar-core@^0.1.0", "@internationalized/date"],
       "registryDependencies": [
         "button",
         "checkbox",
@@ -237,7 +237,7 @@
       "type": "registry:ui",
       "title": "Recurrence editor",
       "description": "Optional editor for repeat rules: every N days/weeks/months/years, several weekdays, day of month or nth weekday. Plug it into the event dialog or your own form.",
-      "dependencies": ["@guilli/calendar-core", "@internationalized/date"],
+      "dependencies": ["@guilli/calendar-core@^0.1.0", "@internationalized/date"],
       "registryDependencies": ["input", "utils", "./calendar-state.json"],
       "files": [
         {
@@ -291,7 +291,7 @@
       "type": "registry:ui",
       "title": "Event context menu",
       "description": "Optional: wrap the views to get a right-click (or Shift+F10) menu on events with Open, Duplicate, Move to calendar and Delete. Snippets replace or extend the items.",
-      "dependencies": ["@guilli/calendar-core"],
+      "dependencies": ["@guilli/calendar-core@^0.1.0"],
       "registryDependencies": ["context-menu", "utils", "./calendar-state.json"],
       "files": [
         {
@@ -309,7 +309,7 @@
       "type": "registry:ui",
       "title": "Event preview",
       "description": "Optional: wrap the views to show a card with an event's details on hover or focus (accessible, dismissible with Escape). A snippet replaces its content.",
-      "dependencies": ["@guilli/calendar-core"],
+      "dependencies": ["@guilli/calendar-core@^0.1.0"],
       "registryDependencies": ["utils", "./calendar-state.json"],
       "files": [
         {
@@ -327,7 +327,7 @@
       "type": "registry:ui",
       "title": "Mini calendar",
       "description": "Optional: a small month to jump to any date, with dots on days that have events, the visible range shaded and arrow-key navigation.",
-      "dependencies": ["@guilli/calendar-core", "@internationalized/date", "@lucide/svelte"],
+      "dependencies": ["@guilli/calendar-core@^0.1.0", "@internationalized/date", "@lucide/svelte"],
       "registryDependencies": ["utils", "./calendar-state.json"],
       "files": [
         {
@@ -345,7 +345,7 @@
       "type": "registry:ui",
       "title": "Scheduling assistant",
       "description": "Optional: pick participants and a length to get the next times when all of them are free; a suggestion opens as a new event.",
-      "dependencies": ["@guilli/calendar-core", "@internationalized/date"],
+      "dependencies": ["@guilli/calendar-core@^0.1.0", "@internationalized/date"],
       "registryDependencies": ["utils", "./calendar-state.json"],
       "files": [
         {
@@ -363,7 +363,7 @@
       "type": "registry:ui",
       "title": "Import and export",
       "description": "Optional buttons: import and export iCalendar (.ics), export the visible events as CSV, and print (or save as PDF).",
-      "dependencies": ["@guilli/calendar-core", "@lucide/svelte"],
+      "dependencies": ["@guilli/calendar-core@^0.1.0", "@lucide/svelte"],
       "registryDependencies": ["button", "utils", "./calendar-state.json"],
       "files": [
         {

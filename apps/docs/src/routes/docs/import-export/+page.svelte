@@ -5,7 +5,7 @@
   const closeScript = "</" + "script>";
 
   const buttons = `<script lang="ts">
-	import * as Exchange from '$lib/components/ui/import-export/index.js';
+	import * as Exchange from '#lib/components/ui/import-export/index.js';
 	let warnings: string[] = $state([]);
 ${closeScript}
 

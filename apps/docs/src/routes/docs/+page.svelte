@@ -9,9 +9,9 @@
 
   const quickStart = `<script lang="ts">
 	import { today, toZoned } from '@internationalized/date';
-	import * as FullCalendar from '$lib/components/ui/full-calendar/index.js';
-	import { CalendarState } from '$lib/components/ui/full-calendar/index.js';
-	import { MonthView } from '$lib/components/ui/month-view/index.js';
+	import * as FullCalendar from '#lib/components/ui/full-calendar/index.js';
+	import { CalendarState } from '#lib/components/ui/full-calendar/index.js';
+	import { MonthView } from '#lib/components/ui/month-view/index.js';
 
 	const timeZone = 'America/Lima';
 	const day = today(timeZone);
@@ -90,6 +90,9 @@ ${closeScript}
   a one-day event ends the next day.
 </p>
 <Code code={quickStart} label="+page.svelte" />
+<p>
+  SvelteKit 3 imports from <code>#lib</code>; in SvelteKit 2 projects use <code>$lib</code> instead.
+</p>
 
 <p>
   Next: see every <a href={resolve("/docs/blocks")}>block</a>, or how to react to clicks and save

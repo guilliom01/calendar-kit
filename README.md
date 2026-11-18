@@ -42,9 +42,9 @@ npx shadcn-svelte@latest add <registry-url>/r/full-calendar.json <registry-url>/
 
 ```svelte
 <script lang="ts">
-  import * as FullCalendar from "$lib/components/ui/full-calendar/index.js";
-  import { CalendarState } from "$lib/components/ui/full-calendar/index.js";
-  import { MonthView } from "$lib/components/ui/month-view/index.js";
+  import * as FullCalendar from "#lib/components/ui/full-calendar/index.js";
+  import { CalendarState } from "#lib/components/ui/full-calendar/index.js";
+  import { MonthView } from "#lib/components/ui/month-view/index.js";
 
   const calendar = new CalendarState({ locale: "es-PE", timeZone: "America/Lima", events });
 </script>
@@ -57,6 +57,8 @@ npx shadcn-svelte@latest add <registry-url>/r/full-calendar.json <registry-url>/
   <FullCalendar.View name="month"><MonthView /></FullCalendar.View>
 </FullCalendar.Root>
 ```
+
+SvelteKit 3 imports from `#lib`; in SvelteKit 2 projects use `$lib` instead.
 
 Events are all-day (`CalendarDate` start/end) or timed (`ZonedDateTime` start/end). Besides `title`, they can carry `location` and `description`, which import and export keep. `end` is exclusive, as in iCalendar. Dates and calendar words come from `Intl`, so they follow `locale`; the few texts Intl cannot provide are in `labels` (see `defaultLabels`).
 
