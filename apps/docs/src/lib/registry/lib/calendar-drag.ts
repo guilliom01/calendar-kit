@@ -4,9 +4,12 @@ import {
 	moveEvent,
 	resizeEvent,
 	resizeEventStart,
+	snapMinutes,
+	zonedAt,
 	type CalendarEvent
 } from '@calendar-kit/core';
-import type { CalendarState, ResizeHandles } from './calendar-state.svelte.js';
+import type { Attachment } from 'svelte/attachments';
+import type { CalendarState, ExternalItem, ResizeHandles } from './calendar-state.svelte.js';
 
 /** Pixels the pointer must travel before a press becomes a drag. */
 const DRAG_THRESHOLD = 4;
@@ -356,4 +359,80 @@ export function withPreview<T extends CalendarEvent>(events: readonly T[], previ
 	return found
 		? events.map((event) => (event.id === preview.id ? preview : event))
 		: [...events, preview];
+}
+
+const MINUTES_PER_DAY = 24 * 60;
+
+/**
+ * Where a drop at (x, y) lands: a time-grid column (`data-time-column`, with the minute under the
+ * pointer) or a day cell (`data-date`), with the `data-resource` of either.
+ */
+function dropTargetAt(x: number, y: number, step: number) {
+	for (const element of document.elementsFromPoint(x, y)) {
+		const { timeColumn, date, resource } = (element as HTMLElement).dataset ?? {};
+		if (timeColumn) {
+			const rect = element.getBoundingClientRect();
+			const minutes = snapMinutes(((y - rect.top) / rect.height) * MINUTES_PER_DAY, step);
+			return { date: parseDate(timeColumn), minutes, resource: resource || undefined };
+		}
+		if (date) return { date: parseDate(date), minutes: undefined, resource: resource || undefined };
+	}
+	return undefined;
+}
+
+/**
+ * Makes any element of yours draggable onto the views: `<li {@attach draggable(calendar, item)}>`.
+ * Dropped on the hours it becomes a timed event lasting `item.duration` (or `defaultDuration`);
+ * dropped on a day it becomes an all-day event. `onExternalDrop` decides what is created.
+ * There is no keyboard path: offer one of your own (e.g. a "Schedule" button).
+ */
+export function draggable<T extends CalendarEvent>(
+	calendar: CalendarState<T>,
+	item: ExternalItem
+): Attachment<HTMLElement> {
+	return (node) => {
+		const down = (pointer: PointerEvent) => {
+			let ghost: HTMLElement | undefined;
+			trackPointer(
+				pointer,
+				{
+					onMove: (move) => {
+						if (!ghost) {
+							// A label that follows the pointer; pointer-events-none keeps it out of hit tests.
+							ghost = document.createElement('div');
+							ghost.textContent = item.title;
+							ghost.className =
+								'pointer-events-none fixed top-0 left-0 z-50 rounded-md bg-primary px-2 py-1 text-xs text-primary-foreground shadow-lg';
+							document.body.append(ghost);
+						}
+						ghost.style.translate = `${move.clientX + 8}px ${move.clientY + 8}px`;
+					},
+					onDrop: (up) => {
+						ghost?.remove();
+						const target = dropTargetAt(up.clientX, up.clientY, calendar.snapStep);
+						if (!target) return;
+						const resourceIds = target.resource ? [target.resource] : undefined;
+						if (target.minutes === undefined) {
+							const start = target.date;
+							void calendar.dropExternal({
+								item,
+								start,
+								end: start.add({ days: 1 }),
+								allDay: true,
+								resourceIds
+							});
+						} else {
+							const start = zonedAt(target.date, target.minutes, calendar.timeZone);
+							const end = start.add({ minutes: item.duration ?? calendar.defaultDuration });
+							void calendar.dropExternal({ item, start, end, allDay: false, resourceIds });
+						}
+					},
+					onCancel: () => ghost?.remove()
+				},
+				touchOf(calendar)
+			);
+		};
+		node.addEventListener('pointerdown', down);
+		return () => node.removeEventListener('pointerdown', down);
+	};
 }

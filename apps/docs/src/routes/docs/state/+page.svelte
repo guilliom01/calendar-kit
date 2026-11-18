@@ -163,6 +163,12 @@
 				'"+N" was clicked in the month view. Built-in: a popover listing every event of the day.'
 		},
 		{
+			name: 'onExternalDrop({ item, start, end, allDay, resourceIds })',
+			type: 'boolean | event | void',
+			description:
+				'An item made draggable with draggable(calendar, item) was dropped. Return false to create nothing, or the event to create. Built-in: an event with its title there.'
+		},
+		{
 			name: 'onEventContextMenu(event, nativeEvent)',
 			type: 'boolean | void',
 			description:

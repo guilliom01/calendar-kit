@@ -120,6 +120,7 @@ Every interaction runs your hook first; return `false` to skip the built-in beha
 | `onEventClick`       | An event is clicked or activated                          | Open the event dialog (if you added one)        |
 | `onMoreClick`        | "+N" is clicked in the month view                         | A popover listing every event of that day       |
 | `onEventContextMenu` | An event is right-clicked (or Shift+F10)                  | The `event-context-menu` block, if you added it |
+| `onExternalDrop`     | An item from `draggable` is dropped                       | Create an event with its title there            |
 | `onDateClick`        | A day number or day header is clicked                     | Show the day view (if you registered one)       |
 | `onSelect`           | An empty day or time range is picked                      | Open the dialog for a new event                 |
 | `onEventChange`      | An event is dragged or resized                            | Save it. Return an event to save that instead   |
@@ -129,6 +130,8 @@ Every interaction runs your hook first; return `false` to skip the built-in beha
 With `calendars: [{ id, title, color }]`, events join a calendar through `calendarId`, take its color when they have none, and hide with it (`hiddenCalendars`, or the `calendar-list` block).
 
 `filter(event)` (an option, and the reactive `state.filter`) and `state.query` narrow what every view shows; the store still holds every event, so undo and saving are unaffected.
+
+`draggable(calendar, { title, duration, data })` turns any element of yours (a list of unscheduled tasks, say) into something users can drop on the hours or days; `onExternalDrop` decides what gets created.
 
 `eventClass(event)` returns extra classes for an event in every view, for example `border-dashed` for tentative events.
 

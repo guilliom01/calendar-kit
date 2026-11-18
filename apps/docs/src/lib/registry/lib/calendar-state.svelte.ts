@@ -164,6 +164,25 @@ export interface DaySnippetArgs {
 /** What the user is about to do to an event; `edit` is the event dialog. */
 export type EditAction = 'move' | 'resize' | 'delete' | 'edit';
 
+/** Something from outside the calendar that `draggable` lets the user drop on it. */
+export interface ExternalItem {
+	title: string;
+	/** Minutes it lasts when dropped on the hours. Default: the state's `defaultDuration`. */
+	duration?: number;
+	/** Your own payload, e.g. the task it comes from. */
+	data?: unknown;
+}
+
+/** Where an external item was dropped. `end` is exclusive, as in events. */
+export interface ExternalDrop {
+	item: ExternalItem;
+	start: CalendarDate | ZonedDateTime;
+	end: CalendarDate | ZonedDateTime;
+	allDay: boolean;
+	/** The row or column resource it was dropped on. */
+	resourceIds?: string[];
+}
+
 /** An event the user moved or resized by dragging. */
 export interface EventChange<T extends CalendarEvent> {
 	event: T;
@@ -220,6 +239,11 @@ export interface CalendarStateOptions<T extends CalendarEvent> extends EventStor
 
 	/** An event was clicked (or activated with the keyboard). Built-in: open the event dialog. */
 	onEventClick?(event: T, nativeEvent: Event): boolean | void;
+	/**
+	 * An external item (see `draggable`) was dropped. Return false to create nothing, or an event to
+	 * create instead of the default one (its title at the drop place).
+	 */
+	onExternalDrop?(drop: ExternalDrop): boolean | T | void;
 	/** An event was right-clicked (or got the context menu key). Built-in: the `event-context-menu` block. */
 	onEventContextMenu?(event: T, nativeEvent: Event): boolean | void;
 	/** "+N" was clicked on a day with hidden events. Built-in: a popover listing all of them. */
@@ -563,6 +587,23 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 
 	create(event: T) {
 		return this.#track(this.store.create(event));
+	}
+
+	/** Creates the event for an external item dropped on the calendar, after `onExternalDrop`. */
+	dropExternal(drop: ExternalDrop) {
+		const verdict = this.#options.onExternalDrop?.(drop);
+		if (verdict === false) return Promise.resolve(undefined);
+		const event =
+			typeof verdict === 'object'
+				? verdict
+				: ({
+						id: this.#createId(),
+						title: drop.item.title,
+						start: drop.start,
+						end: drop.end,
+						...(drop.resourceIds && { resourceIds: drop.resourceIds })
+					} as T);
+		return this.create(event);
 	}
 
 	/** Creates a copy of `event` with a new id. A copy of an occurrence is a single event. */

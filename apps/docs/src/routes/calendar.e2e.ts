@@ -1222,3 +1222,60 @@ test.describe('mini calendar', () => {
 		await expect(title(page)).toContainText('28');
 	});
 });
+
+test.describe('dragging items from outside the calendar', () => {
+	async function dragTo(page: Page, from: ReturnType<Page['locator']>, x: number, y: number) {
+		const box = (await from.boundingBox())!;
+		await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+		await page.mouse.down();
+		await page.mouse.move(x - 20, y - 20, { steps: 5 });
+		await page.mouse.move(x, y, { steps: 5 });
+		await page.mouse.up();
+	}
+	const pending = (page: Page) => page.getByRole('list', { name: 'Pendientes' });
+
+	test('dropping on a month day creates an all-day event there', async ({ page }) => {
+		const cell = (await page.locator('[data-date="2026-11-26"]').boundingBox())!;
+		await dragTo(
+			page,
+			pending(page).getByText('Revisar contrato'),
+			cell.x + cell.width / 2,
+			cell.y + cell.height - 10
+		);
+		await expect(page.getByRole('button', { name: 'Revisar contrato' })).toBeVisible();
+		await expect(pending(page).getByText('Revisar contrato')).toHaveCount(0);
+		await dayButton(page, 'jueves, 26 de noviembre de 2026').click();
+		await expect(page.getByRole('button', { name: /Revisar contrato/ })).toBeVisible();
+	});
+
+	test('dropping on the hours creates a timed event at that time', async ({ page }) => {
+		await viewButton(page, 'semana').click();
+		const workshop = page.getByRole('button', { name: /Svelte workshop/ });
+		await workshop.scrollIntoViewIfNeeded();
+		const box = (await workshop.boundingBox())!;
+		await dragTo(
+			page,
+			pending(page).getByText('Llamar al proveedor'),
+			box.x + box.width / 2,
+			box.y + 2
+		);
+		await expect(page.getByRole('button', { name: /Llamar al proveedor/ })).toContainText(
+			'3:00 – 4:00 p. m.'
+		);
+	});
+
+	test('onExternalDrop can decide not to create anything', async ({ page }) => {
+		await page.goto('/ganchos');
+		const cell = (await page.locator('[data-date="2026-11-26"]').boundingBox())!;
+		await dragTo(
+			page,
+			page.getByText('Tarea sin fecha'),
+			cell.x + cell.width / 2,
+			cell.y + cell.height - 10
+		);
+		await expect(page.getByTestId('message')).toHaveText(
+			'Soltaste «Tarea sin fecha» el 2026-11-26'
+		);
+		await expect(page.getByRole('button', { name: 'Tarea sin fecha' })).toHaveCount(0);
+	});
+});

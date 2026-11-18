@@ -8,6 +8,7 @@
 	import { EventContextMenu } from '#lib/registry/ui/event-context-menu/index.js';
 	import { EventPreview } from '#lib/registry/ui/event-preview/index.js';
 	import { MiniCalendar } from '#lib/registry/ui/mini-calendar/index.js';
+	import { draggable } from '#lib/registry/lib/calendar-drag.js';
 	import {
 		ChangeConfirmDialog,
 		EventDialog,
@@ -27,12 +28,21 @@
 	const timeZone = 'America/Lima';
 
 	let importWarnings: string[] = $state([]);
+	// Tasks without a date; dragging one onto the calendar schedules it.
+	let pending = $state([
+		{ id: 'call', title: 'Llamar al proveedor', duration: 60 },
+		{ id: 'contract', title: 'Revisar contrato', duration: 120 }
+	]);
 
 	const calendar = new CalendarState({
 		locale,
 		timeZone,
 		events: demoEvents(today(timeZone), locale, timeZone),
 		calendars: demoCalendars,
+		// The dropped task leaves the list; the calendar creates the event as usual.
+		onExternalDrop: ({ item }) => {
+			pending = pending.filter((task) => task.id !== (item.data as { id: string }).id);
+		},
 		// Simulates a backend call: changes show at once and "save" a moment later.
 		onMutate: () => new Promise((resolve) => setTimeout(resolve, 300)),
 		labels: spanishLabels
@@ -72,6 +82,23 @@
 			<aside class="flex shrink-0 flex-col gap-6 md:w-56 print:hidden">
 				<MiniCalendar />
 				<CalendarList />
+				<div class="grid gap-2 text-sm">
+					<p id="pending-heading" class="font-medium">Pendientes</p>
+					<ul aria-labelledby="pending-heading" class="grid gap-1">
+						{#each pending as task (task.id)}
+							<li
+								class="cursor-grab rounded-md border px-2 py-1.5 select-none"
+								{@attach draggable(calendar, {
+									title: task.title,
+									duration: task.duration,
+									data: task
+								})}
+							>
+								{task.title}
+							</li>
+						{/each}
+					</ul>
+				</div>
 			</aside>
 			<EventContextMenu class="min-w-0">
 				<EventPreview>

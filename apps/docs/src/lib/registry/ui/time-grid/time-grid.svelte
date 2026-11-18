@@ -615,6 +615,8 @@
 				<!-- svelte-ignore a11y_no_static_element_interactions -->
 				<div
 					bind:this={columnElements[dayIndex]}
+					data-time-column={day.toString()}
+					data-resource={column.resource?.id}
 					class="relative border-s"
 					style:background-image="repeating-linear-gradient(to bottom, var(--border) 0 1px,
 					transparent 1px {hourHeight})"

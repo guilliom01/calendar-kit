@@ -3,6 +3,7 @@
 	import * as FullCalendar from '#lib/registry/ui/full-calendar/index.js';
 	import { CalendarState } from '#lib/registry/ui/full-calendar/index.js';
 	import { MonthView } from '#lib/registry/ui/month-view/index.js';
+	import { draggable } from '#lib/registry/lib/calendar-drag.js';
 	import { demoEvents } from '../demo-events.js';
 
 	const timeZone = 'America/Lima';
@@ -35,6 +36,11 @@
 			message = `Más eventos el ${day.toString()}: ${events.length}`;
 			return false;
 		},
+		// Dropped items are only reported, never created.
+		onExternalDrop: ({ item, start }) => {
+			message = `Soltaste «${item.title}» el ${start.toString()}`;
+			return false;
+		},
 		// Our own reaction to a right-click instead of a menu.
 		onEventContextMenu: (event, nativeEvent) => {
 			nativeEvent.preventDefault();
@@ -64,6 +70,12 @@
 		/>
 		Solo eventos de Ana
 	</label>
+	<p
+		class="w-fit cursor-grab rounded-md border px-2 py-1.5 text-sm select-none"
+		{@attach draggable(calendar, { title: 'Tarea sin fecha' })}
+	>
+		Tarea sin fecha
+	</p>
 	<p class="rounded-lg border p-3 text-sm" aria-live="polite" data-testid="message">
 		{message || 'Arrastra un evento o haz clic en un día vacío.'}
 	</p>
