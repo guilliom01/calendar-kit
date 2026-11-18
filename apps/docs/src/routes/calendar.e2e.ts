@@ -614,6 +614,7 @@ test('the documentation covers every block and links its sections', async ({ pag
 		'calendar-list',
 		'event-context-menu',
 		'event-preview',
+		'scheduling-assistant',
 		'event-dialog',
 		'recurrence-editor',
 		'import-export'
@@ -1302,5 +1303,27 @@ test.describe('phones', () => {
 		await expect(list.getByRole('button', { name: /Conferencia en Cusco/ })).toBeVisible();
 		await list.getByRole('button', { name: /Svelte workshop/ }).click();
 		await expect(page.getByRole('dialog')).toBeVisible();
+	});
+});
+
+test.describe('scheduling assistant', () => {
+	test('suggests the first time everyone is free and opens it as a new event', async ({ page }) => {
+		await page.goto('/asistente');
+		const people = page.getByRole('group', { name: 'Participantes' });
+		await people.getByRole('checkbox', { name: 'Ana' }).check();
+		await people.getByRole('checkbox', { name: 'Luis' }).check();
+		await page.getByLabel('Duración').selectOption({ label: '60 minutos' });
+
+		// Now is Tuesday 14:00; Luis has lunch until 14:30.
+		const suggestions = page.getByRole('list', { name: 'Horarios sugeridos' });
+		const first = suggestions.getByRole('button').first();
+		await expect(first).toContainText('martes, 17 de noviembre');
+		await expect(first).toContainText('2:30');
+		await first.click();
+
+		const dialog = page.getByRole('dialog');
+		await expect(dialog.getByRole('heading', { name: 'Nuevo evento' })).toBeVisible();
+		await expect(dialog.getByRole('checkbox', { name: 'Ana' })).toBeChecked();
+		await expect(dialog.getByRole('checkbox', { name: 'Luis' })).toBeChecked();
 	});
 });

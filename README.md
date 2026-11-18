@@ -62,23 +62,24 @@ Events are all-day (`CalendarDate` start/end) or timed (`ZonedDateTime` start/en
 
 ## Blocks
 
-| Item                 | Add it when you want…                                                                                                            |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `full-calendar`      | Always. `Root`, `View`, `Toolbar` and parts: `Nav`, `Title`, `ViewSwitcher`, `NewEvent`, `UndoRedo`, `TimeZoneSelect`, `Loading` |
-| `month-view`         | A month grid with multi-day bars and "+N" overflow                                                                               |
-| `time-grid`          | Week or day views; with `resources`, one column per resource                                                                     |
-| `agenda-view`        | The month's events listed day by day                                                                                             |
-| `year-view`          | Twelve small months with busier days tinted                                                                                      |
-| `timeline-view`      | Resources as rows (nested, collapsible) across the week                                                                          |
-| `gantt-view`         | Tasks (`progress`, `dependsOn`) across the month with dependency arrows                                                          |
-| `event-dialog`       | A ready-made dialog to create, edit and delete events, and to pick the scope of changes to recurring events                      |
-| `mini-calendar`      | A small month to jump to any date, with dots on busy days and keyboard navigation                                                |
-| `calendar-search`    | A search box: every view shows only events whose title has every word (accents and case ignored)                                 |
-| `event-context-menu` | A right-click / Shift+F10 menu on events (Open, Duplicate, Move to calendar, Delete); snippets replace or extend it              |
-| `event-preview`      | A card with an event's details on hover or keyboard focus (accessible); a snippet replaces its content                           |
-| `calendar-list`      | Checkboxes to show or hide each calendar of `calendars`, in its color                                                            |
-| `recurrence-editor`  | A full repeat-rule editor; plug it into `event-dialog` (snippet `recurrence`) or your own form                                   |
-| `calendar-state`     | Installed automatically: the runes state, event store and drag helpers                                                           |
+| Item                   | Add it when you want…                                                                                                            |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `full-calendar`        | Always. `Root`, `View`, `Toolbar` and parts: `Nav`, `Title`, `ViewSwitcher`, `NewEvent`, `UndoRedo`, `TimeZoneSelect`, `Loading` |
+| `month-view`           | A month grid with multi-day bars and "+N" overflow                                                                               |
+| `time-grid`            | Week or day views; with `resources`, one column per resource                                                                     |
+| `agenda-view`          | The month's events listed day by day                                                                                             |
+| `year-view`            | Twelve small months with busier days tinted                                                                                      |
+| `timeline-view`        | Resources as rows (nested, collapsible) across the week                                                                          |
+| `gantt-view`           | Tasks (`progress`, `dependsOn`) across the month with dependency arrows                                                          |
+| `scheduling-assistant` | Pick participants and a length; lists the next times all of them are free (`findFreeSlots` in the core)                          |
+| `event-dialog`         | A ready-made dialog to create, edit and delete events, and to pick the scope of changes to recurring events                      |
+| `mini-calendar`        | A small month to jump to any date, with dots on busy days and keyboard navigation                                                |
+| `calendar-search`      | A search box: every view shows only events whose title has every word (accents and case ignored)                                 |
+| `event-context-menu`   | A right-click / Shift+F10 menu on events (Open, Duplicate, Move to calendar, Delete); snippets replace or extend it              |
+| `event-preview`        | A card with an event's details on hover or keyboard focus (accessible); a snippet replaces its content                           |
+| `calendar-list`        | Checkboxes to show or hide each calendar of `calendars`, in its color                                                            |
+| `recurrence-editor`    | A full repeat-rule editor; plug it into `event-dialog` (snippet `recurrence`) or your own form                                   |
+| `calendar-state`       | Installed automatically: the runes state, event store and drag helpers                                                           |
 
 Each view is shown by a `<FullCalendar.View name="…">`. Registering a view also lists it in `<FullCalendar.ViewSwitcher>`. Built-in names (`month`, `week`, `day`, `agenda`, `year`, `timeline`, `resources`, `gantt`) know their date range; for your own view, pass `range` and `unit`:
 

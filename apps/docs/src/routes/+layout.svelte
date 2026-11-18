@@ -28,6 +28,7 @@
 		{ href: resolve('/ganchos'), label: 'Ganchos' },
 		{ href: resolve('/carga'), label: 'Carga por rango' },
 		{ href: resolve('/personalizar'), label: 'Personalizar' },
+		{ href: resolve('/asistente'), label: 'Asistente' },
 		{ href: resolve('/docs'), label: 'Documentación' }
 	];
 </script>

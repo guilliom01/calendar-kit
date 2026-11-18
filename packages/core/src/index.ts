@@ -7,3 +7,4 @@ export * from './recurrence/index.js';
 export * from './store/index.js';
 export * from './time/index.js';
 export * from './views/index.js';
+export * from './scheduling/index.js';
