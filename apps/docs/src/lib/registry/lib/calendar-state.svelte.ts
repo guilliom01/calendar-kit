@@ -74,6 +74,9 @@ export const defaultLabels = {
 	calendar: 'Calendar',
 	calendars: 'Calendars',
 	search: 'Search events',
+	open: 'Open',
+	duplicate: 'Duplicate',
+	moveToCalendar: 'Move to calendar',
 	gantt: 'Gantt',
 	noEvents: 'No events',
 	loading: 'Loading…',
@@ -217,6 +220,8 @@ export interface CalendarStateOptions<T extends CalendarEvent> extends EventStor
 
 	/** An event was clicked (or activated with the keyboard). Built-in: open the event dialog. */
 	onEventClick?(event: T, nativeEvent: Event): boolean | void;
+	/** An event was right-clicked (or got the context menu key). Built-in: the `event-context-menu` block. */
+	onEventContextMenu?(event: T, nativeEvent: Event): boolean | void;
 	/** "+N" was clicked on a day with hidden events. Built-in: a popover listing all of them. */
 	onMoreClick?(day: CalendarDate, events: T[]): boolean | void;
 	/** A day number or day header was clicked. Built-in: show that day in the day view. */
@@ -447,6 +452,11 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 
 	// Interactions, called by the views. Each runs its hook, then the built-in behavior.
 
+	/** Whether the built-in context menu should open for `event`, after `onEventContextMenu`. */
+	contextMenu(event: T, nativeEvent: Event) {
+		return this.#options.onEventContextMenu?.(event, nativeEvent) !== false;
+	}
+
 	clickEvent(event: T, nativeEvent: Event) {
 		if (this.#options.onEventClick?.(event, nativeEvent) === false) return;
 		if (this.canEdit(event)) this.draft = { event, isNew: false };
@@ -537,6 +547,16 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 
 	create(event: T) {
 		return this.#track(this.store.create(event));
+	}
+
+	/** Creates a copy of `event` with a new id. A copy of an occurrence is a single event. */
+	duplicate(event: T) {
+		const copy = { ...event, id: this.#createId() };
+		delete copy.rrule;
+		delete copy.exdates;
+		delete copy.seriesId;
+		delete copy.recurrenceId;
+		return this.create(copy);
 	}
 
 	/** Saves a changed event. For an occurrence of a series, first asks for the scope. */

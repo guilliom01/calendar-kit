@@ -62,20 +62,21 @@ Events are all-day (`CalendarDate` start/end) or timed (`ZonedDateTime` start/en
 
 ## Blocks
 
-| Item                | Add it when you want…                                                                                                            |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `calendar`          | Always. `Root`, `View`, `Toolbar` and parts: `Nav`, `Title`, `ViewSwitcher`, `NewEvent`, `UndoRedo`, `TimeZoneSelect`, `Loading` |
-| `month-view`        | A month grid with multi-day bars and "+N" overflow                                                                               |
-| `time-grid`         | Week or day views; with `resources`, one column per resource                                                                     |
-| `agenda-view`       | The month's events listed day by day                                                                                             |
-| `year-view`         | Twelve small months with busier days tinted                                                                                      |
-| `timeline-view`     | Resources as rows (nested, collapsible) across the week                                                                          |
-| `gantt-view`        | Tasks (`progress`, `dependsOn`) across the month with dependency arrows                                                          |
-| `event-dialog`      | A ready-made dialog to create, edit and delete events, and to pick the scope of changes to recurring events                      |
-| `calendar-search`   | A search box: every view shows only events whose title has every word (accents and case ignored)                                 |
-| `calendar-list`     | Checkboxes to show or hide each calendar of `calendars`, in its color                                                            |
-| `recurrence-editor` | A full repeat-rule editor; plug it into `event-dialog` (snippet `recurrence`) or your own form                                   |
-| `calendar-state`    | Installed automatically: the runes state, event store and drag helpers                                                           |
+| Item                 | Add it when you want…                                                                                                            |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `calendar`           | Always. `Root`, `View`, `Toolbar` and parts: `Nav`, `Title`, `ViewSwitcher`, `NewEvent`, `UndoRedo`, `TimeZoneSelect`, `Loading` |
+| `month-view`         | A month grid with multi-day bars and "+N" overflow                                                                               |
+| `time-grid`          | Week or day views; with `resources`, one column per resource                                                                     |
+| `agenda-view`        | The month's events listed day by day                                                                                             |
+| `year-view`          | Twelve small months with busier days tinted                                                                                      |
+| `timeline-view`      | Resources as rows (nested, collapsible) across the week                                                                          |
+| `gantt-view`         | Tasks (`progress`, `dependsOn`) across the month with dependency arrows                                                          |
+| `event-dialog`       | A ready-made dialog to create, edit and delete events, and to pick the scope of changes to recurring events                      |
+| `calendar-search`    | A search box: every view shows only events whose title has every word (accents and case ignored)                                 |
+| `event-context-menu` | A right-click / Shift+F10 menu on events (Open, Duplicate, Move to calendar, Delete); snippets replace or extend it              |
+| `calendar-list`      | Checkboxes to show or hide each calendar of `calendars`, in its color                                                            |
+| `recurrence-editor`  | A full repeat-rule editor; plug it into `event-dialog` (snippet `recurrence`) or your own form                                   |
+| `calendar-state`     | Installed automatically: the runes state, event store and drag helpers                                                           |
 
 Each view is shown by a `<Calendar.View name="…">`. Registering a view also lists it in `<Calendar.ViewSwitcher>`. Built-in names (`month`, `week`, `day`, `agenda`, `year`, `timeline`, `resources`, `gantt`) know their date range; for your own view, pass `range` and `unit`:
 
@@ -112,15 +113,16 @@ The demo page `/personalizar` uses them in the month, week and timeline views.
 
 Every interaction runs your hook first; return `false` to skip the built-in behavior.
 
-| Option          | When                                                      | Built-in behavior                              |
-| --------------- | --------------------------------------------------------- | ---------------------------------------------- |
-| `onEventClick`  | An event is clicked or activated                          | Open the event dialog (if you added one)       |
-| `onMoreClick`   | "+N" is clicked in the month view                         | A popover listing every event of that day      |
-| `onDateClick`   | A day number or day header is clicked                     | Show the day view (if you registered one)      |
-| `onSelect`      | An empty day or time range is picked                      | Open the dialog for a new event                |
-| `onEventChange` | An event is dragged or resized                            | Save it. Return an event to save that instead  |
-| `resolveScope`  | A recurring event is changed                              | Ask "this / following / all" in the dialog     |
-| `isEditable`    | Per event and action (`move`, `resize`, `delete`, `edit`) | Everything is editable when `editable` is true |
+| Option               | When                                                      | Built-in behavior                               |
+| -------------------- | --------------------------------------------------------- | ----------------------------------------------- |
+| `onEventClick`       | An event is clicked or activated                          | Open the event dialog (if you added one)        |
+| `onMoreClick`        | "+N" is clicked in the month view                         | A popover listing every event of that day       |
+| `onEventContextMenu` | An event is right-clicked (or Shift+F10)                  | The `event-context-menu` block, if you added it |
+| `onDateClick`        | A day number or day header is clicked                     | Show the day view (if you registered one)       |
+| `onSelect`           | An empty day or time range is picked                      | Open the dialog for a new event                 |
+| `onEventChange`      | An event is dragged or resized                            | Save it. Return an event to save that instead   |
+| `resolveScope`       | A recurring event is changed                              | Ask "this / following / all" in the dialog      |
+| `isEditable`         | Per event and action (`move`, `resize`, `delete`, `edit`) | Everything is editable when `editable` is true  |
 
 With `calendars: [{ id, title, color }]`, events join a calendar through `calendarId`, take its color when they have none, and hide with it (`hiddenCalendars`, or the `calendar-list` block).
 

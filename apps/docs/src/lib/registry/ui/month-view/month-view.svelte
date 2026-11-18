@@ -9,7 +9,7 @@
 		barResizeHandles
 	} from '#lib/registry/lib/calendar-drag.js';
 	import * as Popover from '#lib/registry/ui/popover/index.js';
-	import { dayStepper, keyboardMove } from '#lib/registry/lib/calendar-keyboard.js';
+	import { dayStepper, contextMenuKey, keyboardMove } from '#lib/registry/lib/calendar-keyboard.js';
 	import {
 		getCalendar,
 		pluralLabel,
@@ -111,6 +111,7 @@
 
 	/** Delete removes the event; `moveKey` (without modifiers) starts keyboard move mode. */
 	function onEventKey(key: KeyboardEvent, event: CalendarEvent) {
+		if (contextMenuKey(key)) return;
 		if ((key.key === 'Delete' || key.key === 'Backspace') && calendar.canEdit(event, 'delete')) {
 			key.preventDefault();
 			void calendar.remove(event.id);
@@ -160,6 +161,7 @@
 				: undefined,
 			onpointerdown: (down: PointerEvent) => startDrag(down, event),
 			onclick: (click: MouseEvent) => calendar.clickEvent(event, click),
+			oncontextmenu: (menu: MouseEvent) => onEventMenu(event, menu),
 			onkeydown: (key: KeyboardEvent) => onEventKey(key, event)
 		};
 	}
@@ -182,6 +184,11 @@
 		return bar
 			? barResizeHandles(calendar, item.event, item, (resized) => (preview = resized))
 			: {};
+	}
+
+	/** `onEventContextMenu` decides first; returning false keeps menus around the view from opening. */
+	function onEventMenu(event: CalendarEvent, menu: MouseEvent) {
+		if (!calendar.contextMenu(event, menu)) menu.stopPropagation();
 	}
 </script>
 

@@ -5,6 +5,7 @@
 	import { AgendaView } from '#lib/registry/ui/agenda-view/index.js';
 	import { CalendarList } from '#lib/registry/ui/calendar-list/index.js';
 	import { CalendarSearch } from '#lib/registry/ui/calendar-search/index.js';
+	import { EventContextMenu } from '#lib/registry/ui/event-context-menu/index.js';
 	import {
 		ChangeConfirmDialog,
 		EventDialog,
@@ -67,7 +68,7 @@
 
 		<div class="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
 			<CalendarList class="shrink-0 md:w-36 print:hidden" />
-			<div class="flex min-h-0 min-w-0 flex-1 flex-col">
+			<EventContextMenu class="min-w-0">
 				<Calendar.View name="month"><MonthView class="flex-1" /></Calendar.View>
 				<Calendar.View name="week"><TimeGrid class="flex-1" /></Calendar.View>
 				<Calendar.View name="day"><TimeGrid class="flex-1" /></Calendar.View>
@@ -82,7 +83,7 @@
 					<TimeGrid class="flex-1" resources={demoResources} />
 				</Calendar.View>
 				<Calendar.View name="gantt"><GanttView class="flex-1" /></Calendar.View>
-			</div>
+			</EventContextMenu>
 		</div>
 
 		<EventDialog resources={demoResources}>

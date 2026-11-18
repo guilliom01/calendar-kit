@@ -8,7 +8,7 @@
 		touchOf,
 		withPreview
 	} from '#lib/registry/lib/calendar-drag.js';
-	import { dayStepper, keyboardMove } from '#lib/registry/lib/calendar-keyboard.js';
+	import { dayStepper, contextMenuKey, keyboardMove } from '#lib/registry/lib/calendar-keyboard.js';
 	import {
 		getCalendar,
 		type DaySnippetArgs,
@@ -102,6 +102,7 @@
 	const percent = $derived(new Intl.NumberFormat(calendar.locale, { style: 'percent' }));
 	/** Delete removes the event; `moveKey` (without modifiers) starts keyboard move mode. */
 	function onEventKey(key: KeyboardEvent, event: CalendarEvent) {
+		if (contextMenuKey(key)) return;
 		if ((key.key === 'Delete' || key.key === 'Backspace') && calendar.canEdit(event, 'delete')) {
 			key.preventDefault();
 			void calendar.remove(event.id);
@@ -165,6 +166,7 @@
 				: undefined,
 			onpointerdown: (down: PointerEvent) => startDrag(down, event),
 			onclick: (click: MouseEvent) => calendar.clickEvent(event, click),
+			oncontextmenu: (menu: MouseEvent) => onEventMenu(event, menu),
 			onkeydown: (key: KeyboardEvent) => onEventKey(key, event)
 		};
 	}
@@ -188,6 +190,11 @@
 			{ continuesBefore: item.continuesBefore, continuesAfter: item.continuesAfter },
 			(resized) => (preview = resized)
 		);
+	}
+
+	/** `onEventContextMenu` decides first; returning false keeps menus around the view from opening. */
+	function onEventMenu(event: CalendarEvent, menu: MouseEvent) {
+		if (!calendar.contextMenu(event, menu)) menu.stopPropagation();
 	}
 </script>
 

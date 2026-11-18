@@ -35,6 +35,12 @@
 			message = `Más eventos el ${day.toString()}: ${events.length}`;
 			return false;
 		},
+		// Our own reaction to a right-click instead of a menu.
+		onEventContextMenu: (event, nativeEvent) => {
+			nativeEvent.preventDefault();
+			message = `Menú propio para: ${event.title}`;
+			return false;
+		},
 		// Show the picked day instead of opening a dialog.
 		onSelect: ({ start }) => {
 			message = `Selección: ${start.toString()}`;

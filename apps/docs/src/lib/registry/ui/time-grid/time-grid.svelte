@@ -36,6 +36,7 @@
 	} from '#lib/registry/lib/calendar-drag.js';
 	import {
 		dayStepper,
+		contextMenuKey,
 		keyboardMove,
 		type MoveStepper
 	} from '#lib/registry/lib/calendar-keyboard.js';
@@ -372,6 +373,7 @@
 		event: CalendarEvent,
 		stepper: MoveStepper<CalendarEvent>
 	) {
+		if (contextMenuKey(key)) return;
 		if ((key.key === 'Delete' || key.key === 'Backspace') && calendar.canEdit(event, 'delete')) {
 			key.preventDefault();
 			void calendar.remove(event.id);
@@ -416,6 +418,7 @@
 				: undefined,
 			onpointerdown: (down: PointerEvent) => startAllDayDrag(down, event),
 			onclick: (click: MouseEvent) => openEvent(event, click),
+			oncontextmenu: (menu: MouseEvent) => onEventMenu(event, menu),
 			onkeydown: (key: KeyboardEvent) => onEventKey(key, event, dayStepper())
 		};
 	}
@@ -440,6 +443,7 @@
 				: undefined,
 			onpointerdown: (down: PointerEvent) => startMove(down, item),
 			onclick: (click: MouseEvent) => openEvent(event, click),
+			oncontextmenu: (menu: MouseEvent) => onEventMenu(event, menu),
 			onkeydown: (key: KeyboardEvent) => onEventKey(key, event, timedStepper)
 		};
 	}
@@ -467,6 +471,11 @@
 			class: 'flex flex-col items-center gap-0.5 py-1.5 hover:bg-muted',
 			onclick: (click: MouseEvent) => calendar.clickDate(day, click)
 		};
+	}
+
+	/** `onEventContextMenu` decides first; returning false keeps menus around the view from opening. */
+	function onEventMenu(event: CalendarEvent, menu: MouseEvent) {
+		if (!calendar.contextMenu(event, menu)) menu.stopPropagation();
 	}
 </script>
 

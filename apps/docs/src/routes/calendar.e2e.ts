@@ -1089,3 +1089,46 @@ test.describe('search and filters', () => {
 		await expect(page.getByRole('button', { name: /Daily standup/ })).toBeVisible();
 	});
 });
+
+test.describe('context menu', () => {
+	const menu = (page: Page) => page.getByRole('menu');
+
+	test('duplicates an event', async ({ page }) => {
+		await page.getByRole('button', { name: /Svelte workshop/ }).click({ button: 'right' });
+		await menu(page).getByRole('menuitem', { name: 'Duplicar' }).click();
+		await expect(page.getByRole('button', { name: /Svelte workshop/ })).toHaveCount(2);
+	});
+
+	test('moves an event to another calendar', async ({ page }) => {
+		await page.getByRole('button', { name: /Daily standup/ }).click({ button: 'right' });
+		await menu(page).getByRole('menuitem', { name: 'Mover a calendario' }).click();
+		await page.getByRole('menuitem', { name: 'Personal' }).click();
+		await expect
+			.poll(() =>
+				page
+					.locator('[data-event-id="standup"]')
+					.evaluate((element) => getComputedStyle(element).getPropertyValue('--event-color').trim())
+			)
+			.toBe('oklch(0.65 0.15 150)');
+	});
+
+	test('deletes an event, and opens from the keyboard with Shift+F10', async ({ page }) => {
+		const workshop = page.getByRole('button', { name: /Svelte workshop/ });
+		await workshop.focus();
+		await page.keyboard.press('Shift+F10');
+		await menu(page).getByRole('menuitem', { name: 'Eliminar' }).click();
+		await expect(workshop).toHaveCount(0);
+	});
+
+	test('the developer can add items, and the hook can replace the menu', async ({ page }) => {
+		await page.goto('/personalizar');
+		await page.getByRole('button', { name: 'Feriado' }).first().click({ button: 'right' });
+		await menu(page).getByRole('menuitem', { name: 'Ver detalles' }).click();
+		await expect(page.getByTestId('opened')).toHaveText('Detalles: Feriado');
+
+		await page.goto('/ganchos');
+		await page.getByRole('button', { name: /Svelte workshop/ }).click({ button: 'right' });
+		await expect(page.getByTestId('message')).toHaveText('Menú propio para: Svelte workshop');
+		await expect(menu(page)).toHaveCount(0);
+	});
+});

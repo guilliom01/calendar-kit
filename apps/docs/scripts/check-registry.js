@@ -3,7 +3,15 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const SHADCN = new Set(['button', 'checkbox', 'dialog', 'input', 'label', 'popover']);
+const SHADCN = new Set([
+	'button',
+	'checkbox',
+	'context-menu',
+	'dialog',
+	'input',
+	'label',
+	'popover'
+]);
 const registry = JSON.parse(readFileSync('registry.json', 'utf8'));
 const listed = new Set(registry.items.flatMap((item) => item.files.map((file) => file.path)));
 

@@ -8,6 +8,7 @@
 		type EventSnippetArgs,
 		type PartProps
 	} from '#lib/registry/lib/calendar-state.svelte.js';
+	import { contextMenuKey } from '#lib/registry/lib/calendar-keyboard.js';
 	import { cn } from '#lib/utils.js';
 
 	interface Props {
@@ -67,7 +68,9 @@
 				calendar.eventClass(event)
 			),
 			style: `--event-color: ${calendar.colorOf(event)}`,
-			onclick: (click: MouseEvent) => calendar.clickEvent(event, click)
+			onclick: (click: MouseEvent) => calendar.clickEvent(event, click),
+			onkeydown: contextMenuKey,
+			oncontextmenu: (menu: MouseEvent) => onEventMenu(event, menu)
 		};
 	}
 
@@ -77,6 +80,11 @@
 			class: 'flex items-center gap-2 rounded text-start hover:bg-muted',
 			onclick: (click: MouseEvent) => calendar.clickDate(day, click)
 		};
+	}
+
+	/** `onEventContextMenu` decides first; returning false keeps menus around the view from opening. */
+	function onEventMenu(event: CalendarEvent, menu: MouseEvent) {
+		if (!calendar.contextMenu(event, menu)) menu.stopPropagation();
 	}
 </script>
 

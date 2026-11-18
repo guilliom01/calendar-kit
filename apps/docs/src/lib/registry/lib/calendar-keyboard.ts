@@ -103,3 +103,24 @@ export function dayStepper<T extends CalendarEvent>(verticalDays?: number): Move
 		return days ? moveEvent(current, current.start.add({ days })) : null;
 	};
 }
+
+/**
+ * Shift+F10 or the context menu key on an event: fires `contextmenu` at its center, so menus open
+ * from the keyboard on every platform (macOS has no such key of its own). Returns whether it did.
+ */
+export function contextMenuKey(key: KeyboardEvent) {
+	if (key.key !== 'ContextMenu' && !(key.shiftKey && key.key === 'F10')) return false;
+	key.preventDefault();
+	const element = key.currentTarget as HTMLElement;
+	const { left, top, width, height } = element.getBoundingClientRect();
+	element.dispatchEvent(
+		new MouseEvent('contextmenu', {
+			bubbles: true,
+			cancelable: true,
+			button: 2,
+			clientX: left + width / 2,
+			clientY: top + height / 2
+		})
+	);
+	return true;
+}

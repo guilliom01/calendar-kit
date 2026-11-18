@@ -287,6 +287,24 @@
 			]
 		},
 		{
+			"name": "event-context-menu",
+			"type": "registry:ui",
+			"title": "Event context menu",
+			"description": "Optional: wrap the views to get a right-click (or Shift+F10) menu on events with Open, Duplicate, Move to calendar and Delete. Snippets replace or extend the items.",
+			"dependencies": ["@calendar-kit/core"],
+			"registryDependencies": ["context-menu", "utils", "./calendar-state.json"],
+			"files": [
+				{
+					"path": "src/lib/registry/ui/event-context-menu/event-context-menu.svelte",
+					"type": "registry:ui"
+				},
+				{
+					"path": "src/lib/registry/ui/event-context-menu/index.ts",
+					"type": "registry:ui"
+				}
+			]
+		},
+		{
 			"name": "import-export",
 			"type": "registry:ui",
 			"title": "Import and export",

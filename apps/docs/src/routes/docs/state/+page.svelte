@@ -163,6 +163,12 @@
 				'"+N" was clicked in the month view. Built-in: a popover listing every event of the day.'
 		},
 		{
+			name: 'onEventContextMenu(event, nativeEvent)',
+			type: 'boolean | void',
+			description:
+				'An event was right-clicked, or got Shift+F10 or the menu key. Built-in: the event-context-menu block, if mounted.'
+		},
+		{
 			name: 'onDateClick(date, nativeEvent)',
 			type: 'boolean | void',
 			description:
@@ -216,6 +222,7 @@
 	</li>
 	<li>
 		<code>create(event)</code>, <code>update(event)</code>, <code>remove(id)</code>,
+		<code>duplicate(event)</code>,
 		<code>importEvents(events)</code>, <code>undo()</code>, <code>redo()</code>: changes, all
 		optimistic and undoable.
 	</li>
