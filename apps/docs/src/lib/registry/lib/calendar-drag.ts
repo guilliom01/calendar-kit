@@ -37,12 +37,76 @@ function swallowNextClick() {
 
 const preventDefault = (event: Event) => event.preventDefault();
 
+/** Distance from a scroll container's edge, in pixels, where a drag starts scrolling it. */
+const SCROLL_EDGE = 48;
+/** Auto-scroll speed at the very edge (or beyond it), in pixels per frame. */
+const SCROLL_SPEED = 16;
+/** Milliseconds the pointer must rest near an edge before scrolling, so drops near it stay put. */
+const SCROLL_DELAY = 250;
+
+/** Scrollable ancestors of `element`, innermost first. */
+function scrollParents(element: Element | null) {
+	const parents: HTMLElement[] = [];
+	for (let node = element?.parentElement; node; node = node.parentElement) {
+		const { overflowX, overflowY } = getComputedStyle(node);
+		if (/auto|scroll/.test(overflowX + overflowY)) parents.push(node);
+	}
+	return parents;
+}
+
+/** Scroll step along one axis: negative near the start edge, positive near the end edge. */
+function edgeSpeed(position: number, start: number, end: number) {
+	const edge = Math.min(SCROLL_EDGE, (end - start) / 4);
+	const depth =
+		position < start + edge
+			? -(start + edge - position)
+			: position > end - edge
+				? position - (end - edge)
+				: 0;
+	return Math.sign(depth) * SCROLL_SPEED * Math.min(1, Math.abs(depth) / edge);
+}
+
+/**
+ * While the pointer rests near the edge of a scroll container around `element` (for
+ * `SCROLL_DELAY` ms), scrolls the
+ * innermost one that can still move and calls `onScroll`, so the drag preview follows the content.
+ * Returns the function that stops it.
+ */
+function autoScroll(element: Element | null, pointer: () => PointerEvent, onScroll: () => void) {
+	const parents = scrollParents(element);
+	// When the pointer entered an edge zone; undefined while it is away from every edge.
+	let since: number | undefined;
+	let frame = requestAnimationFrame(function step(now) {
+		const { clientX, clientY } = pointer();
+		const steps = parents.map((parent) => {
+			const rect = parent.getBoundingClientRect();
+			return [edgeSpeed(clientX, rect.left, rect.right), edgeSpeed(clientY, rect.top, rect.bottom)];
+		});
+		if (!steps.some(([left, top]) => left || top)) since = undefined;
+		else if (since === undefined) since = now;
+		else if (now - since >= SCROLL_DELAY) {
+			for (const [index, parent] of parents.entries()) {
+				const { scrollLeft, scrollTop } = parent;
+				const [left, top] = steps[index]!;
+				parent.scrollBy({ left, top, behavior: 'instant' });
+				if (parent.scrollLeft !== scrollLeft || parent.scrollTop !== scrollTop) {
+					onScroll();
+					break;
+				}
+			}
+		}
+		frame = requestAnimationFrame(step);
+	});
+	return () => cancelAnimationFrame(frame);
+}
+
 /**
  * Follows a primary-button press until it is released or cancelled.
  *
  * Mouse and pen drag at once. A finger must rest for `touch` milliseconds first: moving earlier
  * is a scroll, so tracking stops and the page scrolls normally. Once lifted, page scrolling and
  * the long-press menu are blocked until the finger is released. `touch = false` never drags.
+ * Near the edge of a scroll container, the container scrolls and `onMove` runs again.
  */
 export function trackPointer(
 	down: PointerEvent,
@@ -54,6 +118,7 @@ export function trackPointer(
 	let lifted = !isTouch;
 	let dragging = false;
 	let timer: ReturnType<typeof setTimeout> | undefined;
+	let stopScrolling: (() => void) | undefined;
 
 	if (isTouch && touch !== false) {
 		timer = setTimeout(() => {
@@ -66,11 +131,20 @@ export function trackPointer(
 		}, touch);
 	}
 
+	let last = down;
 	const move = (event: PointerEvent) => {
 		const distance = Math.hypot(event.clientX - down.clientX, event.clientY - down.clientY);
 		if (!dragging && distance < DRAG_THRESHOLD) return;
 		if (!lifted) return cancel(); // a touch that moved too soon is a scroll
-		dragging = true;
+		last = event;
+		if (!dragging) {
+			dragging = true;
+			stopScrolling = autoScroll(
+				down.target as Element,
+				() => last,
+				() => handlers.onMove(last)
+			);
+		}
 		handlers.onMove(event);
 	};
 	const up = (event: PointerEvent) => {
@@ -89,6 +163,7 @@ export function trackPointer(
 	};
 	const stop = () => {
 		clearTimeout(timer);
+		stopScrolling?.();
 		window.removeEventListener('pointermove', move);
 		window.removeEventListener('pointerup', up);
 		window.removeEventListener('pointercancel', cancel);

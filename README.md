@@ -128,7 +128,7 @@ Without `event-dialog`, nothing opens: react to `onEventClick` and `onSelect` wi
 
 Changes show right away and are sent to `onMutate(mutation)` (create, update or delete). Return the saved event to replace the local one (for example with a server id); throw to roll the change back (`onError` is called). Changes to the same event are saved in order, and undo/redo (`Calendar.UndoRedo`, Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z) reach `onMutate` as inverse changes.
 
-Users can drag events across days, hours and resources, resize them from the bottom edge, draw new ones over empty time, and press Delete to remove the focused one. Escape cancels a drag.
+Users can drag events across days, hours and resources, resize them from the bottom edge, draw new ones over empty time, and press Delete to remove the focused one. Escape cancels a drag. Resting the pointer near the edge of a scrolling area scrolls it, so events can reach hours or days that are not visible.
 
 ### Recurring events
 

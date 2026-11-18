@@ -881,3 +881,41 @@ test.describe('per-action permissions and event classes', () => {
 		await expect(page.getByRole('button', { name: 'Feriado' })).toHaveClass(/border-dashed/);
 	});
 });
+
+test('dragging near the edge of the time grid scrolls it, and the preview follows the pointer', async ({
+	page
+}) => {
+	await viewButton(page, 'semana').click();
+	// .first(): near midnight the preview is drawn in two parts (today and tomorrow).
+	const workshop = page.getByRole('button', { name: /Svelte workshop/ }).first();
+	await workshop.scrollIntoViewIfNeeded();
+	const scrollTop = () =>
+		workshop.evaluate((element) => {
+			let node = element.parentElement;
+			while (node && getComputedStyle(node).overflowY !== 'auto') node = node.parentElement;
+			return node!.scrollTop;
+		});
+	const before = await scrollTop();
+	const box = (await workshop.boundingBox())!;
+	const area = (await workshop.evaluate((element) => {
+		let node = element.parentElement;
+		while (node && getComputedStyle(node).overflowY !== 'auto') node = node.parentElement;
+		const { bottom } = node!.getBoundingClientRect();
+		return { bottom };
+	}))!;
+
+	const x = box.x + box.width / 2;
+	await page.mouse.move(x, box.y + 20);
+	await page.mouse.down();
+	await page.mouse.move(x, area.bottom - 30, { steps: 5 });
+	await page.mouse.move(x, area.bottom - 10, { steps: 2 });
+
+	await expect.poll(scrollTop).toBeGreaterThan(before + 100);
+	// The preview is redrawn under the pointer instead of scrolling away with the grid.
+	const preview = (await workshop.boundingBox())!;
+	expect(Math.abs(preview.y + 20 - (area.bottom - 10))).toBeLessThan(40);
+
+	await page.keyboard.press('Escape');
+	await page.mouse.up();
+	await expect(workshop).toContainText('3:00 – 6:00 p. m.');
+});
