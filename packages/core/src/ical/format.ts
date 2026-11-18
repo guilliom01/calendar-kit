@@ -58,6 +58,8 @@ function eventLines(event: CalendarEvent, stamp: string): string[] {
 		dateProperty('DTSTART', event.start),
 		dateProperty('DTEND', event.end)
 	];
+	if (event.location) lines.push(`LOCATION:${escapeText(event.location)}`);
+	if (event.description) lines.push(`DESCRIPTION:${escapeText(event.description)}`);
 	if (event.rrule) lines.push(`RRULE:${event.rrule}`);
 	for (const date of event.exdates ?? []) lines.push(dateProperty('EXDATE', date));
 	// calendar-kit fields other apps ignore but a round trip keeps.

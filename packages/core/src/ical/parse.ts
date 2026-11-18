@@ -172,6 +172,11 @@ export function parseICS(text: string, options: IcsImportOptions = {}): IcsImpor
 			end
 		} as CalendarEvent;
 
+		const location = get('LOCATION')?.value;
+		if (location) event.location = unescapeText(location);
+		const description = get('DESCRIPTION')?.value;
+		if (description) event.description = unescapeText(description);
+
 		const rrule = get('RRULE')?.value;
 		if (rrule) {
 			try {

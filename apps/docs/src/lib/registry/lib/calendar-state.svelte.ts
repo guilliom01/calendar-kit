@@ -37,6 +37,8 @@ export const defaultLabels = {
 	newEvent: 'New event',
 	editEvent: 'Edit event',
 	title: 'Title',
+	location: 'Location',
+	description: 'Description',
 	start: 'Start',
 	end: 'End',
 	color: 'Color',

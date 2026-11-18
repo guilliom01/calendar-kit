@@ -7,6 +7,8 @@ export const spanishLabels: Partial<CalendarLabels> = {
 	newEvent: 'Nuevo evento',
 	editEvent: 'Editar evento',
 	title: 'Título',
+	location: 'Lugar',
+	description: 'Descripción',
 	start: 'Inicio',
 	end: 'Fin',
 	color: 'Color',

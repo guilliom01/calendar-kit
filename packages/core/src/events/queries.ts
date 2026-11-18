@@ -57,12 +57,12 @@ const fold = (text: string, locale: string) =>
 		.toLocaleLowerCase(locale);
 
 /**
- * Whether `event`'s title contains every word of `query`, ignoring accents and case. A blank query
- * matches every event.
+ * Whether `event`'s title, location and description together contain every word of `query`,
+ * ignoring accents and case. A blank query matches every event.
  */
 export function matchesQuery(event: CalendarEvent, query: string, locale: string): boolean {
-	const title = fold(event.title, locale);
+	const text = fold([event.title, event.location ?? '', event.description ?? ''].join(' '), locale);
 	return fold(query, locale)
 		.split(/\s+/)
-		.every((word) => title.includes(word));
+		.every((word) => text.includes(word));
 }

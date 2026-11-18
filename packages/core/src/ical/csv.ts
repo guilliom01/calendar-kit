@@ -15,7 +15,18 @@ const cell = (value: string) => (/[",\r\n]/.test(value) ? `"${value.replace(/"/g
  * user sees, or the stored events to list series once (with their `rrule`).
  */
 export function toCSV(events: readonly CalendarEvent[], { timeZone }: CsvExportOptions): string {
-	const header = ['id', 'title', 'start', 'end', 'all_day', 'rrule', 'resources', 'color'];
+	const header = [
+		'id',
+		'title',
+		'start',
+		'end',
+		'all_day',
+		'rrule',
+		'resources',
+		'color',
+		'location',
+		'description'
+	];
 	const rows = events.map((event) => {
 		const allDay = isAllDay(event);
 		const local = (value: CalendarEvent['start']) => {
@@ -32,7 +43,9 @@ export function toCSV(events: readonly CalendarEvent[], { timeZone }: CsvExportO
 			String(allDay),
 			event.rrule ?? '',
 			(event.resourceIds ?? []).join(';'),
-			event.color ?? ''
+			event.color ?? '',
+			event.location ?? '',
+			event.description ?? ''
 		].map(cell);
 	});
 	return [header, ...rows].map((row) => row.join(',')).join('\r\n') + '\r\n';

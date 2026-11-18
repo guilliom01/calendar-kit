@@ -139,7 +139,13 @@
 				<div class="grid gap-0.5">
 					<p class="font-medium">{event.title || calendar.labels.untitled}</p>
 					<p class="text-muted-foreground first-letter:uppercase">{calendar.describe(event)}</p>
+					{#if event.location}<p>{event.location}</p>{/if}
 					{#if source}<p class="text-muted-foreground">{source.title}</p>{/if}
+					{#if event.description}
+						<p class="line-clamp-3 whitespace-pre-line text-muted-foreground">
+							{event.description}
+						</p>
+					{/if}
 				</div>
 			</div>
 		{/if}

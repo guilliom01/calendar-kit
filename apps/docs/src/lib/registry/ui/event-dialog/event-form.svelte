@@ -69,6 +69,8 @@
 
 	// Form fields. All-day end dates are shown inclusive ("ends on Friday"), stored exclusive.
 	let title = $state(original.title);
+	let location = $state(original.location ?? '');
+	let description = $state(original.description ?? '');
 	let color = $state(original.color);
 	let allDay = $state(isAllDay(original));
 	let startDate = $state(isAllDay(original) ? original.start.toString() : dateOf(original.start));
@@ -207,6 +209,8 @@
 		const base = {
 			...original,
 			title: title.trim(),
+			location: location.trim() || undefined,
+			description: description.trim() || undefined,
 			color,
 			rrule: buildRule(),
 			calendarId,
@@ -255,6 +259,11 @@
 			placeholder={labels.untitled}
 			autocomplete="off"
 		/>
+	</div>
+
+	<div class="grid gap-2">
+		<Label for="calendar-event-location">{labels.location}</Label>
+		<Input id="calendar-event-location" bind:value={location} autocomplete="off" />
 	</div>
 
 	<div class="flex items-center gap-2">
@@ -344,6 +353,15 @@
 			</div>
 		</fieldset>
 	{/if}
+
+	<div class="grid gap-2">
+		<Label for="calendar-event-description">{labels.description}</Label>
+		<textarea
+			id="calendar-event-description"
+			rows="3"
+			class="min-h-16 w-full rounded-md border border-input bg-transparent px-2.5 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+			bind:value={description}></textarea>
+	</div>
 
 	{#if calendar.calendars.length}
 		<div class="grid gap-2">

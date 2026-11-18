@@ -71,6 +71,12 @@ describe('matchesQuery', () => {
 		expect(matchesQuery(english, 'clase francés', 'es-PE')).toBe(false);
 	});
 
+	it('also looks in the location and description', () => {
+		const meeting = { ...english, location: 'Miraflores', description: 'Traer laptop' };
+		expect(matchesQuery(meeting, 'miraflores', 'es-PE')).toBe(true);
+		expect(matchesQuery(meeting, 'clase laptop', 'es-PE')).toBe(true);
+	});
+
 	it('matches everything when the query is blank', () => {
 		expect(matchesQuery(english, '   ', 'es-PE')).toBe(true);
 	});

@@ -58,7 +58,7 @@ npx shadcn-svelte@latest add <registry-url>/r/full-calendar.json <registry-url>/
 </FullCalendar.Root>
 ```
 
-Events are all-day (`CalendarDate` start/end) or timed (`ZonedDateTime` start/end). `end` is exclusive, as in iCalendar. Dates and calendar words come from `Intl`, so they follow `locale`; the few texts Intl cannot provide are in `labels` (see `defaultLabels`).
+Events are all-day (`CalendarDate` start/end) or timed (`ZonedDateTime` start/end). Besides `title`, they can carry `location` and `description`, which import and export keep. `end` is exclusive, as in iCalendar. Dates and calendar words come from `Intl`, so they follow `locale`; the few texts Intl cannot provide are in `labels` (see `defaultLabels`).
 
 ## Blocks
 

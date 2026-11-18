@@ -1351,3 +1351,21 @@ test.describe('scheduling assistant', () => {
 		await expect(dialog.getByRole('checkbox', { name: 'Luis' })).toBeChecked();
 	});
 });
+
+test('an event keeps a location and a description, shown in its preview and found by search', async ({
+	page
+}) => {
+	await page.getByRole('button', { name: /Svelte workshop/ }).click();
+	const dialog = page.getByRole('dialog');
+	await dialog.getByLabel('Lugar').fill('Sala Miraflores');
+	await dialog.getByLabel('Descripción').fill('Traer laptop');
+	await dialog.getByRole('button', { name: 'Guardar' }).click();
+	await expect(dialog).toBeHidden();
+
+	await page.getByRole('button', { name: /Svelte workshop/ }).hover();
+	await expect(page.getByRole('tooltip')).toContainText('Sala Miraflores');
+
+	await page.getByRole('searchbox', { name: 'Buscar eventos' }).fill('laptop');
+	await expect(page.getByRole('button', { name: /Svelte workshop/ })).toBeVisible();
+	await expect(page.getByRole('button', { name: /Daily standup/ })).toHaveCount(0);
+});

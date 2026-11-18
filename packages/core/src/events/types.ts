@@ -5,6 +5,10 @@ interface EventBase<TData> {
 	title: string;
 	/** Id of the `CalendarSource` it belongs to (for its color and showing or hiding it). */
 	calendarId?: string | undefined;
+	/** Where it happens: an address, a room or a link. */
+	location?: string | undefined;
+	/** Notes, agenda, instructions. Plain text. */
+	description?: string | undefined;
 	/** Any CSS color; components fall back to the calendar or theme color. */
 	color?: string | undefined;
 	/** Your own payload; the library never reads it. */

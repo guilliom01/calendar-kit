@@ -237,3 +237,19 @@ describe('parseICS', () => {
 		]);
 	});
 });
+
+describe('description and location', () => {
+	it('survive a round trip, escaped', () => {
+		const event: CalendarEvent = {
+			...timed('m', '2026-11-18T09:00', '2026-11-18T10:00'),
+			location: 'Av. Larco 123, Miraflores',
+			description: 'Agenda:\n1. Presupuesto; 2. Fechas'
+		};
+		const ics = toICS([event], { now: stamp });
+		expect(ics).toContain(String.raw`LOCATION:Av. Larco 123\, Miraflores`);
+		expect(ics).toContain(String.raw`DESCRIPTION:Agenda:\n1. Presupuesto\; 2. Fechas`);
+		const [back] = parseICS(ics, { timeZone }).events;
+		expect(back!.location).toBe(event.location);
+		expect(back!.description).toBe(event.description);
+	});
+});

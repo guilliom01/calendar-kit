@@ -58,7 +58,18 @@ export function toXLSX(
 	events: readonly CalendarEvent[],
 	{ timeZone, sheetName = 'Events' }: XlsxExportOptions
 ): Uint8Array<ArrayBuffer> {
-	const header = ['id', 'title', 'start', 'end', 'all_day', 'rrule', 'resources', 'color'];
+	const header = [
+		'id',
+		'title',
+		'start',
+		'end',
+		'all_day',
+		'rrule',
+		'resources',
+		'color',
+		'location',
+		'description'
+	];
 	const when = (value: CalendarEvent['start']): Cell => {
 		if (!('hour' in value)) return { number: serial(value), style: DATE };
 		const local = toTimeZone(value, timeZone);
@@ -74,7 +85,9 @@ export function toXLSX(
 			{ boolean: allDay },
 			{ text: event.rrule ?? '' },
 			{ text: (event.resourceIds ?? []).join('; ') },
-			{ text: event.color ?? '' }
+			{ text: event.color ?? '' },
+			{ text: event.location ?? '' },
+			{ text: event.description ?? '' }
 		];
 	});
 
@@ -86,7 +99,7 @@ export function toXLSX(
 				`<row r="${index + 2}">${cells.map((cell, at) => cellXml(cell, `${column(at)}${index + 2}`)).join('')}</row>`
 		)
 	];
-	const widths = [14, 32, 18, 18, 8, 24, 20, 12]
+	const widths = [14, 32, 18, 18, 8, 24, 20, 12, 24, 40]
 		.map(
 			(width, index) =>
 				`<col min="${index + 1}" max="${index + 1}" width="${width}" customWidth="1"/>`

@@ -50,7 +50,8 @@ const workbook = toXLSX(visibleEvents, { timeZone: 'America/Lima', sheetName: 'T
 <h2>CSV and Excel</h2>
 <p>
 	Both export what the user sees: the visible range, with recurring events expanded, one row each
-	with local times. Pass <code>events</code> to export something else (for example
+	with local times, with the columns id, title, start, end, all_day, rrule, resources, color,
+	location and description. Pass <code>events</code> to export something else (for example
 	<code>calendar.events</code>, with each series once).
 </p>
 <ul>

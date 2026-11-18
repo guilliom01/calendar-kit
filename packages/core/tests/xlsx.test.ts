@@ -68,3 +68,26 @@ describe('toXLSX', () => {
 		expect(workbook).toContain('name="Eventos &amp; más"');
 	});
 });
+
+describe('toXLSX extra columns', () => {
+	it('adds location and description', () => {
+		const files = unzip(
+			toXLSX(
+				[
+					{
+						...timed('x', '2026-11-18T09:00', '2026-11-18T10:00'),
+						location: 'Sala A',
+						description: 'Notas'
+					}
+				],
+				{
+					timeZone
+				}
+			)
+		);
+		const sheet = files.get('xl/worksheets/sheet1.xml')!;
+		expect(sheet).toContain('<t>location</t>');
+		expect(sheet).toContain('<c r="I2" t="inlineStr"><is><t>Sala A</t></is></c>');
+		expect(sheet).toContain('<c r="J2" t="inlineStr"><is><t>Notas</t></is></c>');
+	});
+});
