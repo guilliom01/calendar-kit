@@ -91,6 +91,11 @@
 			description: 'Long-press milliseconds. Default 400.'
 		},
 		{
+			name: 'moveKey',
+			type: 'string',
+			description: "Key that starts keyboard move mode on a focused event. Default 'm'."
+		},
+		{
 			name: 'labels',
 			type: 'Partial<CalendarLabels>',
 			description: 'Texts Intl cannot provide. See defaultLabels.'

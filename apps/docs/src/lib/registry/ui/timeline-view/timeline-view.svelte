@@ -13,6 +13,11 @@
 	import type { Snippet } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { dragAcrossDays, touchOf, withPreview } from '#lib/registry/lib/calendar-drag.js';
+	import {
+		dayStepper,
+		keyboardMove,
+		type MoveStepper
+	} from '#lib/registry/lib/calendar-keyboard.js';
 	import { getCalendar } from '#lib/registry/lib/calendar-state.svelte.js';
 	import { cn } from '#lib/utils.js';
 
@@ -84,10 +89,41 @@
 		);
 	}
 
-	function onEventKey(key: KeyboardEvent, event: CalendarEvent) {
-		if ((key.key === 'Delete' || key.key === 'Backspace') && calendar.canEdit(event)) {
+	/** Left/right move by day; up/down move to the previous or next resource row. */
+	function rowStepper(rowId: string): MoveStepper<CalendarEvent> {
+		const byDay = dayStepper<CalendarEvent>();
+		let row = rowId;
+		return (current, step) => {
+			if (!step.vertical || step.resize) return byDay(current, step);
+			const ids = rows.filter((other) => !other.hasChildren).map((other) => other.id);
+			const target = ids[ids.indexOf(row) + step.vertical];
+			if (target === undefined) return null;
+			const rest = (current.resourceIds ?? []).filter((id) => id !== row && id !== target);
+			row = target;
+			return { ...current, resourceIds: target ? [...rest, target] : rest };
+		};
+	}
+
+	/** Delete removes the event; `moveKey` (without modifiers) starts keyboard move mode. */
+	function onEventKey(key: KeyboardEvent, event: CalendarEvent, rowId: string) {
+		if (!calendar.canEdit(event)) return;
+		if (key.key === 'Delete' || key.key === 'Backspace') {
 			key.preventDefault();
 			void calendar.remove(event.id);
+		} else if (
+			key.key.toLowerCase() === calendar.moveKey &&
+			!key.ctrlKey &&
+			!key.metaKey &&
+			!key.altKey
+		) {
+			key.preventDefault();
+			keyboardMove(
+				calendar,
+				event,
+				key.currentTarget as HTMLElement,
+				rowStepper(rowId),
+				(moved) => (preview = moved)
+			);
 		}
 	}
 </script>
@@ -193,7 +229,11 @@
 							title={event.title || calendar.labels.untitled}
 							onpointerdown={(down) => startDrag(down, event)}
 							onclick={(click) => calendar.clickEvent(event, click)}
-							onkeydown={(key) => onEventKey(key, event)}
+							onkeydown={(key) => onEventKey(key, event, row.id)}
+							data-event-id={event.id}
+							aria-keyshortcuts={calendar.canEdit(event)
+								? calendar.moveKey.toUpperCase()
+								: undefined}
 						>
 							{#if eventContent}
 								{@render eventContent(event)}

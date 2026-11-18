@@ -62,5 +62,8 @@ export const spanishLabels: Partial<CalendarLabels> = {
 	confirmMoveDescription: '«{title}» se moverá al {when}.',
 	confirmResizeDescription: '«{title}» quedará el {when}.',
 	move: 'Mover',
-	change: 'Cambiar'
+	change: 'Cambiar',
+	moveMode:
+		'Moviendo «{title}»: las flechas lo mueven, Shift con flechas cambia su duración, Enter guarda, Escape cancela.',
+	moveCancelled: 'Movimiento cancelado.'
 };

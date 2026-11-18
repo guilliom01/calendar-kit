@@ -3,6 +3,7 @@
 	import { eventBounds, layoutWeekRow, type CalendarEvent } from '@calendar-kit/core';
 	import type { Snippet } from 'svelte';
 	import { dragAcrossDays, touchOf, withPreview } from '#lib/registry/lib/calendar-drag.js';
+	import { dayStepper, keyboardMove } from '#lib/registry/lib/calendar-keyboard.js';
 	import { getCalendar } from '#lib/registry/lib/calendar-state.svelte.js';
 	import { cn } from '#lib/utils.js';
 
@@ -80,6 +81,29 @@
 	const weekday = $derived(formatter({ weekday: 'narrow' }));
 	const fullDate = $derived(formatter({ dateStyle: 'full' }));
 	const percent = $derived(new Intl.NumberFormat(calendar.locale, { style: 'percent' }));
+	/** Delete removes the event; `moveKey` (without modifiers) starts keyboard move mode. */
+	function onEventKey(key: KeyboardEvent, event: CalendarEvent) {
+		if (!calendar.canEdit(event)) return;
+		if (key.key === 'Delete' || key.key === 'Backspace') {
+			key.preventDefault();
+			void calendar.remove(event.id);
+		} else if (
+			key.key.toLowerCase() === calendar.moveKey &&
+			!key.ctrlKey &&
+			!key.metaKey &&
+			!key.altKey
+		) {
+			key.preventDefault();
+			keyboardMove(
+				calendar,
+				event,
+				key.currentTarget as HTMLElement,
+				dayStepper(),
+				(moved) => (preview = moved)
+			);
+		}
+	}
+
 	const toDate = (day: CalendarDate) => day.toDate(calendar.timeZone);
 	const dayColumns = $derived(`repeat(${days.length}, minmax(0, 1fr))`);
 
@@ -182,6 +206,11 @@
 								: ''}"
 							onpointerdown={(down) => startDrag(down, event)}
 							onclick={(click) => calendar.clickEvent(event, click)}
+							onkeydown={(key) => onEventKey(key, event)}
+							data-event-id={event.id}
+							aria-keyshortcuts={calendar.canEdit(event)
+								? calendar.moveKey.toUpperCase()
+								: undefined}
 						>
 							<span
 								class="absolute inset-y-0 start-0 bg-(--event-color)/60"

@@ -43,4 +43,6 @@
 
 <div class={cn('flex h-full min-h-0 flex-col gap-3 print:h-auto', className)}>
 	{@render children?.()}
+	<!-- Announces keyboard moves and other changes to screen readers. -->
+	<div class="sr-only" aria-live="polite" aria-atomic="true">{state.announcement}</div>
 </div>

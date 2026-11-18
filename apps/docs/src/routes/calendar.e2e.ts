@@ -745,3 +745,100 @@ test.describe('touch', () => {
 		);
 	});
 });
+
+test.describe('keyboard move mode', () => {
+	const live = (page: Page) => page.locator('div[aria-live="polite"][aria-atomic="true"]');
+	async function press(page: Page, key: string, times = 1) {
+		for (let index = 0; index < times; index++) await page.keyboard.press(key);
+	}
+
+	test('M then arrows move the event; Enter saves without the confirmation dialog', async ({
+		page
+	}) => {
+		await viewButton(page, 'semana').click();
+		const workshop = page.getByRole('button', { name: /Svelte workshop/ });
+		await expect(workshop).toHaveAttribute('aria-keyshortcuts', 'M');
+		await workshop.focus();
+		await page.keyboard.press('m');
+		await expect(live(page)).toContainText('Moviendo «Svelte workshop»');
+
+		await press(page, 'ArrowDown', 4);
+		await expect(live(page)).toContainText('miércoles, 18 de noviembre de 2026');
+		await expect(live(page)).toContainText('4:00');
+		await expect(workshop).toContainText('4:00 – 7:00 p. m.');
+
+		await page.keyboard.press('Enter');
+		await expect(page.getByRole('dialog')).toHaveCount(0);
+		await expect(workshop).toContainText('4:00 – 7:00 p. m.');
+		await expect(workshop).toBeFocused();
+
+		await page.getByRole('button', { name: 'Deshacer' }).click();
+		await expect(workshop).toContainText('3:00 – 6:00 p. m.');
+	});
+
+	test('Escape cancels; Shift with arrows changes the length', async ({ page }) => {
+		await viewButton(page, 'semana').click();
+		const lunch = page.getByRole('button', { name: /Almuerzo/ });
+		await lunch.focus();
+		await page.keyboard.press('m');
+		await press(page, 'Shift+ArrowDown', 2);
+		await expect(lunch).toContainText('1:00 – 3:00 p. m.');
+		await page.keyboard.press('Escape');
+		await expect(lunch).toContainText('1:00 – 2:30 p. m.');
+		await expect(live(page)).toHaveText('Movimiento cancelado.');
+
+		await page.keyboard.press('m');
+		await press(page, 'Shift+ArrowDown', 2);
+		await page.keyboard.press('Enter');
+		await expect(lunch).toContainText('1:00 – 3:00 p. m.');
+	});
+
+	test('in the month view, left/right move a day and up/down a week', async ({ page }) => {
+		const holiday = page.getByRole('button', { name: 'Feriado' });
+		await holiday.focus();
+		await page.keyboard.press('m');
+		await page.keyboard.press('ArrowRight');
+		await page.keyboard.press('ArrowUp');
+		await expect(live(page)).toHaveText('miércoles, 18 de noviembre de 2026');
+		await page.keyboard.press('Enter');
+
+		await page.getByRole('button', { name: 'miércoles, 18 de noviembre de 2026' }).first().click();
+		await expect(page.getByRole('button', { name: 'Feriado' })).toBeVisible();
+	});
+
+	test('in the timeline, up/down move the event to another resource', async ({ page }) => {
+		await viewButton(page, 'Línea de tiempo').click();
+		const workshop = page.getByRole('button', { name: /Svelte workshop/ });
+		await workshop.focus();
+		await page.keyboard.press('m');
+		await page.keyboard.press('ArrowUp');
+		await page.keyboard.press('Enter');
+
+		await workshop.click();
+		await expect(page.getByRole('dialog').getByLabel('Sala A')).toBeChecked();
+		await expect(page.getByRole('dialog').getByLabel('Sala B')).not.toBeChecked();
+	});
+
+	test('recurring events still ask for the scope', async ({ page }) => {
+		await viewButton(page, 'semana').click();
+		await page
+			.getByRole('button', { name: /Clase de inglés/ })
+			.first()
+			.focus();
+		await page.keyboard.press('m');
+		await press(page, 'ArrowDown', 4);
+		await page.keyboard.press('Enter');
+		await expect(
+			page.getByRole('dialog').getByRole('heading', { name: 'Editar evento recurrente' })
+		).toBeVisible();
+	});
+
+	test('hooks still decide: a keyboard move to Sunday is vetoed', async ({ page }) => {
+		await page.goto('/ganchos');
+		await page.getByRole('button', { name: /Svelte workshop/ }).focus();
+		await page.keyboard.press('m');
+		await press(page, 'ArrowLeft', 3);
+		await page.keyboard.press('Enter');
+		await expect(page.getByTestId('message')).toHaveText('No se permiten eventos en domingo');
+	});
+});

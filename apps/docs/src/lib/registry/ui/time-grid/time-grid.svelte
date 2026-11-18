@@ -30,6 +30,11 @@
 		trackPointer,
 		withPreview
 	} from '#lib/registry/lib/calendar-drag.js';
+	import {
+		dayStepper,
+		keyboardMove,
+		type MoveStepper
+	} from '#lib/registry/lib/calendar-keyboard.js';
 	import { getCalendar } from '#lib/registry/lib/calendar-state.svelte.js';
 	import { cn } from '#lib/utils.js';
 
@@ -260,10 +265,49 @@
 		if (event.id !== NEW_EVENT_ID) calendar.clickEvent(event, click);
 	}
 
-	function onEventKey(key: KeyboardEvent, event: CalendarEvent) {
-		if ((key.key === 'Delete' || key.key === 'Backspace') && calendar.canEdit(event)) {
+	/** Up/down move by `snapStep` minutes; left/right move a day (or to the next resource column). */
+	const timedStepper: MoveStepper<CalendarEvent> = (current, { horizontal, vertical, resize }) => {
+		if (resize) {
+			const end = current.end.add({ minutes: vertical * step });
+			return vertical ? resizeEvent(current, end, { minDuration: step }) : null;
+		}
+		if (vertical) return moveEvent(current, current.start.add({ minutes: vertical * step }));
+		if (!horizontal) return null;
+		if (!byResource) return moveEvent(current, current.start.add({ days: horizontal }));
+		const index = cols.findIndex(
+			(column) => column.resource && current.resourceIds?.includes(column.resource.id)
+		);
+		const from = cols[index]?.resource;
+		const to = cols[index + horizontal]?.resource;
+		return from && to
+			? { ...current, resourceIds: reassign(current.resourceIds, from.id, to.id) }
+			: null;
+	};
+
+	/** Delete removes the event; `moveKey` (without modifiers) starts keyboard move mode. */
+	function onEventKey(
+		key: KeyboardEvent,
+		event: CalendarEvent,
+		stepper: MoveStepper<CalendarEvent>
+	) {
+		if (!calendar.canEdit(event)) return;
+		if (key.key === 'Delete' || key.key === 'Backspace') {
 			key.preventDefault();
 			void calendar.remove(event.id);
+		} else if (
+			key.key.toLowerCase() === calendar.moveKey &&
+			!key.ctrlKey &&
+			!key.metaKey &&
+			!key.altKey
+		) {
+			key.preventDefault();
+			keyboardMove(
+				calendar,
+				event,
+				key.currentTarget as HTMLElement,
+				stepper,
+				(moved) => (preview = moved)
+			);
 		}
 	}
 </script>
@@ -352,7 +396,9 @@
 				title={event.title || calendar.labels.untitled}
 				onpointerdown={(down) => startAllDayDrag(down, event)}
 				onclick={(click) => openEvent(event, click)}
-				onkeydown={(key) => onEventKey(key, event)}
+				onkeydown={(key) => onEventKey(key, event, dayStepper())}
+				data-event-id={event.id}
+				aria-keyshortcuts={calendar.canEdit(event) ? calendar.moveKey.toUpperCase() : undefined}
 			>
 				{#if eventContent}
 					{@render eventContent(event)}
@@ -414,7 +460,11 @@
 							title={event.title || calendar.labels.untitled}
 							onpointerdown={(down) => startMove(down, item)}
 							onclick={(click) => openEvent(event, click)}
-							onkeydown={(key) => onEventKey(key, event)}
+							onkeydown={(key) => onEventKey(key, event, timedStepper)}
+							data-event-id={event.id}
+							aria-keyshortcuts={calendar.canEdit(event)
+								? calendar.moveKey.toUpperCase()
+								: undefined}
 						>
 							{#if eventContent}
 								{@render eventContent(event)}

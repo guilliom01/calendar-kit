@@ -10,6 +10,7 @@ import {
 import {
 	EventStore,
 	expandEvents,
+	isAllDay,
 	RangeLoader,
 	seriesChanges,
 	shiftDate,
@@ -90,7 +91,10 @@ export const defaultLabels = {
 	confirmMoveDescription: '"{title}" will move to {when}.',
 	confirmResizeDescription: '"{title}" will be {when}.',
 	move: 'Move',
-	change: 'Change'
+	change: 'Change',
+	moveMode:
+		'Moving "{title}": arrow keys move it, Shift with arrow keys changes its length, Enter saves, Escape cancels.',
+	moveCancelled: 'Move cancelled.'
 };
 
 export type CalendarLabels = typeof defaultLabels;
@@ -177,6 +181,8 @@ export interface CalendarStateOptions<T extends CalendarEvent> extends EventStor
 	 */
 	// Written as a method type so a state of a narrower event type still fits `CalendarState`.
 	confirmChanges?: boolean | { decide(change: EventChange<T>): boolean }['decide'];
+	/** Key that starts moving the focused event with the keyboard. Default 'm'. */
+	moveKey?: string;
 	/** Let touch users drag events (after a long press). Default true. */
 	touchDrag?: boolean;
 	/** Milliseconds a finger must rest on an event before it can be dragged. Default 400. */
@@ -239,6 +245,9 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 	/** A drag or resize waiting for the user to confirm it. */
 	changeRequest: EventChange<T> | null = $state.raw(null);
 	touchDrag = $state(true);
+	moveKey = $state('m');
+	/** Text for screen readers, read by the live region of `<Calendar.Root>`. */
+	announcement = $state('');
 	touchDragDelay = $state(400);
 	/** True while events of the visible range are being loaded. */
 	loading = $state(false);
@@ -263,6 +272,7 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 		if (snapStep) this.snapStep = snapStep;
 		if (editable !== undefined) this.editable = editable;
 		if (options.touchDrag !== undefined) this.touchDrag = options.touchDrag;
+		if (options.moveKey) this.moveKey = options.moveKey;
 		if (options.touchDragDelay !== undefined) this.touchDragDelay = options.touchDragDelay;
 		this.labels = { ...defaultLabels, ...labels };
 		this.#createId = options.createId ?? (() => crypto.randomUUID());
@@ -362,13 +372,39 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 		this.compose(selection.start, selection.end, selection.fields);
 	}
 
-	/** Saves an event the user dragged or resized, after `onEventChange` approves it. */
-	changeEvent(change: EventChange<T>) {
+	/** Says `text` to screen reader users (also when it repeats the previous one). */
+	announce(text: string) {
+		this.announcement = this.announcement === text ? `${text}\u00a0` : text;
+	}
+
+	/** "jueves, 19 de noviembre de 2026, 3:00 – 6:00 p. m." in the calendar's locale and zone. */
+	describe(event: T) {
+		const { locale, timeZone } = this;
+		if (isAllDay(event)) {
+			const format = new DateFormatter(locale, { dateStyle: 'full', timeZone });
+			const last = event.end.subtract({ days: 1 });
+			return event.start.compare(last) === 0
+				? format.format(event.start.toDate(timeZone))
+				: format.formatRange(event.start.toDate(timeZone), last.toDate(timeZone));
+		}
+		return new DateFormatter(locale, {
+			dateStyle: 'full',
+			timeStyle: 'short',
+			timeZone
+		}).formatRange(event.start.toDate(), event.end.toDate());
+	}
+
+	/**
+	 * Saves an event the user dragged, resized or moved with the keyboard, after `onEventChange`.
+	 * `confirmed` skips the confirmation dialog (the keyboard move mode is already explicit).
+	 */
+	changeEvent(change: EventChange<T>, { confirmed = false } = {}) {
 		const verdict = this.#options.onEventChange?.(change);
 		if (verdict === false) return Promise.resolve(undefined);
 		const approved = { ...change, event: verdict && verdict !== true ? verdict : change.event };
 		// Recurring events already ask "this / following / all", which confirms the change.
 		if (
+			!confirmed &&
 			this.#confirmDialogs > 0 &&
 			!this.#occurrence(approved.event.id) &&
 			this.#needsConfirm(approved)

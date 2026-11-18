@@ -14,7 +14,7 @@
 			"name": "calendar-state",
 			"type": "registry:lib",
 			"title": "Calendar state",
-			"description": "Reactive calendar state (Svelte 5 runes) shared through context, plus pointer drag helpers.",
+			"description": "Reactive calendar state (Svelte 5 runes) shared through context, plus pointer drag and keyboard move helpers.",
 			"dependencies": ["@calendar-kit/core", "@internationalized/date"],
 			"registryDependencies": [],
 			"files": [
@@ -24,6 +24,10 @@
 				},
 				{
 					"path": "src/lib/registry/lib/calendar-drag.ts",
+					"type": "registry:lib"
+				},
+				{
+					"path": "src/lib/registry/lib/calendar-keyboard.ts",
 					"type": "registry:lib"
 				}
 			]

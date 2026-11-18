@@ -4,6 +4,7 @@
 	import type { Snippet } from 'svelte';
 	import { dragAcrossDays, touchOf, withPreview } from '#lib/registry/lib/calendar-drag.js';
 	import * as Popover from '#lib/registry/ui/popover/index.js';
+	import { dayStepper, keyboardMove } from '#lib/registry/lib/calendar-keyboard.js';
 	import { getCalendar, pluralLabel } from '#lib/registry/lib/calendar-state.svelte.js';
 	import { cn } from '#lib/utils.js';
 
@@ -77,10 +78,26 @@
 		);
 	}
 
+	/** Delete removes the event; `moveKey` (without modifiers) starts keyboard move mode. */
 	function onEventKey(key: KeyboardEvent, event: CalendarEvent) {
-		if ((key.key === 'Delete' || key.key === 'Backspace') && calendar.canEdit(event)) {
+		if (!calendar.canEdit(event)) return;
+		if (key.key === 'Delete' || key.key === 'Backspace') {
 			key.preventDefault();
 			void calendar.remove(event.id);
+		} else if (
+			key.key.toLowerCase() === calendar.moveKey &&
+			!key.ctrlKey &&
+			!key.metaKey &&
+			!key.altKey
+		) {
+			key.preventDefault();
+			keyboardMove(
+				calendar,
+				event,
+				key.currentTarget as HTMLElement,
+				dayStepper(7),
+				(moved) => (preview = moved)
+			);
 		}
 	}
 
@@ -160,6 +177,8 @@
 						onpointerdown={(down) => startDrag(down, event)}
 						onclick={(click) => calendar.clickEvent(event, click)}
 						onkeydown={(key) => onEventKey(key, event)}
+						data-event-id={event.id}
+						aria-keyshortcuts={calendar.canEdit(event) ? calendar.moveKey.toUpperCase() : undefined}
 					>
 						{#if eventContent}
 							{@render eventContent(event)}
