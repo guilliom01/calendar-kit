@@ -204,7 +204,8 @@ test("external drag: a task dropped on the hours becomes an event and leaves the
   await page.mouse.up();
 
   await expect(example(page).getByRole("button", { name: /Llamar al proveedor/ })).toContainText(
-    "10:00 – 10:30 a. m.",
+    // 30 minutes: one line with the start time.
+    "10:00 a. m.",
   );
   await expect(
     example(page).getByRole("list", { name: "Pendientes" }).getByText("Llamar al proveedor"),

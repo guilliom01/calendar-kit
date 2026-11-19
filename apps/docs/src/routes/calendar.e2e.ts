@@ -1461,3 +1461,20 @@ test("ending a series after a count reads well for any number", async ({ page })
   // No "1 repeticiones": the count is not followed by a word that depends on it.
   await expect(dialog.getByText("repeticiones", { exact: true })).toHaveCount(0);
 });
+
+test("short timed events show on one line, long ones on two", async ({ page }) => {
+  await viewButton(page, "semana").click();
+  const standup = page.getByRole("button", { name: /Daily standup/ });
+  await standup.scrollIntoViewIfNeeded();
+  // 30 minutes: title and start time side by side, so nothing is cut in half.
+  await expect(standup).toContainText("9:00 a. m.");
+  await expect(standup).not.toContainText("9:30");
+  expect(await standup.evaluate((element) => getComputedStyle(element).flexDirection)).toBe("row");
+
+  // Three hours: title, then the full range below it.
+  const workshop = page.getByRole("button", { name: /Svelte workshop/ });
+  await expect(workshop).toContainText("3:00 – 6:00 p. m.");
+  expect(await workshop.evaluate((element) => getComputedStyle(element).flexDirection)).toBe(
+    "column",
+  );
+});

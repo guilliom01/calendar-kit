@@ -63,7 +63,7 @@
      * Replaces the whole event element, timed or all-day. Spread `props` on your element and put
      * the `resizeProps` handles inside it to keep resizing from either edge.
      */
-    event?: Snippet<[EventSnippetArgs & { allDay: boolean }]>;
+    event?: Snippet<[EventSnippetArgs & { allDay: boolean; short: boolean }]>;
     /** Replaces the day header button. Spread `props` to keep opening the day. */
     dayHeader?: Snippet<[DaySnippetArgs]>;
     /** Content of a resource column header (with `resources`). */
@@ -431,12 +431,17 @@
   }
 
   /** Attributes of a timed block; used by the default block and the `event` snippet. */
+  /** Events shorter than this draw on one line: two lines would not fit (30 min is 24px at 3rem/h). */
+  const SHORT_MINUTES = 45;
+  const isShort = (item: TimedItem) => item.end - item.start < SHORT_MINUTES;
+
   function timedProps(item: TimedItem): PartProps {
     const event = item.event;
     return {
       type: "button",
       class: cn(
-        "group absolute flex flex-col overflow-hidden rounded-md border-s-4 border-(--event-color) bg-(--event-color)/15 px-1.5 py-0.5 text-start text-xs ring-1 ring-background [-webkit-touch-callout:none] hover:bg-(--event-color)/25",
+        "group absolute flex overflow-hidden rounded-md border-s-4 border-(--event-color) bg-(--event-color)/15 px-1.5 py-0.5 text-start text-xs ring-1 ring-background [-webkit-touch-callout:none] hover:bg-(--event-color)/25",
+        isShort(item) ? "flex-row items-baseline gap-1 leading-tight" : "flex-col",
         item.continuesBefore && "rounded-t-none",
         item.continuesAfter && "rounded-b-none",
         preview?.id === event.id && "z-20 opacity-80 shadow-lg",
@@ -573,6 +578,7 @@
           resizeProps: allDayResize(item),
           dragging: preview?.id === event.id,
           allDay: true,
+          short: false,
         })}
       {:else}
         {@const resize = allDayResize(item)}
@@ -641,6 +647,7 @@
                 props: timedProps(item),
                 dragging: preview?.id === event.id,
                 allDay: false,
+                short: isShort(item),
                 resizeProps: resizeProps(item),
               })}
             {:else}
@@ -651,7 +658,14 @@
                 {:else}
                   <span class="truncate font-medium">{event.title || calendar.labels.untitled}</span
                   >
-                  {#if !isAllDay(event)}
+                  {#if isAllDay(event)}
+                    <!-- nothing: all-day events have no time -->
+                  {:else if isShort(item)}
+                    <!-- Like Google Calendar: "Daily standup 9:00 a. m." on one line. -->
+                    <span class="shrink-0 text-muted-foreground"
+                      >{time.format(event.start.toDate())}</span
+                    >
+                  {:else}
                     <span class="truncate text-muted-foreground">
                       {time.formatRange(event.start.toDate(), event.end.toDate())}
                     </span>
