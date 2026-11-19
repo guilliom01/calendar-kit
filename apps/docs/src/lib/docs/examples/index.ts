@@ -17,7 +17,7 @@ export const examples: Example[] = [
     slug: "events",
     title: "Events",
     description:
-      "Showing events. The calendar is read-only (editable: false); the button adds random events through the state.",
+      "Showing events. The calendar is read-only for the user (editable: false), but your code can still change it: one button adds random events, the other opens a simple form of your own.",
   },
   {
     slug: "views",

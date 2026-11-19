@@ -401,3 +401,34 @@ test("own UI: our buttons, editor and drag confirmation, without the library's",
   await expect(confirmation).toHaveCount(0);
   await expect(standup).toContainText("10:00 a. m.");
 });
+
+test("editing: the built-in dialog's Custom… repeat opens the full rule editor", async ({
+  page,
+}) => {
+  await open(page, "editing");
+  await example(page).getByRole("button", { name: "Nuevo evento" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Título").fill("Gimnasio");
+  await dialog.getByRole("combobox", { name: "Repetir" }).selectOption({ label: "Personalizado…" });
+  // Today is Tuesday: the editor starts weekly on Tuesday; add Thursday.
+  await expect(dialog.getByRole("button", { name: "martes" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await dialog.getByRole("button", { name: "jueves" }).click();
+  await dialog.getByRole("button", { name: "Guardar" }).click();
+
+  await example(page).getByRole("button", { name: "semana", exact: true }).click();
+  await expect(example(page).getByRole("button", { name: /Gimnasio/ })).toHaveCount(2);
+});
+
+test("events: a second button opens our own simple form", async ({ page }) => {
+  await open(page, "events");
+  await example(page).getByRole("button", { name: "Agregar con mi formulario" }).click();
+  const form = example(page).getByRole("form", { name: "Mi formulario" });
+  await form.getByLabel("Título").fill("Cumpleaños de Rosa");
+  await form.getByLabel("Fecha").fill("2026-11-26");
+  await form.getByRole("button", { name: "Agregar" }).click();
+  await expect(example(page).getByRole("button", { name: "Cumpleaños de Rosa" })).toBeVisible();
+  await expect(form).toHaveCount(0);
+});
