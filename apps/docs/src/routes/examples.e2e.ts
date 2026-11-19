@@ -36,6 +36,7 @@ test("the examples index links every example", async ({ page }) => {
     "Validation",
     "Languages and RTL",
     "Mobile",
+    "Your own UI",
   ]) {
     // Inside the list: the docs menu also has a "Recurring events" page.
     await expect(
@@ -363,4 +364,40 @@ test("mobile: a select for the views and a compact month in a phone-wide box", a
   await expect(
     example(page).getByRole("list", { name: "miércoles, 18 de noviembre de 2026" }),
   ).toContainText("Revisión de diseño");
+});
+
+test("own UI: our buttons, editor and drag confirmation, without the library's", async ({
+  page,
+}) => {
+  await open(page, "own-ui");
+  // Our own editor, opened by onEventClick.
+  await example(page)
+    .getByRole("button", { name: /Daily standup/ })
+    .click();
+  await expect(example(page).getByText("Editar cita")).toBeVisible();
+  await example(page).getByLabel("Título").fill("Standup");
+  await example(page).getByRole("button", { name: "Guardar" }).click();
+  await expect(example(page).getByRole("button", { name: /^Standup/ })).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+
+  // Our own view buttons.
+  const week = example(page).getByRole("button", { name: "Semana", exact: true });
+  await week.click();
+  await expect(week).toHaveAttribute("aria-pressed", "true");
+  await expect(title(page)).toContainText("15");
+
+  // Our own confirmation: a drag waits for it.
+  const standup = example(page).getByRole("button", { name: /^Standup/ });
+  await standup.scrollIntoViewIfNeeded();
+  const box = (await standup.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 24, { steps: 5 });
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 48, { steps: 5 });
+  await page.mouse.up();
+  const confirmation = example(page).getByRole("alertdialog", { name: "Confirmar cambio" });
+  await expect(confirmation).toContainText("10:00");
+  await confirmation.getByRole("button", { name: "Sí, cambiar" }).click();
+  await expect(confirmation).toHaveCount(0);
+  await expect(standup).toContainText("10:00 a. m.");
 });

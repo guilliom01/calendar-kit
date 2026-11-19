@@ -148,6 +148,12 @@ export const examples: Example[] = [
     description:
       "In a phone-wide box, the view switcher becomes a select and the month shows dots, with the tapped day's events below.",
   },
+  {
+    slug: "own-ui",
+    title: "Your own UI",
+    description:
+      "None of our dialogs or buttons: your own view buttons, editor panel and drag confirmation, driven by the state and its hooks.",
+  },
 ];
 
 const components = import.meta.glob<{ default: Component }>("./*.svelte", { eager: true });
