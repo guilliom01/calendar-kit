@@ -27,6 +27,7 @@
   import * as Dialog from "#lib/registry/ui/dialog/index.js";
   import { Input } from "#lib/registry/ui/input/index.js";
   import { Label } from "#lib/registry/ui/label/index.js";
+  import { RecurrenceEditor } from "#lib/registry/ui/recurrence-editor/index.js";
   import {
     fillLabel,
     getCalendar,
@@ -92,6 +93,20 @@
   const withoutEnd = (rule: RecurrenceRule) =>
     formatRRule({ ...rule, count: undefined, until: undefined });
   let repeat = $state(originalRule ? withoutEnd(originalRule) : "");
+  // "Custom…" shows the full rule editor under the shortcuts, for rules they do not cover.
+  const CUSTOM = "custom";
+  let customRepeat = $state(false);
+
+  function chooseRepeat(value: string) {
+    if (value !== CUSTOM) {
+      customRepeat = false;
+      repeat = value;
+      return;
+    }
+    // The editor reads its rule once when it appears: start from the current one, or weekly.
+    if (!repeat) repeat = `FREQ=WEEKLY;BYDAY=${WEEKDAYS[getDayOfWeek(startDay, "en-US", "mon")]}`;
+    customRepeat = true;
+  }
   let ends: "never" | "on" | "after" = $state(
     originalRule?.count !== undefined ? "after" : originalRule?.until ? "on" : "never",
   );
@@ -372,12 +387,21 @@
   {:else}
     <div class="grid gap-2">
       <Label for="calendar-event-repeat">{labels.repeat}</Label>
-      <select id="calendar-event-repeat" class={selectClass} bind:value={repeat}>
+      <select
+        id="calendar-event-repeat"
+        class={selectClass}
+        value={customRepeat ? CUSTOM : repeat}
+        onchange={(change) => chooseRepeat(change.currentTarget.value)}
+      >
         {#each repeatOptions as option (option.value)}
           <option value={option.value}>{option.label}</option>
         {/each}
+        <option value={CUSTOM}>{labels.customRepeat}</option>
       </select>
     </div>
+    {#if customRepeat}
+      <RecurrenceEditor value={repeat} onchange={(value) => (repeat = value)} start={startDay} />
+    {/if}
   {/if}
 
   {#if repeat}

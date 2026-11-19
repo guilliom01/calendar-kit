@@ -488,7 +488,11 @@ ${"</" + "script>"}
   <code>confirmChanges: false</code>). Each dialog registers itself when mounted: without
   <code>ChangeConfirmDialog</code>, changes save directly; without
   <code>RecurrenceScopeDialog</code>
-  (or <code>resolveScope</code>), changes to a recurring event apply to that occurrence only.
+  (or <code>resolveScope</code>), changes to a recurring event apply to that occurrence only. Its
+  Repeat list offers shortcuts for the start date (every week on Tuesday, every month on the 3rd
+  Tuesday…) and <strong>Custom…</strong>, which shows the full <code>recurrence-editor</code>
+  (installed with the dialog). The <code>recurrence</code> snippet replaces the list with an editor of
+  your own.
 </p>
 <PropsTable
   caption="EventDialog props"

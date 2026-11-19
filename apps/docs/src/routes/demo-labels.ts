@@ -31,6 +31,7 @@ export const spanishLabels: Partial<CalendarLabels> = {
   timeZone: "Zona horaria",
   repeat: "Repetir",
   doesNotRepeat: "No se repite",
+  customRepeat: "Personalizado…",
   daily: "Todos los días",
   weekly: "Cada semana el {weekday}",
   weekdays: "Días laborables (de lunes a viernes)",

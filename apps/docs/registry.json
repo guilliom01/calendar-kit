@@ -207,7 +207,8 @@
         "input",
         "label",
         "utils",
-        "./calendar-state.json"
+        "./calendar-state.json",
+        "./recurrence-editor.json"
       ],
       "files": [
         {

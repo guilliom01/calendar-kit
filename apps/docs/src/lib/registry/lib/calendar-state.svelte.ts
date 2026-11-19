@@ -51,6 +51,7 @@ export const defaultLabels = {
   timeZone: "Time zone",
   repeat: "Repeat",
   doesNotRepeat: "Does not repeat",
+  customRepeat: "Custom…",
   daily: "Every day",
   weekly: "Every week on {weekday}",
   weekdays: "Every weekday (Monday to Friday)",
