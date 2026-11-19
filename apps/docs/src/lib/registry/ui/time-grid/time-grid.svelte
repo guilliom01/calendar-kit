@@ -441,7 +441,7 @@
       type: "button",
       class: cn(
         "group absolute flex overflow-hidden rounded-md border-s-4 border-(--event-color) bg-(--event-color)/15 px-1.5 py-0.5 text-start text-xs ring-1 ring-background [-webkit-touch-callout:none] hover:bg-(--event-color)/25",
-        isShort(item) ? "flex-row items-baseline gap-1 leading-tight" : "flex-col",
+        isShort(item) ? "flex-row leading-tight" : "flex-col",
         item.continuesBefore && "rounded-t-none",
         item.continuesAfter && "rounded-b-none",
         preview?.id === event.id && "z-20 opacity-80 shadow-lg",
@@ -656,19 +656,21 @@
                 {#if eventContent}
                   {@render eventContent(event)}
                 {:else}
-                  <span class="truncate font-medium">{event.title || calendar.labels.untitled}</span
-                  >
-                  {#if isAllDay(event)}
-                    <!-- nothing: all-day events have no time -->
-                  {:else if isShort(item)}
-                    <!-- Like Google Calendar: "Daily standup 9:00 a. m." on one line. -->
-                    <span class="shrink-0 text-muted-foreground"
-                      >{time.format(event.start.toDate())}</span
-                    >
-                  {:else}
-                    <span class="truncate text-muted-foreground">
-                      {time.formatRange(event.start.toDate(), event.end.toDate())}
+                  {#if isShort(item) && !isAllDay(event)}
+                    <!-- One line, like Google Calendar: the title first; the time is cut before it. -->
+                    <span class="truncate">
+                      <span class="font-medium">{event.title || calendar.labels.untitled}</span>
+                      <span class="text-muted-foreground">{time.format(event.start.toDate())}</span>
                     </span>
+                  {:else}
+                    <span class="truncate font-medium"
+                      >{event.title || calendar.labels.untitled}</span
+                    >
+                    {#if !isAllDay(event)}
+                      <span class="truncate text-muted-foreground">
+                        {time.formatRange(event.start.toDate(), event.end.toDate())}
+                      </span>
+                    {/if}
                   {/if}
                 {/if}
                 {#if resize.start}<span {...resize.start}></span>{/if}
