@@ -207,6 +207,14 @@ export interface ScopeRequest<T extends CalendarEvent> {
   allowThis: boolean;
 }
 
+/** What a hook returns: the answer itself, or a promise of it. */
+export type Answer<V> = V | Promise<V>;
+
+/** Runs `next` on a hook's answer right away, or once it resolves when the hook is async. */
+function whenAnswered<V, R>(answer: Answer<V>, next: (value: V) => Promise<R>): Promise<R> {
+  return answer instanceof Promise ? answer.then(next) : next(answer);
+}
+
 export interface CalendarStateOptions<T extends CalendarEvent> extends EventStoreOptions<T> {
   view?: string;
   /** Date the calendar is centered on. Defaults to today. */
@@ -220,7 +228,7 @@ export interface CalendarStateOptions<T extends CalendarEvent> extends EventStor
   snapStep?: number;
   /** Minutes an all-day event lasts after it is dragged onto the hours of the time grid. */
   defaultDuration?: number;
-  /** Set to false to show events without letting users change them. */
+  /** Set to true to let users create, move, resize, edit and delete events. Default false. */
   editable?: boolean;
   /**
    * Per-event, per-action permission, e.g. `(event) => event.data.owner === me` or
@@ -255,9 +263,9 @@ export interface CalendarStateOptions<T extends CalendarEvent> extends EventStor
   onEventClick?(event: T, nativeEvent: Event): boolean | void;
   /**
    * An external item (see `draggable`) was dropped. Return false to create nothing, or an event to
-   * create instead of the default one (its title at the drop place).
+   * create instead of the default one (its title at the drop place). May return a promise.
    */
-  onExternalDrop?(drop: ExternalDrop): boolean | T | void;
+  onExternalDrop?(drop: ExternalDrop): Answer<boolean | T | void>;
   /** An event was right-clicked (or got the context menu key). Built-in: the `event-context-menu` block. */
   onEventContextMenu?(event: T, nativeEvent: Event): boolean | void;
   /** "+N" was clicked on a day with hidden events. Built-in: a popover listing all of them. */
@@ -266,8 +274,11 @@ export interface CalendarStateOptions<T extends CalendarEvent> extends EventStor
   onDateClick?(date: CalendarDate, nativeEvent: Event): boolean | void;
   /** An empty day or time range was picked. Built-in: open the dialog for a new event. */
   onSelect?(selection: Selection<T>): boolean | void;
-  /** An event was dragged or resized. Return false to cancel, or an event to save instead. */
-  onEventChange?(change: EventChange<T>): boolean | T | void;
+  /**
+   * An event was dragged or resized. Return false to cancel, or an event to save instead. May
+   * return a promise (e.g. your own confirmation): the event stays where it was until it settles.
+   */
+  onEventChange?(change: EventChange<T>): Answer<boolean | T | void>;
   /**
    * Ask before saving a drag or resize (with `<ChangeConfirmDialog>` mounted). Default true;
    * false saves directly; a function decides per change, e.g. only when the day changes.
@@ -280,8 +291,11 @@ export interface CalendarStateOptions<T extends CalendarEvent> extends EventStor
   touchDrag?: boolean;
   /** Milliseconds a finger must rest on an event before it can be dragged. Default 400. */
   touchDragDelay?: number;
-  /** Decide the scope of a change to a recurring event yourself instead of asking the user. */
-  resolveScope?(request: ScopeRequest<T>): SeriesScope | null;
+  /**
+   * Decide the scope of a change to a recurring event yourself (null cancels it) instead of the
+   * built-in dialog. May return a promise, e.g. the answer from your own dialog.
+   */
+  resolveScope?(request: ScopeRequest<T>): Answer<SeriesScope | null>;
 }
 
 /** An event being created or edited in the event dialog. */
@@ -332,7 +346,7 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
   firstDayOfWeek: DayOfWeek | undefined = $state();
   snapStep = $state(15);
   defaultDuration = $state(60);
-  editable = $state(true);
+  editable = $state(false);
   labels: CalendarLabels = $state(defaultLabels);
   draft: EventDraft<T> | null = $state.raw(null);
   scopeRequest: ScopeRequest<T> | null = $state.raw(null);
@@ -361,6 +375,10 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
   #loader: RangeLoader<T> | undefined;
   // Mounted dialogs. Without one, the request it would show is resolved by a safe default.
   #confirmDialogs = 0;
+  /** Changes whose async `onEventChange` has not answered yet, by event id. */
+  // Bookkeeping only, not reactive state.
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity
+  #waitingChanges = new Map<string, EventChange<T>>();
   #previews = $state(0);
   #scopeDialogs = 0;
 
@@ -552,7 +570,25 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
    * `confirmed` skips the confirmation dialog (the keyboard move mode is already explicit).
    */
   changeEvent(change: EventChange<T>, { confirmed = false } = {}) {
+    const { id } = change.event;
     const verdict = this.#options.onEventChange?.(change);
+    if (!(verdict instanceof Promise)) {
+      this.#waitingChanges.delete(id);
+      return this.#applyChange(change, verdict, confirmed);
+    }
+    // A newer change to the same event while this one waits wins: this answer is then dropped.
+    this.#waitingChanges.set(id, change);
+    const latest = () => this.#waitingChanges.get(id) === change && this.#waitingChanges.delete(id);
+    return verdict.then(
+      (answer) => (latest() ? this.#applyChange(change, answer, confirmed) : undefined),
+      (error: unknown) => {
+        latest();
+        throw error;
+      },
+    );
+  }
+
+  #applyChange(change: EventChange<T>, verdict: boolean | T | void, confirmed: boolean) {
     if (verdict === false) return Promise.resolve(undefined);
     const approved = { ...change, event: verdict && verdict !== true ? verdict : change.event };
     // Recurring events already ask "this / following / all", which confirms the change.
@@ -610,19 +646,20 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 
   /** Creates the event for an external item dropped on the calendar, after `onExternalDrop`. */
   dropExternal(drop: ExternalDrop) {
-    const verdict = this.#options.onExternalDrop?.(drop);
-    if (verdict === false) return Promise.resolve(undefined);
-    const event =
-      typeof verdict === "object"
-        ? verdict
-        : ({
-            id: this.#createId(),
-            title: drop.item.title,
-            start: drop.start,
-            end: drop.end,
-            ...(drop.resourceIds && { resourceIds: drop.resourceIds }),
-          } as T);
-    return this.create(event);
+    return whenAnswered(this.#options.onExternalDrop?.(drop), (verdict) => {
+      if (verdict === false) return Promise.resolve(undefined);
+      const event =
+        typeof verdict === "object"
+          ? verdict
+          : ({
+              id: this.#createId(),
+              title: drop.item.title,
+              start: drop.start,
+              end: drop.end,
+              ...(drop.resourceIds && { resourceIds: drop.resourceIds }),
+            } as T);
+      return this.create(event);
+    });
   }
 
   /** Creates a copy of `event` with a new id. A copy of an occurrence is a single event. */
@@ -732,7 +769,10 @@ export class CalendarState<T extends CalendarEvent = CalendarEvent> {
 
   #askScope(request: ScopeRequest<T>) {
     if (this.#options.resolveScope) {
-      return this.#applyScope(request, this.#options.resolveScope(request));
+      return whenAnswered<SeriesScope | null, unknown>(
+        this.#options.resolveScope(request),
+        (scope) => this.#applyScope(request, scope),
+      );
     }
     // Without a dialog to ask, change only this occurrence: the least destructive choice.
     if (this.#scopeDialogs === 0)

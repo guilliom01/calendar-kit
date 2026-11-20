@@ -14,7 +14,6 @@
     timeZone,
     labels,
     view: "week",
-    editable: false,
     events: sampleEvents(today(timeZone), timeZone).map((event) => ({
       ...event,
       location: "Sala Miraflores",

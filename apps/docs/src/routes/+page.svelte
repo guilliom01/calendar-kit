@@ -37,6 +37,7 @@
   ]);
 
   const calendar = new CalendarState({
+    editable: true,
     locale,
     timeZone,
     events: demoEvents(today(timeZone), locale, timeZone),

@@ -14,7 +14,6 @@
   const calendar = new CalendarState({
     locale: "es-PE",
     timeZone,
-    editable: false,
     labels: { moreEvents: { one: "{count} evento más", other: "{count} eventos más" } },
     events: demoEvents(today(timeZone), "es-PE", timeZone).filter(
       (event) => event.progress === undefined,

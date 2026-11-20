@@ -11,6 +11,7 @@
   const locales = { "es-PE": "Español", "en-US": "English", "ar-EG": "العربية", "ja-JP": "日本語" };
 
   const calendar = new CalendarState({
+    editable: true,
     locale: "es-PE",
     timeZone,
     labels,

@@ -13,6 +13,7 @@
 
   // Our own rules on top of the built-in behavior.
   const calendar = new CalendarState({
+    editable: true,
     locale: "es-PE",
     timeZone,
     labels: spanishLabels,
@@ -40,8 +41,8 @@
     },
     // Our own rule in the event dialog, next to the built-in ones.
     validate: (event) => (event.title.trim() ? undefined : { title: "El título es obligatorio." }),
-    // Dropped items are only reported, never created.
-    onExternalDrop: ({ item, start }) => {
+    // Dropped items are only reported, never created. Hooks may be async.
+    onExternalDrop: async ({ item, start }) => {
       message = `Soltaste «${item.title}» el ${start.toString()}`;
       return false;
     },

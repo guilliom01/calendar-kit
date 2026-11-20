@@ -17,7 +17,7 @@ export const examples: Example[] = [
     slug: "events",
     title: "Events",
     description:
-      "Showing events. The calendar is read-only for the user (editable: false), but your code can still change it: one button adds random events, the other opens a simple form of your own.",
+      "Showing events. The calendar is read-only for the user (the default), but your code can still change it: one button adds random events, the other opens a simple form of your own.",
   },
   {
     slug: "views",
@@ -152,7 +152,7 @@ export const examples: Example[] = [
     slug: "own-ui",
     title: "Your own UI",
     description:
-      "None of our dialogs or buttons: your own view buttons, editor panel and drag confirmation, driven by the state and its hooks.",
+      "None of our dialogs or buttons: your own view buttons and editor panel, and your own questions before a drag or a change to a repeating event, asked from async hooks.",
   },
 ];
 

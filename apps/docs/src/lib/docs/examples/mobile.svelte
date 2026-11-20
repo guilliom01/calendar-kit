@@ -14,7 +14,6 @@
     locale: "es-PE",
     timeZone,
     labels,
-    editable: false,
     events: sampleEvents(today(timeZone), timeZone),
   });
 </script>

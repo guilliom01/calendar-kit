@@ -14,7 +14,6 @@
     timeZone,
     labels,
     view: "agenda",
-    editable: false,
     events: sampleEvents(today(timeZone), timeZone),
   });
 </script>

@@ -38,6 +38,7 @@ export {
   defaultLabels,
   fillLabel,
   getCalendar,
+  type Answer,
   type CalendarLabels,
   type CalendarStateOptions,
   type EventChange,

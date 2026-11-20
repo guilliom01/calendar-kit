@@ -8,6 +8,7 @@
   const date = today("America/Lima").toString();
 
   const calendar = new CalendarState({
+    editable: true,
     locale: "es-PE",
     timeZone: "America/Lima",
     labels,

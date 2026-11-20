@@ -13,6 +13,7 @@
   let message = $state("Haz clic derecho (o Shift+F10) sobre un evento.");
 
   const calendar = new CalendarState({
+    editable: true,
     locale: "es-PE",
     timeZone,
     labels,

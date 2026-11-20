@@ -373,11 +373,17 @@ test("own UI: our buttons, editor and drag confirmation, without the library's",
   // Our own editor, opened by onEventClick.
   await example(page)
     .getByRole("button", { name: /Daily standup/ })
+    .first()
     .click();
   await expect(example(page).getByText("Editar cita")).toBeVisible();
   await example(page).getByLabel("Título").fill("Standup");
   await example(page).getByRole("button", { name: "Guardar" }).click();
-  await expect(example(page).getByRole("button", { name: /^Standup/ })).toBeVisible();
+  // The standup repeats: the async resolveScope asks in our own bar and waits.
+  const question = example(page).getByRole("alertdialog", { name: "Pregunta" });
+  await expect(question).toContainText("«Daily standup» se repite");
+  await expect(example(page).getByRole("button", { name: /\bStandup/ })).toHaveCount(0);
+  await question.getByRole("button", { name: "Solo este" }).click();
+  await expect(example(page).getByRole("button", { name: /\bStandup/ })).toBeVisible();
   await expect(page.getByRole("dialog")).toHaveCount(0);
 
   // Our own view buttons.
@@ -386,8 +392,8 @@ test("own UI: our buttons, editor and drag confirmation, without the library's",
   await expect(week).toHaveAttribute("aria-pressed", "true");
   await expect(title(page)).toContainText("15");
 
-  // Our own confirmation: a drag waits for it.
-  const standup = example(page).getByRole("button", { name: /^Standup/ });
+  // The async onEventChange: a drag waits for our answer.
+  const standup = example(page).getByRole("button", { name: /\bStandup/ });
   await standup.scrollIntoViewIfNeeded();
   const box = (await standup.boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
@@ -395,10 +401,11 @@ test("own UI: our buttons, editor and drag confirmation, without the library's",
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 24, { steps: 5 });
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 48, { steps: 5 });
   await page.mouse.up();
-  const confirmation = example(page).getByRole("alertdialog", { name: "Confirmar cambio" });
-  await expect(confirmation).toContainText("10:00");
-  await confirmation.getByRole("button", { name: "Sí, cambiar" }).click();
-  await expect(confirmation).toHaveCount(0);
+  await expect(question).toContainText("«Standup»");
+  await expect(question).toContainText("10:00");
+  await expect(standup).not.toContainText("10:00 a. m.");
+  await question.getByRole("button", { name: "Sí, cambiar" }).click();
+  await expect(question).toHaveCount(0);
   await expect(standup).toContainText("10:00 a. m.");
 });
 

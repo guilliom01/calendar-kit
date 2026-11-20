@@ -11,6 +11,7 @@
 
   // Each hook runs before the built-in behavior; returning false skips it.
   const calendar = new CalendarState({
+    editable: true,
     locale: "es-PE",
     timeZone,
     labels,

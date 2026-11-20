@@ -4,6 +4,7 @@
 
   const saving = `const calendar = new CalendarState({
 	events,
+	editable: true,
 	// Called after the change is already visible. Return the saved event to replace the local
 	// one (e.g. with the id your database assigned). Throw to roll the change back.
 	onMutate: async (mutation) => {
@@ -18,6 +19,7 @@
 
   const hooks = `const calendar = new CalendarState({
 	events,
+	editable: true,
 	// Holidays cannot be changed; bookings can move but keep their length.
 	isEditable: (event, action) =>
 		event.data?.kind !== 'holiday' && (event.data?.kind !== 'booking' || action !== 'resize'),
@@ -82,7 +84,12 @@
       type: "number",
       description: "Minutes an all-day event lasts when dragged onto the hours. Default 60.",
     },
-    { name: "editable", type: "boolean", description: "Set to false for a read-only calendar." },
+    {
+      name: "editable",
+      type: "boolean",
+      description:
+        "Default false: a read-only calendar. Set to true to let users create, move, resize, edit and delete events; isEditable then narrows it per event and action.",
+    },
     {
       name: "filter",
       type: "(event) => boolean",
@@ -177,9 +184,9 @@
     },
     {
       name: "onExternalDrop({ item, start, end, allDay, resourceIds })",
-      type: "boolean | event | void",
+      type: "boolean | event | void, or a promise of it",
       description:
-        "An item made draggable with draggable(calendar, item) was dropped. Return false to create nothing, or the event to create. Built-in: an event with its title there.",
+        "An item made draggable with draggable(calendar, item) was dropped. Return false to create nothing, or the event to create. Built-in: an event with its title there. An async hook is awaited before anything is created.",
     },
     {
       name: "onEventContextMenu(event, nativeEvent)",
@@ -201,14 +208,15 @@
     },
     {
       name: "onEventChange({ event, previous, kind })",
-      type: "boolean | event | void",
+      type: "boolean | event | void, or a promise of it",
       description:
-        "A drag or resize finished. Return false to cancel, or an event to save instead.",
+        "A drag or resize finished. Return false to cancel, or an event to save instead. Return a promise to ask first (your own dialog, your server): the event stays where it was until it settles, and if the same event changes again meanwhile, only the newest answer counts.",
     },
     {
       name: "resolveScope(request)",
-      type: "'this' | 'following' | 'all' | null",
-      description: "Decides the scope of a change to a recurring event instead of asking.",
+      type: "'this' | 'following' | 'all' | null, or a promise of it",
+      description:
+        "Decides the scope of a change to a recurring event instead of the built-in dialog; null cancels the change. Return a promise to ask with your own dialog.",
     },
     {
       name: "isEditable(event, action)",

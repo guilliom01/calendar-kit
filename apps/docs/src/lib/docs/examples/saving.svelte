@@ -27,6 +27,7 @@
   }
 
   const calendar = new CalendarState({
+    editable: true,
     locale: "es-PE",
     timeZone,
     labels,

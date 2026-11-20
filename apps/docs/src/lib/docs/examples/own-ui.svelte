@@ -21,13 +21,34 @@
     title = event.title;
   }
 
-  // No EventDialog, ChangeConfirmDialog, NewEvent or ViewSwitcher: the hooks hand
-  // clicks and selections to our UI, and we call the state ourselves.
-  const calendar = new CalendarState({
+  // A question shown in our own bar; `ask` resolves with the answer the user clicks.
+  type Question = { text: string; choices: [label: string, value: unknown][] };
+  let question: (Question & { answer(value: unknown): void }) | null = $state(null);
+
+  function ask<V>(text: string, choices: [label: string, value: V][]) {
+    return new Promise<V>((resolve) => {
+      question = {
+        text,
+        choices,
+        answer: (value) => {
+          question = null;
+          resolve(value as V);
+        },
+      };
+    });
+  }
+
+  // No EventDialog, ChangeConfirmDialog, RecurrenceScopeDialog, NewEvent or ViewSwitcher: the
+  // hooks hand clicks, selections and questions to our UI, and we call the state ourselves.
+  const calendar: CalendarState<CalendarEvent> = new CalendarState({
+    editable: true,
     locale: "es-PE",
     timeZone,
     labels,
-    events: sampleEvents(today(timeZone), timeZone),
+    // The standup repeats on the next five days, so changing one asks for the scope.
+    events: sampleEvents(today(timeZone), timeZone).map((event) =>
+      event.id === "standup" ? { ...event, rrule: "FREQ=DAILY;COUNT=5" } : event,
+    ),
     onEventClick: (event) => {
       open(event, false);
       return false;
@@ -36,10 +57,21 @@
       open({ id: crypto.randomUUID(), title: "", start, end } as CalendarEvent, true);
       return false;
     },
+    // Hooks may be async: a drag or resize waits for our answer before it is saved...
+    onEventChange: ({ event }) =>
+      ask(`¿Pasar «${event.title}» a ${calendar.describe(event)}?`, [
+        ["Sí, cambiar", true],
+        ["No", false],
+      ]),
+    // ...and so does a change to one occurrence of a repeating event.
+    resolveScope: ({ occurrence }) =>
+      ask(`«${occurrence.title}» se repite. ¿Qué querés cambiar?`, [
+        ["Solo este", "this"],
+        ["Este y los siguientes", "following"],
+        ["Todos", "all"],
+        ["Cancelar", null],
+      ]),
   });
-
-  // While this runs, drags and resizes wait in `changeRequest` for our answer.
-  $effect(() => calendar.registerConfirmDialog());
 
   function save(submit: SubmitEvent) {
     submit.preventDefault();
@@ -93,29 +125,24 @@
     <FullCalendar.Title class="ms-2" />
   </div>
 
-  <!-- Our own confirmation for a drag or resize. -->
-  {#if calendar.changeRequest}
-    {@const change = calendar.changeRequest}
+  <!-- Our own questions, asked by the async hooks above. -->
+  {#if question}
+    {@const current = question}
     <div
       role="alertdialog"
-      aria-label="Confirmar cambio"
+      aria-label="Pregunta"
       class="flex flex-wrap items-center gap-2 rounded-md border p-2 text-sm"
     >
-      <span>¿Pasar «{change.event.title}» a {calendar.describe(change.event)}?</span>
-      <button
-        type="button"
-        class="rounded-md border px-3 py-1"
-        onclick={() => calendar.confirmChange(true)}
-      >
-        Sí, cambiar
-      </button>
-      <button
-        type="button"
-        class="rounded-md border px-3 py-1"
-        onclick={() => calendar.confirmChange(false)}
-      >
-        No
-      </button>
+      <span>{current.text}</span>
+      {#each current.choices as [label, value] (label)}
+        <button
+          type="button"
+          class="rounded-md border px-3 py-1"
+          onclick={() => current.answer(value)}
+        >
+          {label}
+        </button>
+      {/each}
     </div>
   {/if}
 

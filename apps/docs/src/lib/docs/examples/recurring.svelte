@@ -13,6 +13,7 @@
   const at = (hour: number) => toZoned(day.subtract({ days: 30 }), timeZone).set({ hour });
 
   const calendar = new CalendarState({
+    editable: true,
     locale: "es-PE",
     timeZone,
     labels,

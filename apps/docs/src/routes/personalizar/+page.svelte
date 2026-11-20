@@ -17,6 +17,7 @@
   let message = $state("Los eventos son elementos propios; siguen arrastrándose y abriéndose.");
 
   const calendar = new CalendarState({
+    editable: true,
     locale: "es-PE",
     timeZone,
     labels: spanishLabels,

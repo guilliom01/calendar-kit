@@ -15,7 +15,6 @@
     locale: "es-PE",
     timeZone,
     // Read-only: nothing can be dragged, resized or deleted by the user.
-    editable: false,
     events: [
       // Timed events use ZonedDateTime...
       {

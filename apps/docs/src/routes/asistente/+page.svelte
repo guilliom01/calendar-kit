@@ -11,6 +11,7 @@
   const timeZone = "America/Lima";
 
   const calendar = new CalendarState({
+    editable: true,
     locale: "es-PE",
     timeZone,
     view: "resources",
