@@ -5,8 +5,8 @@
   import { EventDialog } from "#lib/registry/ui/event-dialog/index.js";
   import { SchedulingAssistant } from "#lib/registry/ui/scheduling-assistant/index.js";
   import { TimeGrid } from "#lib/registry/ui/time-grid/index.js";
-  import { demoEvents, demoResources } from "../demo-events.js";
-  import { spanishLabels } from "../demo-labels.js";
+  import { demoEvents, demoResources } from "#lib/docs/demo-events.js";
+  import { spanishLabels } from "#lib/docs/demo-labels.js";
 
   const timeZone = "America/Lima";
 

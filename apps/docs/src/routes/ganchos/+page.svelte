@@ -5,8 +5,8 @@
   import { MonthView } from "#lib/registry/ui/month-view/index.js";
   import { draggable } from "#lib/registry/lib/calendar-drag.js";
   import { EventDialog } from "#lib/registry/ui/event-dialog/index.js";
-  import { demoEvents } from "../demo-events.js";
-  import { spanishLabels } from "../demo-labels.js";
+  import { demoEvents } from "#lib/docs/demo-events.js";
+  import { spanishLabels } from "#lib/docs/demo-labels.js";
 
   const timeZone = "America/Lima";
   let message = $state("");

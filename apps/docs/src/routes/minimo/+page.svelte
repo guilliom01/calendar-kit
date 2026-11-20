@@ -4,7 +4,7 @@
   import { CalendarState } from "#lib/registry/ui/full-calendar/index.js";
   import { MonthView } from "#lib/registry/ui/month-view/index.js";
   import type { CalendarEvent } from "@guilli/calendar-core";
-  import { demoEvents } from "../demo-events.js";
+  import { demoEvents } from "#lib/docs/demo-events.js";
 
   const timeZone = "America/Lima";
   let selected: CalendarEvent | null = $state(null);

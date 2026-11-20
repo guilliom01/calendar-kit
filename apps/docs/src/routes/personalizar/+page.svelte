@@ -10,8 +10,8 @@
   import { EventPreview } from "#lib/registry/ui/event-preview/index.js";
   import * as Exchange from "#lib/registry/ui/import-export/index.js";
   import { cn } from "#lib/utils.js";
-  import { demoEvents, demoResources } from "../demo-events.js";
-  import { spanishLabels } from "../demo-labels.js";
+  import { demoEvents, demoResources } from "#lib/docs/demo-events.js";
+  import { spanishLabels } from "#lib/docs/demo-labels.js";
 
   const timeZone = "America/Lima";
   let message = $state("Los eventos son elementos propios; siguen arrastrándose y abriéndose.");
