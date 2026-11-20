@@ -1,4 +1,5 @@
 import { resolve } from "$app/paths";
+import { components } from "./components/index.js";
 import { examples } from "./examples/index.js";
 
 export interface NavLink {
@@ -19,13 +20,21 @@ export const navGroups: NavGroup[] = [
   },
   {
     title: "Components",
-    links: [{ href: resolve("/docs/blocks"), label: "Blocks" }],
+    links: [
+      { href: resolve("/docs/components"), label: "Overview" },
+      ...components.map((component) => ({
+        href: resolve("/docs/components/[name]", { name: component.name }),
+        label: component.name,
+      })),
+    ],
   },
   {
     title: "Guides",
     links: [
       { href: resolve("/docs/state"), label: "State and hooks" },
       { href: resolve("/docs/recurrence"), label: "Recurring events" },
+      { href: resolve("/docs/customizing"), label: "Customizing views" },
+      { href: resolve("/docs/external-drag"), label: "Dragging your own items in" },
       { href: resolve("/docs/import-export"), label: "Import and export" },
       {
         href: resolve("/docs/i18n-a11y"),

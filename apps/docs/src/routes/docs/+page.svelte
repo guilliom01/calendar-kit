@@ -95,6 +95,6 @@ ${closeScript}
 </p>
 
 <p>
-  Next: see every <a href={resolve("/docs/blocks")}>block</a>, or how to react to clicks and save
-  changes in <a href={resolve("/docs/state")}>State and hooks</a>.
+  Next: see every <a href={resolve("/docs/components")}>component</a>, or how to react to clicks and
+  save changes in <a href={resolve("/docs/state")}>State and hooks</a>.
 </p>
