@@ -3,19 +3,19 @@ import type { CalendarSource, CalendarEvent, Resource } from "@guilli/calendar-c
 
 /** Rooms and people, grouped, for the timeline and resource views. */
 export const demoResources: Resource[] = [
-  { id: "rooms", title: "Salas" },
-  { id: "room-a", title: "Sala A", parentId: "rooms", color: "oklch(0.6 0.15 250)" },
-  { id: "room-b", title: "Sala B", parentId: "rooms", color: "oklch(0.6 0.2 300)" },
-  { id: "team", title: "Equipo" },
+  { id: "rooms", title: "Rooms" },
+  { id: "room-a", title: "Room A", parentId: "rooms", color: "oklch(0.6 0.15 250)" },
+  { id: "room-b", title: "Room B", parentId: "rooms", color: "oklch(0.6 0.2 300)" },
+  { id: "team", title: "Team" },
   { id: "ana", title: "Ana", parentId: "team", color: "oklch(0.65 0.15 150)" },
   { id: "luis", title: "Luis", parentId: "team", color: "oklch(0.7 0.15 70)" },
 ];
 
 /** Calendars of the demo events; the full demo lists them to show and hide. */
 export const demoCalendars: CalendarSource[] = [
-  { id: "work", title: "Trabajo", color: "oklch(0.6 0.15 250)" },
+  { id: "work", title: "Work", color: "oklch(0.6 0.15 250)" },
   { id: "personal", title: "Personal", color: "oklch(0.65 0.15 150)" },
-  { id: "holidays", title: "Feriados", color: "oklch(0.6 0.2 25)" },
+  { id: "holidays", title: "Holidays", color: "oklch(0.6 0.2 25)" },
 ];
 
 /** Sample events around `today`, so the demo always has something to show. */
@@ -46,7 +46,7 @@ export function demoEvents(today: CalendarDate, locale: string, timeZone: string
     {
       id: "lunch",
       calendarId: "personal",
-      title: "Almuerzo con el equipo",
+      title: "Team lunch",
       start: at(day(2), 13),
       end: at(day(2), 14, 30),
       color: "oklch(0.65 0.15 150)",
@@ -64,7 +64,7 @@ export function demoEvents(today: CalendarDate, locale: string, timeZone: string
     {
       id: "deploy",
       calendarId: "work",
-      title: "Deploy nocturno",
+      title: "Night deploy",
       start: at(day(4), 22),
       end: at(day(5), 1),
       color: "oklch(0.6 0.2 25)",
@@ -72,7 +72,7 @@ export function demoEvents(today: CalendarDate, locale: string, timeZone: string
     {
       id: "conference",
       calendarId: "work",
-      title: "Conferencia en Cusco",
+      title: "Conference in Cusco",
       start: day(3),
       end: day(6),
       color: "oklch(0.7 0.15 70)",
@@ -80,7 +80,7 @@ export function demoEvents(today: CalendarDate, locale: string, timeZone: string
     {
       id: "holiday",
       calendarId: "holidays",
-      title: "Feriado",
+      title: "Holiday",
       start: week.add({ weeks: 1, days: 2 }),
       end: week.add({ weeks: 1, days: 3 }),
       color: "oklch(0.6 0.2 25)",
@@ -88,7 +88,7 @@ export function demoEvents(today: CalendarDate, locale: string, timeZone: string
     {
       id: "english",
       calendarId: "personal",
-      title: "Clase de inglés",
+      title: "English class",
       start: at(day(1), 19),
       end: at(day(1), 20, 30),
       color: "oklch(0.6 0.15 250)",
@@ -97,13 +97,13 @@ export function demoEvents(today: CalendarDate, locale: string, timeZone: string
     {
       id: "bills",
       calendarId: "personal",
-      title: "Pago de servicios",
+      title: "Pay the bills",
       start: today.set({ day: 1 }).add({ months: 1 }).subtract({ days: 1 }),
       end: today.set({ day: 1 }).add({ months: 1 }),
       color: "oklch(0.65 0.15 150)",
       rrule: "FREQ=MONTHLY;BYMONTHDAY=-1",
     },
-    ...["Revisión 1:1", "Planning", "Retro", "Café"].map((title, index) => ({
+    ...["1:1 review", "Planning", "Retro", "Coffee"].map((title, index) => ({
       id: `busy-${index}`,
       calendarId: "work",
       title,
@@ -114,10 +114,10 @@ export function demoEvents(today: CalendarDate, locale: string, timeZone: string
     // Project tasks for the gantt view (all-day, with progress and dependencies).
     ...(
       [
-        ["analysis", "Análisis", 7, 9, 1, []],
-        ["design", "Diseño", 9, 11, 0.6, ["analysis"]],
-        ["build", "Desarrollo", 11, 14, 0.2, ["design"]],
-        ["testing", "Pruebas", 14, 16, 0, ["build"]],
+        ["analysis", "Analysis", 7, 9, 1, []],
+        ["design", "Mockups", 9, 11, 0.6, ["analysis"]],
+        ["build", "Build", 11, 14, 0.2, ["design"]],
+        ["testing", "Testing", 14, 16, 0, ["build"]],
       ] as const
     ).map(([id, title, from, to, progress, dependsOn]) => ({
       id,

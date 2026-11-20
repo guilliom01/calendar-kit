@@ -24,6 +24,13 @@
     timeZone,
     view: "resources",
     events: [
+      {
+        id: "lunch",
+        title: "Lunch",
+        start: at(0, 13),
+        end: at(0, 14).add({ minutes: 30 }),
+        resourceIds: ["luis"],
+      },
       { id: "a", title: "Busy", start: at(1, 9), end: at(1, 12), resourceIds: ["ana"] },
       { id: "l", title: "Busy", start: at(1, 11), end: at(1, 15), resourceIds: ["luis"] },
       { id: "r", title: "Busy", start: at(1, 15), end: at(1, 16), resourceIds: ["rosa"] },

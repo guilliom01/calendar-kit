@@ -25,17 +25,16 @@
   import { TimelineView } from "#lib/registry/ui/timeline-view/index.js";
   import { YearView } from "#lib/registry/ui/year-view/index.js";
   import { demoCalendars, demoEvents, demoResources } from "./demo-events.js";
-  import { spanishLabels } from "./demo-labels.js";
 
-  const locale = "es-PE";
+  const locale = "en-US";
   const timeZone = "America/Lima";
 
   let importWarnings: string[] = $state([]);
   let notice = $state("");
   // Tasks without a date; dragging one onto the calendar schedules it.
   let pending = $state([
-    { id: "call", title: "Llamar al proveedor", duration: 60 },
-    { id: "contract", title: "Revisar contrato", duration: 120 },
+    { id: "call", title: "Call the supplier", duration: 60 },
+    { id: "contract", title: "Review the contract", duration: 120 },
   ]);
 
   const calendar = new CalendarState({
@@ -49,12 +48,12 @@
       pending = pending.filter((task) => task.id !== (item.data as { id: string }).id);
     },
     // Simulates a backend call: changes show at once and "save" a moment later. Titles with
-    // "conflicto" get the answer of a server where someone else changed the event first.
+    // "conflict" get the answer of a server where someone else changed the event first.
     onMutate: (mutation) =>
       new Promise((resolve, reject) =>
         setTimeout(() => {
-          if (mutation.type === "update" && /conflicto/i.test(mutation.after.title)) {
-            const title = `${mutation.before.title} (versión del servidor)`;
+          if (mutation.type === "update" && /conflict/i.test(mutation.after.title)) {
+            const title = `${mutation.before.title} (server version)`;
             reject(new ConflictError({ ...mutation.before, title }));
           } else resolve(undefined);
         }, 300),
@@ -62,10 +61,9 @@
     onConflict: (mutation, current) => {
       const title = mutation.type === "update" ? mutation.before.title : mutation.event.title;
       notice = current
-        ? `Otra persona cambió «${title}» mientras lo editabas: se muestra su versión.`
-        : `Otra persona eliminó «${title}».`;
+        ? `Someone else changed "${title}" while you were editing it: showing their version.`
+        : `Someone else deleted "${title}".`;
     },
-    labels: spanishLabels,
   });
 </script>
 
@@ -79,9 +77,9 @@
     <CalendarSearch class="w-48" />
     <div class="ms-auto flex flex-wrap items-center gap-2">
       <Exchange.ImportIcs onImport={({ warnings }) => (importWarnings = warnings)} />
-      <Exchange.ExportIcs filename="calendario.ics" name="calendar-kit" />
-      <Exchange.ExportCsv filename="calendario.csv" />
-      <Exchange.ExportXlsx filename="calendario.xlsx" sheetName="Eventos" />
+      <Exchange.ExportIcs filename="calendar.ics" name="calendar-kit" />
+      <Exchange.ExportCsv filename="calendar.csv" />
+      <Exchange.ExportXlsx filename="calendar.xlsx" sheetName="Events" />
       <Exchange.Print />
       <FullCalendar.TimeZoneSelect />
       <FullCalendar.UndoRedo />
@@ -100,7 +98,7 @@
       <MiniCalendar />
       <CalendarList />
       <div class="grid gap-2 text-sm">
-        <p id="pending-heading" class="font-medium">Pendientes</p>
+        <p id="pending-heading" class="font-medium">Unscheduled</p>
         <ul aria-labelledby="pending-heading" class="grid gap-1">
           {#each pending as task (task.id)}
             <li

@@ -26,9 +26,9 @@
   const links = [
     { href: resolve("/docs"), label: "Docs", current: (path: string) => path === resolve("/docs") },
     {
-      href: resolve("/docs/blocks"),
+      href: resolve("/docs/components"),
       label: "Components",
-      current: (path: string) => path.startsWith(resolve("/docs/blocks")),
+      current: (path: string) => path.startsWith(resolve("/docs/components")),
     },
     {
       href: resolve("/docs/examples"),
@@ -47,11 +47,11 @@
     class="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 print:hidden"
   >
     <div class="mx-auto flex h-14 max-w-screen-2xl items-center gap-4 px-4 md:px-6">
-      <a href={resolve("/")} class="flex items-center gap-2 font-semibold">
+      <a href={resolve("/")} class="flex shrink-0 items-center gap-2 font-semibold">
         <CalendarIcon class="size-5" aria-hidden="true" />
-        calendar-kit
+        <span class="sr-only sm:not-sr-only">calendar-kit</span>
       </a>
-      <nav aria-label="Main" class="flex items-center gap-1 text-sm">
+      <nav aria-label="Main" class="flex items-center text-sm sm:gap-1">
         {#each links as link (link.href)}
           {@const current = link.current(page.url.pathname)}
           <a

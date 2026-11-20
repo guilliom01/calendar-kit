@@ -122,7 +122,7 @@ export const examples: Example[] = [
     slug: "custom-rendering",
     title: "Custom rendering",
     description:
-      "Draw events and day cells your own way with snippets, keeping dragging, clicks and accessibility.",
+      "Draw events, day cells, hour labels, resource labels and the event preview your own way with snippets, keeping dragging, clicks and accessibility.",
   },
   {
     slug: "import-export",

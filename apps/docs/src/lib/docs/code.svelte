@@ -61,6 +61,7 @@
   .docs-code :global(pre) {
     overflow-x: auto;
     padding: 1rem;
+    padding-inline-end: 3rem;
     font-size: 0.8125rem;
     line-height: 1.7;
     background: transparent !important;

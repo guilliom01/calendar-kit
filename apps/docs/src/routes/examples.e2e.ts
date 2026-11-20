@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 // Tuesday 2026-11-17, 14:00 in Lima, as in the other end-to-end tests.
 test.beforeEach(async ({ page }) => {
@@ -8,6 +8,30 @@ test.beforeEach(async ({ page }) => {
 const example = (page: Page) => page.getByRole("region", { name: "Live example" });
 const title = (page: Page) => example(page).getByRole("heading", { level: 2 });
 const open = (page: Page, slug: string) => page.goto(`/docs/examples/${slug}`);
+const center = async (locator: Locator) => {
+  const box = (await locator.boundingBox())!;
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+};
+/** Drags from the center of `from` to (x, y) in small steps. */
+async function dragTo(page: Page, from: Locator, x: number, y: number) {
+  const start = await center(from);
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  await page.mouse.move((start.x + x) / 2, (start.y + y) / 2, { steps: 5 });
+  await page.mouse.move(x, y, { steps: 5 });
+  await page.mouse.up();
+}
+/** A month day cell of the live example. */
+const cell = (page: Page, date: string) => example(page).locator(`[data-date="${date}"]`);
+/** The event is drawn inside the day cell of `date`. */
+async function expectIn(page: Page, event: Locator, date: string) {
+  const chip = await center(event);
+  const box = (await cell(page, date).boundingBox())!;
+  expect(chip.x).toBeGreaterThan(box.x);
+  expect(chip.x).toBeLessThan(box.x + box.width);
+  expect(chip.y).toBeGreaterThan(box.y);
+  expect(chip.y).toBeLessThan(box.y + box.height);
+}
 
 test("the examples index links every example", async ({ page }) => {
   await page.goto("/docs/examples");
@@ -218,15 +242,19 @@ test("scheduling assistant: a free time for two people opens as a new event", as
   const people = example(page).getByRole("group", { name: "Participants" });
   await people.getByRole("checkbox", { name: "Ana" }).check();
   await people.getByRole("checkbox", { name: "Luis" }).check();
+  await example(page).getByLabel("Duration").selectOption({ label: "60 minutes" });
   const first = example(page)
     .getByRole("list", { name: "Suggested times" })
     .getByRole("button")
     .first();
-  // Now is Tuesday 14:00 and both are free for the rest of the day.
+  // Now is Tuesday 14:00; Luis has lunch until 14:30.
   await expect(first).toContainText("Tuesday, November 17");
-  await expect(first).toContainText("2:00");
+  await expect(first).toContainText("2:30");
   await first.click();
-  await expect(page.getByRole("dialog").getByRole("checkbox", { name: "Luis" })).toBeChecked();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("heading", { name: "New event" })).toBeVisible();
+  await expect(dialog.getByRole("checkbox", { name: "Ana" })).toBeChecked();
+  await expect(dialog.getByRole("checkbox", { name: "Luis" })).toBeChecked();
 });
 
 test("loading: months are requested once, with their neighbours", async ({ page }) => {
@@ -279,6 +307,69 @@ test("hooks: our own reactions replace the built-in ones", async ({ page }) => {
   await example(page).getByRole("button", { name: "Wednesday, November 18, 2026" }).click();
   await expect(status).toHaveText("Day: 2026-11-18");
   await expect(title(page)).toHaveText("November 2026");
+  // Only the month view is mounted, and nothing else.
+  await expect(example(page).getByRole("group", { name: "Views" })).toHaveCount(0);
+  await expect(example(page).getByRole("button", { name: "New event" })).toHaveCount(0);
+});
+
+test("hooks: onEventChange vetoes Sundays, with the mouse and the keyboard", async ({ page }) => {
+  await open(page, "hooks");
+  const status = example(page).getByRole("status");
+  const standup = example(page).getByRole("button", { name: /Daily standup/ });
+  const to = async (date: string) => {
+    const box = (await cell(page, date).boundingBox())!;
+    return [box.x + box.width / 2, box.y + box.height / 2] as const;
+  };
+
+  await dragTo(page, standup, ...(await to("2026-11-22")));
+  await expect(status).toHaveText("No work on Sundays.");
+  await expectIn(page, standup, "2026-11-17");
+
+  // Without a confirmation dialog mounted, the change applies at once.
+  await dragTo(page, standup, ...(await to("2026-11-26")));
+  await expect(status).toHaveText("Moved: Daily standup");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expectIn(page, standup, "2026-11-26");
+
+  // Thursday 26 to Sunday 22 with the keyboard.
+  await standup.focus();
+  await page.keyboard.press("m");
+  for (let day = 0; day < 4; day++) await page.keyboard.press("ArrowLeft");
+  await page.keyboard.press("Enter");
+  await expect(status).toHaveText("No work on Sundays.");
+  await expectIn(page, standup, "2026-11-26");
+});
+
+test("hooks: onSelect, onMoreClick, onEventContextMenu and onExternalDrop", async ({ page }) => {
+  await open(page, "hooks");
+  const status = example(page).getByRole("status");
+
+  const empty = (await cell(page, "2026-11-27").boundingBox())!;
+  await page.mouse.click(empty.x + empty.width / 2, empty.y + empty.height - 8);
+  await expect(status).toHaveText("Selected: 2026-11-27");
+
+  // Friday 20: the trip and four meetings.
+  await example(page)
+    .getByRole("button", { name: /more events?, Friday, November 20, 2026/ })
+    .click();
+  await expect(status).toHaveText("More on 2026-11-20: 5");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+
+  await example(page)
+    .getByRole("button", { name: /Daily standup/ })
+    .click({ button: "right" });
+  await expect(status).toHaveText("Our own menu for: Daily standup");
+  await expect(page.getByRole("menu")).toHaveCount(0);
+
+  const target = (await cell(page, "2026-11-26").boundingBox())!;
+  await dragTo(
+    page,
+    example(page).getByText("Task without a date"),
+    target.x + target.width / 2,
+    target.y + target.height - 10,
+  );
+  await expect(status).toHaveText(`Dropped "Task without a date" on 2026-11-26`);
+  await expect(example(page).getByRole("button", { name: "Task without a date" })).toHaveCount(0);
 });
 
 test("permissions: fixed, move-only and dashed events", async ({ page }) => {
@@ -290,6 +381,21 @@ test("permissions: fixed, move-only and dashed events", async ({ page }) => {
   await booking.focus();
   await page.keyboard.press("Delete");
   await expect(booking).toBeVisible();
+  // Move-only: Shift+arrows (length) do nothing, plain arrows move it.
+  await page.keyboard.press("m");
+  await page.keyboard.press("Shift+ArrowDown");
+  await page.keyboard.press("Enter");
+  await expect(booking).toContainText("11:00 AM – 12:00 PM");
+  await booking.focus();
+  await page.keyboard.press("m");
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Enter");
+  await expect(booking).toContainText("11:15 AM – 12:15 PM");
+
+  const editable = example(page).getByRole("button", { name: /Editable/ });
+  await editable.focus();
+  await page.keyboard.press("Delete");
+  await expect(editable).toHaveCount(0);
   await expect(example(page).getByRole("button", { name: /Tentative/ })).toHaveClass(
     /border-dashed/,
   );
@@ -301,6 +407,78 @@ test("custom rendering: our own event pills and day marks", async ({ page }) => 
     /rounded-full/,
   );
   await expect(example(page).getByText("weekend").first()).toBeVisible();
+});
+
+test("custom rendering: our own events keep clicks, dragging and keyboard moves", async ({
+  page,
+}) => {
+  await open(page, "custom-rendering");
+  const lunch = example(page).getByRole("button", { name: /Team lunch/ });
+  await lunch.click();
+  await expect(page.getByRole("dialog").getByLabel("Title")).toHaveValue("Team lunch");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+
+  const target = await center(cell(page, "2026-11-26"));
+  await dragTo(page, lunch, target.x, target.y);
+  await expectIn(page, lunch, "2026-11-26");
+
+  await lunch.focus();
+  await page.keyboard.press("m");
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("Enter");
+  await expectIn(page, lunch, "2026-11-27");
+  await expect(lunch).toBeFocused();
+});
+
+test('custom rendering: our own "+N" opens the built-in list, even without a day view', async ({
+  page,
+}) => {
+  await open(page, "custom-rendering");
+  await example(page)
+    .getByRole("button", { name: /^See \d+ more$/ })
+    .click();
+  const list = page.getByRole("dialog");
+  for (const name of ["Trip to Cusco", "Planning", "Retro", "One on one", "Coffee"]) {
+    await expect(list.getByRole("button", { name: new RegExp(name) })).toBeVisible();
+  }
+  await list.getByRole("button", { name: /Coffee/ }).click();
+  await expect(page.getByRole("dialog").getByLabel("Title")).toHaveValue("Coffee");
+});
+
+test("custom rendering: our own preview content", async ({ page }) => {
+  await open(page, "custom-rendering");
+  await example(page)
+    .getByRole("button", { name: /Daily standup/ })
+    .hover();
+  await expect(page.getByRole("tooltip")).toHaveText("Our own preview: Daily standup");
+});
+
+test("custom rendering: our own time grid events, hour labels, now line and resize handle", async ({
+  page,
+}) => {
+  await open(page, "custom-rendering");
+  await example(page).getByRole("button", { name: "week", exact: true }).click();
+  await expect(example(page).getByText("09:00", { exact: true })).toBeVisible();
+  await expect(example(page).getByTestId("now")).toBeVisible();
+
+  const lunch = example(page).getByRole("button", { name: /Team lunch/ });
+  await lunch.scrollIntoViewIfNeeded();
+  const before = (await lunch.boundingBox())!.height;
+  const handle = await center(lunch.getByTestId("resize-end"));
+  await dragTo(page, lunch.getByTestId("resize-end"), handle.x, handle.y + 48);
+  await expect.poll(async () => (await lunch.boundingBox())!.height).toBeGreaterThan(before + 40);
+});
+
+test("custom rendering: our own resource labels, and groups still collapse", async ({ page }) => {
+  await open(page, "custom-rendering");
+  await example(page).getByRole("button", { name: "Timeline", exact: true }).click();
+  const team = example(page).getByRole("button", { name: "Team", exact: true });
+  await expect(team).toHaveAttribute("aria-expanded", "true");
+  await expect(example(page).locator('[data-resource="ana"]').first()).toBeVisible();
+  await team.click();
+  await expect(team).toHaveAttribute("aria-expanded", "false");
+  await expect(example(page).locator('[data-resource="ana"]').first()).toBeHidden();
 });
 
 test("import and export: an .ics file comes in, an Excel workbook goes out", async ({ page }) => {

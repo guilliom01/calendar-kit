@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-// WCAG 2.1 A and AA rules from axe-core, on every view, the dialog and every demo page.
+// WCAG 2.1 A and AA rules from axe-core, on every view, the dialog and every docs page.
 const scan = async (page: Page) =>
   (
     await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze()
@@ -14,21 +14,21 @@ for (const colorScheme of ["light", "dark"] as const) {
     await page.goto("/");
 
     for (const view of [
-      "mes",
-      "semana",
-      "día",
+      "month",
+      "week",
+      "day",
       "Agenda",
-      "año",
-      "Línea de tiempo",
-      "Recursos",
+      "year",
+      "Timeline",
+      "Resources",
       "Gantt",
     ]) {
       await page.getByRole("button", { name: view, exact: true }).click();
       expect(await scan(page), view).toEqual([]);
     }
 
-    await page.getByRole("button", { name: "mes", exact: true }).click();
-    await page.getByRole("button", { name: /2 eventos más/ }).click();
+    await page.getByRole("button", { name: "month", exact: true }).click();
+    await page.getByRole("button", { name: /2 more events/ }).click();
     expect(await scan(page), "+N popover").toEqual([]);
     await page.keyboard.press("Escape");
 
@@ -36,13 +36,13 @@ for (const colorScheme of ["light", "dark"] as const) {
     expect(await scan(page), "event dialog").toEqual([]);
 
     for (const path of [
-      "/minimo",
-      "/ganchos",
-      "/carga",
-      "/personalizar",
-      "/asistente",
       "/docs",
-      "/docs/blocks",
+      "/docs/components",
+      "/docs/components/full-calendar",
+      "/docs/components/month-view",
+      "/docs/components/scheduling-assistant",
+      "/docs/customizing",
+      "/docs/external-drag",
       "/docs/state",
       "/docs/recurrence",
       "/docs/import-export",
@@ -62,7 +62,7 @@ for (const colorScheme of ["light", "dark"] as const) {
     await page.goto("/");
     // The compact month, with a day's list open, and the view select.
     await page
-      .getByRole("button", { name: "miércoles, 18 de noviembre de 2026, 3 eventos" })
+      .getByRole("button", { name: "Wednesday, November 18, 2026, 3 events" })
       .and(page.locator(":not([data-mini-date])"))
       .click();
     expect(await scan(page), "compact month").toEqual([]);
@@ -76,9 +76,9 @@ for (const colorScheme of ["light", "dark"] as const) {
     await page.goto("/");
     await page.getByRole("button", { name: /Svelte workshop/ }).click();
     const dialog = page.getByRole("dialog");
-    await dialog.getByLabel("Fin", { exact: true }).first().fill("2026-11-10");
-    await dialog.getByRole("button", { name: "Guardar" }).click();
-    await expect(dialog.getByText("El fin debe ser posterior al inicio.")).toBeVisible();
+    await dialog.getByLabel("End", { exact: true }).first().fill("2026-11-10");
+    await dialog.getByRole("button", { name: "Save" }).click();
+    await expect(dialog.getByText("The end must be after the start.")).toBeVisible();
     expect(await scan(page), "dialog with an error").toEqual([]);
   });
 }
