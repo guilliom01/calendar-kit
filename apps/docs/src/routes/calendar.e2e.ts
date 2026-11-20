@@ -24,7 +24,9 @@ test("month view shows the current month with its events", async ({ page }) => {
   // Friday: the conference bar plus 4 meetings; 3 lanes fit, 2 meetings collapse.
   // The overnight deploy (Thu 22:00 to Fri 01:00) shows only on Thursday.
   await expect(
-    page.getByRole("button", { name: "2 eventos más, viernes, 20 de noviembre de 2026" }),
+    page.getByRole("button", {
+      name: "2 eventos más, viernes, 20 de noviembre de 2026",
+    }),
   ).toBeVisible();
 });
 
@@ -299,7 +301,9 @@ test.describe("more views", () => {
   async function dragTo(page: Page, from: { x: number; y: number }, to: { x: number; y: number }) {
     await page.mouse.move(from.x, from.y);
     await page.mouse.down();
-    await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 5 });
+    await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, {
+      steps: 5,
+    });
     await page.mouse.move(to.x, to.y, { steps: 5 });
     await page.mouse.up();
   }
@@ -464,18 +468,23 @@ test.describe("building blocks", () => {
   });
 });
 
-test("the demo navigation opens each page and marks the current one", async ({ page }) => {
-  const nav = page.getByRole("navigation", { name: "Demos" });
+test("the header links the docs, components and examples, and marks the current one", async ({
+  page,
+}) => {
+  const nav = page.getByRole("navigation", { name: "Main" });
   for (const [label, heading] of [
-    ["Solo mes", "Solo vista de mes"],
-    ["Ganchos", "Ganchos de interacción"],
-    ["Carga por rango", "Carga por rango"],
-    ["Completo", "Calendario completo"],
+    ["Docs", "calendar-kit"],
+    ["Components", "Blocks"],
+    ["Examples", "Examples"],
   ]) {
     await nav.getByRole("link", { name: label }).click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(heading);
     await expect(nav.getByRole("link", { name: label })).toHaveAttribute("aria-current", "page");
   }
+  await expect(page.getByRole("link", { name: "GitHub" })).toHaveAttribute(
+    "href",
+    "https://github.com/guilliom01/calendar-kit",
+  );
 });
 
 test.describe("import and export", () => {
@@ -580,7 +589,7 @@ test.describe("import and export", () => {
 
     await page.emulateMedia({ media: "print" });
     await expect(page.getByRole("button", { name: "Nuevo evento" })).toBeHidden();
-    await expect(page.getByRole("navigation", { name: "Demos" })).toBeHidden();
+    await expect(page.getByRole("navigation", { name: "Main" })).toBeHidden();
     await expect(title(page)).toBeVisible();
     await expect(page.getByText("Conferencia en Cusco")).toBeVisible();
   });
@@ -603,8 +612,12 @@ test.describe("languages and directions", () => {
     const box = (await workshop.boundingBox())!;
     await page.mouse.move(box.x + box.width / 2, box.y + 20);
     await page.mouse.down();
-    await page.mouse.move(box.x + box.width / 2 - box.width / 2, box.y + 20, { steps: 5 });
-    await page.mouse.move(box.x + box.width / 2 - box.width, box.y + 20, { steps: 5 });
+    await page.mouse.move(box.x + box.width / 2 - box.width / 2, box.y + 20, {
+      steps: 5,
+    });
+    await page.mouse.move(box.x + box.width / 2 - box.width, box.y + 20, {
+      steps: 5,
+    });
     await page.mouse.up();
     await confirm(page, "Mover");
     await dayButton(page, "jueves, 19 de noviembre de 2026").click();
@@ -647,7 +660,7 @@ test("the documentation covers every block and links its sections", async ({ pag
   }
   await expect(docs.getByRole("link", { name: "Blocks" })).toHaveAttribute("aria-current", "page");
   await expect(
-    page.getByRole("navigation", { name: "Demos" }).getByRole("link", { name: "Documentación" }),
+    page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Components" }),
   ).toHaveAttribute("aria-current", "page");
 });
 
@@ -655,13 +668,16 @@ test("the documentation sections are reachable on a phone", async ({ page }) => 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/docs");
   const docs = page.getByRole("navigation", { name: "Documentation" });
+  await docs.locator("summary").click();
   await docs.getByRole("link", { name: "State and hooks" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("State and hooks");
 });
 
 test.describe("+N in the month view", () => {
   const more = (page: Page) =>
-    page.getByRole("button", { name: "2 eventos más, viernes, 20 de noviembre de 2026" });
+    page.getByRole("button", {
+      name: "2 eventos más, viernes, 20 de noviembre de 2026",
+    });
 
   test("lists every event of the day, even without a day view, and opens them", async ({
     page,
@@ -716,7 +732,9 @@ test.describe("confirming changes", () => {
     const to = (await page.locator('[data-date="2026-11-26"]').boundingBox())!;
     await page.mouse.move(from.x + 10, from.y + from.height / 2);
     await page.mouse.down();
-    await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 8 });
+    await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, {
+      steps: 8,
+    });
     await page.mouse.up();
     await expect(page.getByTestId("message")).toHaveText("Movido: Svelte workshop");
     await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -876,7 +894,9 @@ test.describe("per-action permissions and event classes", () => {
     page,
   }) => {
     await page.goto("/ganchos");
-    const conference = page.getByRole("button", { name: "Conferencia en Cusco" });
+    const conference = page.getByRole("button", {
+      name: "Conferencia en Cusco",
+    });
     await conference.focus();
     await page.keyboard.press("Delete");
     await expect(conference).toBeVisible();
@@ -951,7 +971,9 @@ test.describe("converting between all-day and timed by dragging", () => {
   async function dragTo(page: Page, from: { x: number; y: number }, to: { x: number; y: number }) {
     await page.mouse.move(from.x, from.y);
     await page.mouse.down();
-    await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 5 });
+    await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, {
+      steps: 5,
+    });
     await page.mouse.move(to.x, to.y, { steps: 5 });
     await page.mouse.up();
   }
@@ -980,7 +1002,9 @@ test.describe("converting between all-day and timed by dragging", () => {
 
   test("an all-day event dropped on the hours becomes a one-hour event", async ({ page }) => {
     await viewButton(page, "semana").click();
-    const conference = page.getByRole("button", { name: /Conferencia en Cusco/ });
+    const conference = page.getByRole("button", {
+      name: /Conferencia en Cusco/,
+    });
     const bar = (await conference.boundingBox())!;
     const workshop = (await page.getByRole("button", { name: /Svelte workshop/ }).boundingBox())!;
 
@@ -1029,7 +1053,9 @@ test.describe("resizing from both edges", () => {
   });
 
   test("both edges of a month bar change its first and last day", async ({ page }) => {
-    const conference = page.getByRole("button", { name: "Conferencia en Cusco" });
+    const conference = page.getByRole("button", {
+      name: "Conferencia en Cusco",
+    });
     const cell = (await page.locator('[data-date="2026-11-18"]').boundingBox())!;
 
     await dragBy(page, conference.locator(".cursor-ew-resize").last(), cell.width, 0);
@@ -1199,7 +1225,9 @@ test.describe("event preview", () => {
     const box = (await lunch.boundingBox())!;
     await page.mouse.move(box.x + box.width / 2, box.y + box.height - 3);
     await page.mouse.down();
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height + 45, { steps: 5 });
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height + 45, {
+      steps: 5,
+    });
     await page.mouse.up();
     // Closing the dialog gives focus back to the event, without a keyboard.
     await confirm(page, "Cambiar");
@@ -1228,21 +1256,30 @@ test.describe("mini calendar", () => {
 
   test("marks days with events and the visible range", async ({ page }) => {
     await expect(
-      mini(page).getByRole("button", { name: /^miércoles, 18 de noviembre de 2026, \d+ eventos/ }),
+      mini(page).getByRole("button", {
+        name: /^miércoles, 18 de noviembre de 2026, \d+ eventos/,
+      }),
     ).toBeVisible();
     await expect(
-      mini(page).getByRole("button", { name: "martes, 17 de noviembre de 2026", exact: false }),
+      mini(page).getByRole("button", {
+        name: "martes, 17 de noviembre de 2026",
+        exact: false,
+      }),
     ).toHaveAttribute("aria-current", "date");
   });
 
   test("moves with the arrow keys and opens the focused day with Enter", async ({ page }) => {
     await viewButton(page, "semana").click();
-    const today = mini(page).getByRole("button", { name: /^martes, 17 de noviembre de 2026/ });
+    const today = mini(page).getByRole("button", {
+      name: /^martes, 17 de noviembre de 2026/,
+    });
     await today.focus();
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("ArrowRight");
     await expect(
-      mini(page).getByRole("button", { name: /^miércoles, 25 de noviembre de 2026/ }),
+      mini(page).getByRole("button", {
+        name: /^miércoles, 25 de noviembre de 2026/,
+      }),
     ).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(title(page)).toContainText("22");
@@ -1324,7 +1361,9 @@ test.describe("phones", () => {
   test("the month shows dots, and a tapped day lists its events below", async ({ page }) => {
     await expect(page.getByRole("button", { name: /Svelte workshop/ })).toHaveCount(0);
     await dayButton(page, "miércoles, 18 de noviembre de 2026, 3 eventos").click();
-    const list = page.getByRole("list", { name: "miércoles, 18 de noviembre de 2026" });
+    const list = page.getByRole("list", {
+      name: "miércoles, 18 de noviembre de 2026",
+    });
     await expect(list.getByRole("button", { name: /Svelte workshop/ })).toBeVisible();
     await expect(list.getByRole("button", { name: /Conferencia en Cusco/ })).toBeVisible();
     await list.getByRole("button", { name: /Svelte workshop/ }).click();
@@ -1410,7 +1449,9 @@ test("a conflict shows the server version and the developer tells the user", asy
     "Otra persona cambió «Svelte workshop» mientras lo editabas: se muestra su versión.",
   );
   await expect(
-    page.getByRole("button", { name: /Svelte workshop \(versión del servidor\)/ }),
+    page.getByRole("button", {
+      name: /Svelte workshop \(versión del servidor\)/,
+    }),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: /Prueba de conflicto/ })).toHaveCount(0);
 });
@@ -1455,7 +1496,9 @@ test("ending a series after a count reads well for any number", async ({ page })
   const dialog = page.getByRole("dialog");
   await dialog.getByRole("combobox", { name: "Repetir" }).selectOption({ label: "semana" });
   await dialog.getByRole("radio", { name: "Número de repeticiones" }).check();
-  const count = dialog.getByRole("spinbutton", { name: "Número de repeticiones" });
+  const count = dialog.getByRole("spinbutton", {
+    name: "Número de repeticiones",
+  });
   await count.fill("1");
   await expect(count).toHaveValue("1");
   // No "1 repeticiones": the count is not followed by a word that depends on it.
