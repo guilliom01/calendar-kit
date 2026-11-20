@@ -4,7 +4,6 @@
   import { CalendarState } from "#lib/registry/ui/full-calendar/index.js";
   import * as Exchange from "#lib/registry/ui/import-export/index.js";
   import { MonthView } from "#lib/registry/ui/month-view/index.js";
-  import { labels } from "./labels.js";
   import { sampleEvents } from "./sample-events.js";
 
   const timeZone = "America/Lima";
@@ -12,9 +11,8 @@
 
   const calendar = new CalendarState({
     editable: true,
-    locale: "es-PE",
+    locale: "en-US",
     timeZone,
-    labels,
     events: sampleEvents(today(timeZone), timeZone),
   });
 </script>
@@ -26,10 +24,10 @@
     <div class="ms-auto flex flex-wrap gap-2">
       <!-- .ics from Google Calendar, Outlook or Apple; what it cannot read becomes warnings. -->
       <Exchange.ImportIcs onImport={(result) => (warnings = result.warnings)} />
-      <Exchange.ExportIcs filename="calendario.ics" name="Equipo" />
+      <Exchange.ExportIcs filename="calendar.ics" name="Team" />
       <!-- What is on screen, for spreadsheets. The CSV starts with a BOM so Excel reads ñ. -->
-      <Exchange.ExportCsv filename="calendario.csv" />
-      <Exchange.ExportXlsx filename="calendario.xlsx" sheetName="Eventos" />
+      <Exchange.ExportCsv filename="calendar.csv" />
+      <Exchange.ExportXlsx filename="calendar.xlsx" sheetName="Events" />
       <!-- The browser's print dialog, which also saves as PDF. -->
       <Exchange.Print />
     </div>

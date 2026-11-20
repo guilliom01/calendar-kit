@@ -4,16 +4,14 @@
   import { CalendarState } from "#lib/registry/ui/full-calendar/index.js";
   import { MiniCalendar } from "#lib/registry/ui/mini-calendar/index.js";
   import { TimeGrid } from "#lib/registry/ui/time-grid/index.js";
-  import { labels } from "./labels.js";
   import { sampleEvents } from "./sample-events.js";
 
   const timeZone = "America/Lima";
 
   const calendar = new CalendarState({
     editable: true,
-    locale: "es-PE",
+    locale: "en-US",
     timeZone,
-    labels,
     view: "week",
     events: sampleEvents(today(timeZone), timeZone),
   });

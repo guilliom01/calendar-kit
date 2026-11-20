@@ -4,7 +4,7 @@
   import { MonthView } from "#lib/registry/ui/month-view/index.js";
 
   // Dates and calendar words come from Intl in this locale.
-  const calendar = new CalendarState({ locale: "es-PE", timeZone: "America/Lima" });
+  const calendar = new CalendarState({ locale: "en-US", timeZone: "America/Lima" });
 </script>
 
 <FullCalendar.Root state={calendar}>

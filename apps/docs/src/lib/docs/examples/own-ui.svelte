@@ -5,7 +5,6 @@
   import { CalendarState } from "#lib/registry/ui/full-calendar/index.js";
   import { MonthView } from "#lib/registry/ui/month-view/index.js";
   import { TimeGrid } from "#lib/registry/ui/time-grid/index.js";
-  import { labels } from "./labels.js";
   import { sampleEvents } from "./sample-events.js";
 
   const timeZone = "America/Lima";
@@ -42,9 +41,8 @@
   // hooks hand clicks, selections and questions to our UI, and we call the state ourselves.
   const calendar: CalendarState<CalendarEvent> = new CalendarState({
     editable: true,
-    locale: "es-PE",
+    locale: "en-US",
     timeZone,
-    labels,
     // The standup repeats on the next five days, so changing one asks for the scope.
     events: sampleEvents(today(timeZone), timeZone).map((event) =>
       event.id === "standup" ? { ...event, rrule: "FREQ=DAILY;COUNT=5" } : event,
@@ -59,24 +57,24 @@
     },
     // Hooks may be async: a drag or resize waits for our answer before it is saved...
     onEventChange: ({ event }) =>
-      ask(`¿Pasar «${event.title}» a ${calendar.describe(event)}?`, [
-        ["Sí, cambiar", true],
+      ask(`Move "${event.title}" to ${calendar.describe(event)}?`, [
+        ["Yes, change it", true],
         ["No", false],
       ]),
     // ...and so does a change to one occurrence of a repeating event.
     resolveScope: ({ occurrence }) =>
-      ask(`«${occurrence.title}» se repite. ¿Qué querés cambiar?`, [
-        ["Solo este", "this"],
-        ["Este y los siguientes", "following"],
-        ["Todos", "all"],
-        ["Cancelar", null],
+      ask(`"${occurrence.title}" repeats. What do you want to change?`, [
+        ["Only this one", "this"],
+        ["This and following", "following"],
+        ["All", "all"],
+        ["Cancel", null],
       ]),
   });
 
   function save(submit: SubmitEvent) {
     submit.preventDefault();
     if (!editing) return;
-    const event = { ...editing, title: title.trim() || "Sin título" };
+    const event = { ...editing, title: title.trim() || "Untitled" };
     void (isNew ? calendar.create(event) : calendar.update(event));
     editing = null;
   }
@@ -87,8 +85,8 @@
   }
 
   const views = [
-    { name: "month", label: "Mes" },
-    { name: "week", label: "Semana" },
+    { name: "month", label: "Month" },
+    { name: "week", label: "Week" },
   ];
 </script>
 
@@ -110,7 +108,7 @@
       class="rounded-md border px-3 py-1 text-sm"
       onclick={() => calendar.goToday()}
     >
-      Ir a hoy
+      Go to today
     </button>
     <button
       type="button"
@@ -120,7 +118,7 @@
         open({ id: crypto.randomUUID(), title: "", start, end: start.add({ days: 1 }) }, true);
       }}
     >
-      Nueva cita
+      New appointment
     </button>
     <FullCalendar.Title class="ms-2" />
   </div>
@@ -130,7 +128,7 @@
     {@const current = question}
     <div
       role="alertdialog"
-      aria-label="Pregunta"
+      aria-label="Question"
       class="flex flex-wrap items-center gap-2 rounded-md border p-2 text-sm"
     >
       <span>{current.text}</span>
@@ -159,23 +157,23 @@
         class="grid w-60 shrink-0 content-start gap-3 rounded-md border p-3 text-sm"
         onsubmit={save}
       >
-        <p class="font-medium">{isNew ? "Nueva cita" : "Editar cita"}</p>
+        <p class="font-medium">{isNew ? "New appointment" : "Edit appointment"}</p>
         <label class="grid gap-1">
-          Título
+          Title
           <input class="rounded-md border bg-transparent px-2 py-1" bind:value={title} />
         </label>
         <p class="text-muted-foreground">{calendar.describe(editing)}</p>
         <div class="flex flex-wrap gap-2">
           <button
             type="submit"
-            class="rounded-md border bg-primary px-3 py-1 text-primary-foreground">Guardar</button
+            class="rounded-md border bg-primary px-3 py-1 text-primary-foreground">Save</button
           >
           <button type="button" class="rounded-md border px-3 py-1" onclick={() => (editing = null)}
-            >Cancelar</button
+            >Cancel</button
           >
           {#if !isNew}
             <button type="button" class="rounded-md border px-3 py-1" onclick={remove}
-              >Eliminar</button
+              >Delete</button
             >
           {/if}
         </div>

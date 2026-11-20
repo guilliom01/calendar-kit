@@ -4,22 +4,20 @@
   import { CalendarState } from "#lib/registry/ui/full-calendar/index.js";
   import { draggable } from "#lib/registry/lib/calendar-drag.js";
   import { TimeGrid } from "#lib/registry/ui/time-grid/index.js";
-  import { labels } from "./labels.js";
 
   const timeZone = "America/Lima";
 
   // Your own list, rendered your own way.
   let tasks = $state([
-    { id: "call", title: "Llamar al proveedor", duration: 30 },
-    { id: "contract", title: "Revisar contrato", duration: 90 },
-    { id: "report", title: "Preparar informe", duration: 60 },
+    { id: "call", title: "Call the supplier", duration: 30 },
+    { id: "contract", title: "Review the contract", duration: 90 },
+    { id: "report", title: "Prepare the report", duration: 60 },
   ]);
 
   const calendar = new CalendarState({
     editable: true,
-    locale: "es-PE",
+    locale: "en-US",
     timeZone,
-    labels,
     view: "week",
     date: today(timeZone),
     // Decide what a drop creates. Here: take the task off the list, keep the default event.
@@ -36,7 +34,7 @@
   </FullCalendar.Toolbar>
   <div class="flex min-h-0 flex-1 gap-4">
     <div class="grid w-48 shrink-0 content-start gap-2 text-sm">
-      <p id="tasks-heading" class="font-medium">Pendientes</p>
+      <p id="tasks-heading" class="font-medium">Unscheduled</p>
       <ul aria-labelledby="tasks-heading" class="grid gap-1">
         {#each tasks as task (task.id)}
           <!-- Drop it on the hours for a timed event, on a day for an all-day one. -->

@@ -5,14 +5,13 @@
   import { CalendarState } from "#lib/registry/ui/full-calendar/index.js";
   import { TimeGrid } from "#lib/registry/ui/time-grid/index.js";
   import { TimelineView } from "#lib/registry/ui/timeline-view/index.js";
-  import { labels } from "./labels.js";
 
   // Rooms and people. `parentId` groups them; groups collapse in the timeline.
   const resources: Resource[] = [
-    { id: "rooms", title: "Salas" },
-    { id: "room-a", title: "Sala A", parentId: "rooms", color: "oklch(0.6 0.15 250)" },
-    { id: "room-b", title: "Sala B", parentId: "rooms", color: "oklch(0.6 0.2 300)" },
-    { id: "team", title: "Equipo" },
+    { id: "rooms", title: "Rooms" },
+    { id: "room-a", title: "Room A", parentId: "rooms", color: "oklch(0.6 0.15 250)" },
+    { id: "room-b", title: "Room B", parentId: "rooms", color: "oklch(0.6 0.2 300)" },
+    { id: "team", title: "Team" },
     { id: "ana", title: "Ana", parentId: "team", color: "oklch(0.65 0.15 150)" },
     { id: "luis", title: "Luis", parentId: "team", color: "oklch(0.7 0.15 70)" },
   ];
@@ -23,27 +22,26 @@
 
   const calendar = new CalendarState({
     editable: true,
-    locale: "es-PE",
+    locale: "en-US",
     timeZone,
-    labels,
     view: "resources",
     events: [
       // An event belongs to every resource in `resourceIds`.
       {
         id: "review",
-        title: "Revisión",
+        title: "Review",
         start: at(9),
         end: at(11),
         resourceIds: ["room-a", "ana"],
       },
       {
         id: "demo",
-        title: "Demo al cliente",
+        title: "Client demo",
         start: at(11),
         end: at(12),
         resourceIds: ["room-b", "luis"],
       },
-      { id: "focus", title: "Tiempo de foco", start: at(14), end: at(16), resourceIds: ["ana"] },
+      { id: "focus", title: "Focus time", start: at(14), end: at(16), resourceIds: ["ana"] },
     ],
   });
 </script>

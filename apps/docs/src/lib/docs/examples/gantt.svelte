@@ -4,7 +4,6 @@
   import { CalendarState } from "#lib/registry/ui/full-calendar/index.js";
   import { ChangeConfirmDialog } from "#lib/registry/ui/event-dialog/index.js";
   import { GanttView } from "#lib/registry/ui/gantt-view/index.js";
-  import { labels } from "./labels.js";
 
   const timeZone = "America/Lima";
   const day = today(timeZone);
@@ -26,14 +25,13 @@
 
   const calendar = new CalendarState({
     editable: true,
-    locale: "es-PE",
+    locale: "en-US",
     timeZone,
-    labels,
     view: "gantt",
     // Tasks are events with `progress` (0 to 1) or `dependsOn` (ids drawn as arrows).
     events: [
-      task("analysis", "Análisis", -3, 0, 1),
-      task("design", "Diseño", 0, 3, 0.6, ["analysis"]),
+      task("analysis", "Analysis", -3, 0, 1),
+      task("design", "Design", 0, 3, 0.6, ["analysis"]),
       task("build", "Desarrollo", 3, 8, 0.2, ["design"]),
       task("testing", "Pruebas", 8, 11, 0, ["build"]),
     ],

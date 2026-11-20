@@ -17,7 +17,7 @@
 	const day = today(timeZone);
 
 	const calendar = new CalendarState({
-		locale: 'es-PE',
+		locale: 'en-US',
 		timeZone,
 		events: [
 			{ id: '1', title: 'Holiday', start: day, end: day.add({ days: 1 }) },

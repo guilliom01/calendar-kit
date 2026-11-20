@@ -6,13 +6,12 @@
   import { CalendarList } from "#lib/registry/ui/calendar-list/index.js";
   import { EventDialog } from "#lib/registry/ui/event-dialog/index.js";
   import { MonthView } from "#lib/registry/ui/month-view/index.js";
-  import { labels } from "./labels.js";
 
   // Events join a calendar with `calendarId` and take its color unless they have their own.
   const calendars: CalendarSource[] = [
-    { id: "work", title: "Trabajo", color: "oklch(0.6 0.15 250)" },
+    { id: "work", title: "Work", color: "oklch(0.6 0.15 250)" },
     { id: "personal", title: "Personal", color: "oklch(0.65 0.15 150)" },
-    { id: "holidays", title: "Feriados", color: "oklch(0.6 0.2 25)" },
+    { id: "holidays", title: "Holidays", color: "oklch(0.6 0.2 25)" },
   ];
 
   const timeZone = "America/Lima";
@@ -22,9 +21,8 @@
 
   const calendar = new CalendarState({
     editable: true,
-    locale: "es-PE",
+    locale: "en-US",
     timeZone,
-    labels,
     calendars,
     events: [
       {
@@ -34,10 +32,10 @@
         end: at(0, 10),
         calendarId: "work",
       },
-      { id: "gym", title: "Gimnasio", start: at(1, 7), end: at(1, 8), calendarId: "personal" },
+      { id: "gym", title: "Gym", start: at(1, 7), end: at(1, 8), calendarId: "personal" },
       {
         id: "holiday",
-        title: "Feriado",
+        title: "Holiday",
         start: day.add({ days: 3 }),
         end: day.add({ days: 4 }),
         calendarId: "holidays",

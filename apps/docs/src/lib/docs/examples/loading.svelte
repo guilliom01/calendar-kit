@@ -4,7 +4,6 @@
   import * as FullCalendar from "#lib/registry/ui/full-calendar/index.js";
   import { CalendarState } from "#lib/registry/ui/full-calendar/index.js";
   import { MonthView } from "#lib/registry/ui/month-view/index.js";
-  import { labels } from "./labels.js";
 
   const timeZone = "America/Lima";
   let requests: string[] = $state([]);
@@ -18,7 +17,7 @@
       const at = toZoned(day, timeZone).set({ hour: 10 });
       events.push({
         id: `remote-${day}`,
-        title: "Evento remoto",
+        title: "Remote event",
         start: at,
         end: at.add({ hours: 1 }),
       });
@@ -27,11 +26,11 @@
   }
 
   // Months are requested once each, as the user navigates, plus `preload` months around them.
-  const calendar = new CalendarState({ locale: "es-PE", timeZone, labels, loadEvents, preload: 1 });
+  const calendar = new CalendarState({ locale: "en-US", timeZone, loadEvents, preload: 1 });
 </script>
 
 <p class="mb-2 text-sm text-muted-foreground" aria-live="polite">
-  Meses pedidos: {requests.join(", ")}
+  Months requested: {requests.join(", ")}
 </p>
 <FullCalendar.Root state={calendar}>
   <FullCalendar.Toolbar>

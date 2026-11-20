@@ -6,7 +6,6 @@
   import { MonthView } from "#lib/registry/ui/month-view/index.js";
   import { RecurrenceEditor } from "#lib/registry/ui/recurrence-editor/index.js";
   import { TimeGrid } from "#lib/registry/ui/time-grid/index.js";
-  import { labels } from "./labels.js";
 
   const timeZone = "America/Lima";
   const day = today(timeZone);
@@ -14,21 +13,20 @@
 
   const calendar = new CalendarState({
     editable: true,
-    locale: "es-PE",
+    locale: "en-US",
     timeZone,
-    labels,
     events: [
       // RFC 5545 rules; occurrences are expanded only for the range on screen.
       {
         id: "english",
-        title: "Clase de inglés",
+        title: "English class",
         start: at(19),
         end: at(19).add({ minutes: 90 }),
         rrule: "FREQ=WEEKLY;BYDAY=MO,WE",
       },
       {
         id: "report",
-        title: "Informe mensual",
+        title: "Monthly report",
         start: day.subtract({ days: 30 }),
         end: day.subtract({ days: 29 }),
         // The last Friday of every month.

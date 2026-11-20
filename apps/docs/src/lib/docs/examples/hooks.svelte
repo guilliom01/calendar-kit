@@ -3,41 +3,39 @@
   import * as FullCalendar from "#lib/registry/ui/full-calendar/index.js";
   import { CalendarState } from "#lib/registry/ui/full-calendar/index.js";
   import { MonthView } from "#lib/registry/ui/month-view/index.js";
-  import { labels } from "./labels.js";
   import { sampleEvents } from "./sample-events.js";
 
   const timeZone = "America/Lima";
-  let message = $state("Haz clic en un evento o en un día vacío, o arrastra un evento.");
+  let message = $state("Click an event or an empty day, or drag an event.");
 
   // Each hook runs before the built-in behavior; returning false skips it.
   const calendar = new CalendarState({
     editable: true,
-    locale: "es-PE",
+    locale: "en-US",
     timeZone,
-    labels,
     events: sampleEvents(today(timeZone), timeZone),
     // Our own panel instead of the event dialog.
     onEventClick: (event) => {
-      message = `Abriste: ${event.title}`;
+      message = `Opened: ${event.title}`;
       return false;
     },
     // Stay in the month instead of opening the day.
     onDateClick: (date) => {
-      message = `Día: ${date.toString()}`;
+      message = `Day: ${date.toString()}`;
       return false;
     },
     // An empty day was picked: no dialog, just report it.
     onSelect: ({ start }) => {
-      message = `Seleccionaste: ${start.toString()}`;
+      message = `Selected: ${start.toString()}`;
       return false;
     },
     // A rule of our own: nothing moves to a Sunday.
     onEventChange: ({ event }) => {
       if (getDayOfWeek(event.start, "en-US", "sun") === 0) {
-        message = "Los domingos no se trabaja.";
+        message = "No work on Sundays.";
         return false;
       }
-      message = `Movido: ${event.title}`;
+      message = `Moved: ${event.title}`;
     },
   });
 </script>

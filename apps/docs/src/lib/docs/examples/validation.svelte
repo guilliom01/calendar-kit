@@ -4,23 +4,21 @@
   import { CalendarState } from "#lib/registry/ui/full-calendar/index.js";
   import { EventDialog } from "#lib/registry/ui/event-dialog/index.js";
   import { MonthView } from "#lib/registry/ui/month-view/index.js";
-  import { labels } from "./labels.js";
   import { sampleEvents } from "./sample-events.js";
 
   const timeZone = "America/Lima";
 
   const calendar = new CalendarState({
     editable: true,
-    locale: "es-PE",
+    locale: "en-US",
     timeZone,
-    labels,
     events: sampleEvents(today(timeZone), timeZone),
     // Your rules for the dialog: messages by field, or any other key for a general one.
     // Nothing is saved while one is returned. The end-after-start check is built in.
     validate: (event) => {
       const errors: Record<string, string> = {};
-      if (!event.title.trim()) errors.title = "El título es obligatorio.";
-      if (event.title.length > 60) errors.title = "Máximo 60 caracteres.";
+      if (!event.title.trim()) errors.title = "The title is required.";
+      if (event.title.length > 60) errors.title = "At most 60 characters.";
       return errors;
     },
   });

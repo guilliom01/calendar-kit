@@ -5,12 +5,11 @@
   import { CalendarState } from "#lib/registry/ui/full-calendar/index.js";
   import { EventDialog } from "#lib/registry/ui/event-dialog/index.js";
   import { MonthView } from "#lib/registry/ui/month-view/index.js";
-  import { labels } from "./labels.js";
   import { sampleEvents } from "./sample-events.js";
 
   const timeZone = "America/Lima";
   let backend: "ok" | "error" | "conflict" = $state("ok");
-  let message = $state("Edita un evento y guárdalo.");
+  let message = $state("Edit an event and save it.");
 
   // Your API call. Changes are already on screen; return the saved event, or throw.
   async function save(mutation: Mutation<CalendarEvent>) {
@@ -20,33 +19,32 @@
       // Someone else changed it first: send back the server's version.
       throw new ConflictError({
         ...mutation.before,
-        title: `${mutation.before.title} (otra persona)`,
+        title: `${mutation.before.title} (someone else)`,
       });
     }
-    message = `Guardado: ${mutation.type}`;
+    message = `Saved: ${mutation.type}`;
   }
 
   const calendar = new CalendarState({
     editable: true,
-    locale: "es-PE",
+    locale: "en-US",
     timeZone,
-    labels,
     events: sampleEvents(today(timeZone), timeZone),
     onMutate: save,
     // The change was rolled back already; tell the user.
-    onError: () => (message = "No se pudo guardar: se deshizo el cambio."),
+    onError: () => (message = "Could not save: the change was undone."),
     // The server's version is on screen already; tell the user.
-    onConflict: () => (message = "Otra persona lo cambió antes: se muestra su versión."),
+    onConflict: () => (message = "Someone else changed it first: showing their version."),
   });
 </script>
 
 <div class="mb-2 flex flex-wrap items-center gap-4 text-sm">
   <label class="flex items-center gap-2">
-    Servidor
+    Server
     <select class="h-8 rounded-md border bg-transparent px-2" bind:value={backend}>
-      <option value="ok">responde bien</option>
-      <option value="error">falla</option>
-      <option value="conflict">tiene otra versión</option>
+      <option value="ok">responds fine</option>
+      <option value="error">fails</option>
+      <option value="conflict">has another version</option>
     </select>
   </label>
   <p role="status">{message}</p>

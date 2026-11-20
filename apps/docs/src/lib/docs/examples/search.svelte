@@ -4,15 +4,13 @@
   import { CalendarState } from "#lib/registry/ui/full-calendar/index.js";
   import { AgendaView } from "#lib/registry/ui/agenda-view/index.js";
   import { CalendarSearch } from "#lib/registry/ui/calendar-search/index.js";
-  import { labels } from "./labels.js";
   import { sampleEvents } from "./sample-events.js";
 
   const timeZone = "America/Lima";
 
   const calendar = new CalendarState({
-    locale: "es-PE",
+    locale: "en-US",
     timeZone,
-    labels,
     view: "agenda",
     events: sampleEvents(today(timeZone), timeZone),
   });
@@ -33,7 +31,7 @@
             ? (event) => "hour" in event.start
             : null)}
       />
-      Solo con hora
+      Timed only
     </label>
   </FullCalendar.Toolbar>
   <FullCalendar.View name="agenda"><AgendaView class="flex-1" /></FullCalendar.View>

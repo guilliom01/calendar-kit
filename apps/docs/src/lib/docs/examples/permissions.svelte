@@ -4,7 +4,6 @@
   import { CalendarState } from "#lib/registry/ui/full-calendar/index.js";
   import { EventDialog } from "#lib/registry/ui/event-dialog/index.js";
   import { TimeGrid } from "#lib/registry/ui/time-grid/index.js";
-  import { labels } from "./labels.js";
 
   const timeZone = "America/Lima";
   const day = today(timeZone);
@@ -13,29 +12,28 @@
 
   const calendar = new CalendarState({
     editable: true,
-    locale: "es-PE",
+    locale: "en-US",
     timeZone,
-    labels,
     view: "week",
     events: [
       { id: "free", title: "Editable", start: at(0, 9), end: at(0, 10) },
       {
         id: "booking",
-        title: "Reserva de sala",
+        title: "Room booking",
         start: at(1, 11),
         end: at(1, 12),
         data: { kind: "booking" },
       },
       {
         id: "holiday",
-        title: "Feriado",
+        title: "Holiday",
         start: day.add({ days: 2 }),
         end: day.add({ days: 3 }),
         data: { kind: "holiday" },
       },
       {
         id: "maybe",
-        title: "Por confirmar",
+        title: "Tentative",
         start: at(3, 15),
         end: at(3, 16),
         data: { tentative: true },

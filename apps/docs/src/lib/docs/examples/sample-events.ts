@@ -9,18 +9,18 @@ export function sampleEvents(day: CalendarDate, timeZone: string): CalendarEvent
     { id: "standup", title: "Daily standup", start: at(0, 9), end: at(0, 9, 30) },
     {
       id: "review",
-      title: "Revisión de diseño",
+      title: "Design review",
       start: at(1, 11),
       end: at(1, 12, 30),
       color: "oklch(0.6 0.15 250)",
     },
     {
       id: "lunch",
-      title: "Almuerzo con el equipo",
+      title: "Team lunch",
       start: at(2, 13),
       end: at(2, 14, 30),
       color: "oklch(0.65 0.15 150)",
     },
-    { id: "trip", title: "Viaje a Cusco", start: day.add({ days: 3 }), end: day.add({ days: 5 }) },
+    { id: "trip", title: "Trip to Cusco", start: day.add({ days: 3 }), end: day.add({ days: 5 }) },
   ];
 }

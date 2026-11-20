@@ -12,9 +12,8 @@
 
   const calendar = new CalendarState({
     editable: true,
-    locale: "es-PE",
+    locale: "en-US",
     timeZone,
-    labels,
     events: sampleEvents(today(timeZone), timeZone),
   });
 
@@ -27,7 +26,7 @@
 </script>
 
 <label class="mb-2 flex items-center gap-2 text-sm">
-  Idioma
+  Language
   <select
     class="h-8 rounded-md border bg-transparent px-2"
     value={calendar.locale}

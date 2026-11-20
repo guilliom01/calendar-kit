@@ -4,16 +4,14 @@
   import { CalendarState } from "#lib/registry/ui/full-calendar/index.js";
   import { MonthView } from "#lib/registry/ui/month-view/index.js";
   import { cn } from "#lib/utils.js";
-  import { labels } from "./labels.js";
   import { sampleEvents } from "./sample-events.js";
 
   const timeZone = "America/Lima";
 
   const calendar = new CalendarState({
     editable: true,
-    locale: "es-PE",
+    locale: "en-US",
     timeZone,
-    labels,
     events: sampleEvents(today(timeZone), timeZone),
   });
 </script>
@@ -44,7 +42,7 @@
       <!-- Extra content in each day: here, a mark on weekends. -->
       {#snippet dayCell({ day })}
         {#if day.toDate(timeZone).getDay() % 6 === 0}
-          <span class="ms-1 text-xs text-muted-foreground">fin de semana</span>
+          <span class="ms-1 text-xs text-muted-foreground">weekend</span>
         {/if}
       {/snippet}
     </MonthView>

@@ -5,7 +5,6 @@
   import { ChangeConfirmDialog, EventDialog } from "#lib/registry/ui/event-dialog/index.js";
   import { MonthView } from "#lib/registry/ui/month-view/index.js";
   import { TimeGrid } from "#lib/registry/ui/time-grid/index.js";
-  import { labels } from "./labels.js";
   import { sampleEvents } from "./sample-events.js";
 
   const timeZone = "America/Lima";
@@ -13,9 +12,8 @@
   // Editable is the default. Changes show at once; add onMutate to save them (see "Saving").
   const calendar = new CalendarState({
     editable: true,
-    locale: "es-PE",
+    locale: "en-US",
     timeZone,
-    labels,
     events: sampleEvents(today(timeZone), timeZone),
   });
 </script>

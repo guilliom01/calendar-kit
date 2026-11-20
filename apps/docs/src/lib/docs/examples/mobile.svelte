@@ -5,15 +5,13 @@
   import { AgendaView } from "#lib/registry/ui/agenda-view/index.js";
   import { MonthView } from "#lib/registry/ui/month-view/index.js";
   import { TimeGrid } from "#lib/registry/ui/time-grid/index.js";
-  import { labels } from "./labels.js";
   import { sampleEvents } from "./sample-events.js";
 
   const timeZone = "America/Lima";
 
   const calendar = new CalendarState({
-    locale: "es-PE",
+    locale: "en-US",
     timeZone,
-    labels,
     events: sampleEvents(today(timeZone), timeZone),
   });
 </script>

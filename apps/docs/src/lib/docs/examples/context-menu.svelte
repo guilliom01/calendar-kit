@@ -6,17 +6,15 @@
   import { EventContextMenu } from "#lib/registry/ui/event-context-menu/index.js";
   import { EventDialog } from "#lib/registry/ui/event-dialog/index.js";
   import { MonthView } from "#lib/registry/ui/month-view/index.js";
-  import { labels } from "./labels.js";
   import { sampleEvents } from "./sample-events.js";
 
   const timeZone = "America/Lima";
-  let message = $state("Haz clic derecho (o Shift+F10) sobre un evento.");
+  let message = $state("Right-click (or Shift+F10) an event.");
 
   const calendar = new CalendarState({
     editable: true,
-    locale: "es-PE",
+    locale: "en-US",
     timeZone,
-    labels,
     events: sampleEvents(today(timeZone), timeZone),
   });
 </script>
@@ -31,8 +29,8 @@
   <EventContextMenu>
     <!-- `extra` adds your own items; `menu` would replace them all. -->
     {#snippet extra({ event })}
-      <ContextMenu.Item onSelect={() => (message = `Compartiste «${event.title}».`)}>
-        Compartir
+      <ContextMenu.Item onSelect={() => (message = `You shared "${event.title}".`)}>
+        Share
       </ContextMenu.Item>
     {/snippet}
     <FullCalendar.View name="month"><MonthView class="flex-1" /></FullCalendar.View>

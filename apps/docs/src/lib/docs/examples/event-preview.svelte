@@ -4,20 +4,18 @@
   import { CalendarState } from "#lib/registry/ui/full-calendar/index.js";
   import { EventPreview } from "#lib/registry/ui/event-preview/index.js";
   import { TimeGrid } from "#lib/registry/ui/time-grid/index.js";
-  import { labels } from "./labels.js";
   import { sampleEvents } from "./sample-events.js";
 
   const timeZone = "America/Lima";
 
   const calendar = new CalendarState({
-    locale: "es-PE",
+    locale: "en-US",
     timeZone,
-    labels,
     view: "week",
     events: sampleEvents(today(timeZone), timeZone).map((event) => ({
       ...event,
-      location: "Sala Miraflores",
-      description: "Traer laptop.",
+      location: "Room Miraflores",
+      description: "Bring a laptop.",
     })),
   });
 </script>

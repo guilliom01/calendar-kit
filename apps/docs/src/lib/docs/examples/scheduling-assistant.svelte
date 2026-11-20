@@ -6,7 +6,6 @@
   import { EventDialog } from "#lib/registry/ui/event-dialog/index.js";
   import { SchedulingAssistant } from "#lib/registry/ui/scheduling-assistant/index.js";
   import { TimeGrid } from "#lib/registry/ui/time-grid/index.js";
-  import { labels } from "./labels.js";
 
   const people: Resource[] = [
     { id: "ana", title: "Ana", color: "oklch(0.65 0.15 150)" },
@@ -21,14 +20,13 @@
 
   const calendar = new CalendarState({
     editable: true,
-    locale: "es-PE",
+    locale: "en-US",
     timeZone,
-    labels,
     view: "resources",
     events: [
-      { id: "a", title: "Ocupada", start: at(1, 9), end: at(1, 12), resourceIds: ["ana"] },
-      { id: "l", title: "Ocupado", start: at(1, 11), end: at(1, 15), resourceIds: ["luis"] },
-      { id: "r", title: "Ocupada", start: at(1, 15), end: at(1, 16), resourceIds: ["rosa"] },
+      { id: "a", title: "Busy", start: at(1, 9), end: at(1, 12), resourceIds: ["ana"] },
+      { id: "l", title: "Busy", start: at(1, 11), end: at(1, 15), resourceIds: ["luis"] },
+      { id: "r", title: "Busy", start: at(1, 15), end: at(1, 16), resourceIds: ["rosa"] },
     ],
   });
 </script>

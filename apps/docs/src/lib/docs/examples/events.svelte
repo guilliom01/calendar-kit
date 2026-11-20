@@ -12,21 +12,21 @@
   // <CalendarEvent>: otherwise TypeScript infers the type from the events below, and
   // create() would only accept events shaped exactly like them.
   const calendar = new CalendarState<CalendarEvent>({
-    locale: "es-PE",
+    locale: "en-US",
     timeZone,
     // Read-only: nothing can be dragged, resized or deleted by the user.
     events: [
       // Timed events use ZonedDateTime...
       {
         id: "meeting",
-        title: "Reunión de equipo",
+        title: "Team meeting",
         start: toZoned(day, timeZone).set({ hour: 10 }),
         end: toZoned(day, timeZone).set({ hour: 11 }),
       },
       // ...all-day events use CalendarDate. `end` is exclusive: this one lasts 2 days.
       {
         id: "trip",
-        title: "Viaje a Cusco",
+        title: "Trip to Cusco",
         start: day.add({ days: 2 }),
         end: day.add({ days: 4 }),
         color: "oklch(0.7 0.15 70)",
@@ -34,7 +34,7 @@
     ],
   });
 
-  const titles = ["Llamada", "Café", "Entrevista", "Clase", "Demo"];
+  const titles = ["Call", "Coffee", "Interview", "Class", "Demo"];
   let count = 0;
 
   // The state is yours to change from your own UI, editable or not.
@@ -60,7 +60,7 @@
     const start = parseDate(date);
     void calendar.create({
       id: `form-${++count}`,
-      title: title.trim() || "Sin título",
+      title: title.trim() || "Untitled",
       start,
       end: start.add({ days: 1 }),
     });
@@ -74,24 +74,24 @@
     <FullCalendar.Nav />
     <FullCalendar.Title />
     <Button variant="outline" size="sm" class="ms-auto" onclick={addRandomEvent}>
-      Agregar evento aleatorio
+      Add a random event
     </Button>
     <Button variant="outline" size="sm" onclick={() => (showForm = !showForm)}>
-      Agregar con mi formulario
+      Add with my own form
     </Button>
   </FullCalendar.Toolbar>
   {#if showForm}
     <form
-      aria-label="Mi formulario"
+      aria-label="My form"
       class="flex flex-wrap items-end gap-2 text-sm"
       onsubmit={addFromForm}
     >
       <label class="grid gap-1">
-        Título
+        Title
         <input class="h-8 rounded-md border bg-transparent px-2" bind:value={title} required />
       </label>
       <label class="grid gap-1">
-        Fecha
+        Date
         <input
           type="date"
           class="h-8 rounded-md border bg-transparent px-2"
@@ -99,7 +99,7 @@
           required
         />
       </label>
-      <Button type="submit" size="sm">Agregar</Button>
+      <Button type="submit" size="sm">Add</Button>
     </form>
   {/if}
   <FullCalendar.View name="month">
